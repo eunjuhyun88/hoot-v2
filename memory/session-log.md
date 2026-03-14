@@ -287,6 +287,44 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
 ### Pending
 - if `claude/kind-leavitt` needs to continue, it must be migrated into a fresh `codex/*` worktree and claimed properly
 - root worktree still contains unrelated dirty UI/runtime artifacts outside the runtime-control merge
+
+---
+
+## 2026-03-15 (cont): split remaining dirty UI/widget work into a dedicated lane
+
+### Context
+사용자 확인: 현재 남아 있는 dirty UI/widget 변경도 별도 레인으로 분리해서 계속 작업 가능해야 함
+
+### Completed
+- **Current dirty lane split**:
+  - current worktree switched from `codex/multi-agent-enforcement` to `codex/dashboard-widget-lane`
+  - prior coordination claim released:
+    - `W-20260315-agent-lane-enforcement` → `done`
+  - new checkpoint created:
+    - `W-20260315-dashboard-widget-lane`
+  - new active claim created on surface `web`
+
+- **New active lane**:
+  - branch: `codex/dashboard-widget-lane`
+  - work id: `W-20260315-dashboard-widget-lane`
+  - purpose: continue dirty dashboard/widget UI work separately from the integrated runtime-control lane
+
+- **Clean integration branch advanced again**:
+  - temporary worktree `/tmp/mesh-merge-ff3`
+  - `feat/next-iteration` fast-forwarded from `d0d1338` to `898fd1d`
+  - `codex/multi-agent-enforcement` and `feat/next-iteration` now both point to `898fd1d`
+
+### Verification
+- initial narrow claim failed because branch diff versus `main` still included prior integrated changes
+- claim was widened to real top-level branch boundaries and then:
+  - `npm run agent:guard` ✓ on `codex/dashboard-widget-lane`
+  - `npm run coord:check` ✓
+  - `npm run coord:list` shows only:
+    - `W-20260315-dashboard-widget-lane`
+
+### Pending
+- current worktree still contains uncommitted UI/widget/runtime artifacts on `codex/dashboard-widget-lane`
+- `feat/next-iteration` is ready as the clean integration branch, but it has not been pushed
   - `npm run coord:claim -- --work-id "W-20260315-agent-lane-enforcement" ...`
   - `npm run agent:guard` ✓
   - `npm run coord:check` ✓

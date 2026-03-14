@@ -17,8 +17,8 @@
 - **Don't reduce info, only add** — user explicitly rejected removing visualizations
 
 ## Project State
-- Branch: `codex/multi-agent-enforcement` (uncommitted changes)
-- `feat/next-iteration` is fast-forwarded to `d0d1338` and now matches `codex/multi-agent-enforcement`
+- Branch: `codex/dashboard-widget-lane` (uncommitted UI/widget changes)
+- `feat/next-iteration` is fast-forwarded to `898fd1d` and now matches `codex/multi-agent-enforcement`
 - All builds pass (`npm run build`)
 - No test runner configured — verify via build
 - `memento-kit` core repo layer integrated
@@ -102,8 +102,9 @@
   - `scripts/dev/start-agent-run.mjs` runs the guard
   - `.githooks/pre-push` runs the guard
   - non-`codex/` agent branches are now intentionally blocked
-  - current lane was migrated to `codex/multi-agent-enforcement`
-  - active claim: `W-20260315-agent-lane-enforcement`
+  - integrated runtime-control lane remains on `codex/multi-agent-enforcement`
+  - current dirty UI/widget lane was split to `codex/dashboard-widget-lane`
+  - active claim: `W-20260315-dashboard-widget-lane`
 - **Stale Claude worktree was synced to latest enforcement commit**:
   - `.claude/worktrees/kind-leavitt` fast-forwarded from `546a59f` to `d0d1338`
   - worktree is now clean, but still intentionally blocked by `agent:guard` because branch is `claude/kind-leavitt`
