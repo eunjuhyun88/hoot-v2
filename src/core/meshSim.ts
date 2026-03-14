@@ -1,4 +1,17 @@
-import * as THREE from "three";
+// Pure-math replacements for THREE.MathUtils (removed three dependency)
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+const degToRad = (d: number) => d * Math.PI / 180;
+const euclideanModulo = (n: number, m: number) => ((n % m) + m) % m;
+
+function hslToHex(h: number, s: number, l: number): string {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h * 12) % 12;
+    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(255 * Math.max(0, Math.min(1, c))).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
 
 import type {
   Job,
@@ -127,22 +140,22 @@ export function getJobFlowCount(job: Job) {
 }
 
 export function latLngToVector3(lat: number, lng: number, radius: number) {
-  const phi = THREE.MathUtils.degToRad(90 - lat);
-  const theta = THREE.MathUtils.degToRad(lng + 180);
+  const phi = degToRad(90 - lat);
+  const theta = degToRad(lng + 180);
 
-  return new THREE.Vector3(
-    -radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta),
-  );
+  return {
+    x: -radius * Math.sin(phi) * Math.cos(theta),
+    y: radius * Math.cos(phi),
+    z: radius * Math.sin(phi) * Math.sin(theta),
+  };
 }
 
 export function latToPitch(lat: number) {
-  return THREE.MathUtils.clamp(THREE.MathUtils.degToRad(lat) * -0.5, -0.65, 0.4);
+  return clamp(degToRad(lat) * -0.5, -0.65, 0.4);
 }
 
 export function lngToRotation(lng: number) {
-  return THREE.MathUtils.degToRad(-lng - 90);
+  return degToRad(-lng - 90);
 }
 
 export function formatNodeLabel(nodeId: string) {
@@ -173,7 +186,7 @@ export function normalNoise(seedA: number, seedB: number) {
 }
 
 export function wrapLongitude(lng: number) {
-  return THREE.MathUtils.euclideanModulo(lng + 180, 360) - 180;
+  return euclideanModulo(lng + 180, 360) - 180;
 }
 
 export function resolveMeshRegion(lat: number, lng: number): MeshRegion {
@@ -197,7 +210,7 @@ export function oscillate01(angle: number) {
 }
 
 export function smoothPulse(value: number) {
-  const clamped = THREE.MathUtils.clamp(value, 0, 1);
+  const clamped = clamp(value, 0, 1);
   return clamped * clamped * (3 - 2 * clamped);
 }
 
@@ -211,13 +224,12 @@ export function getRegionPulse(clock: number, region: MeshRegion) {
   const longWave = smoothPulse(oscillate01(clock * base + offset));
   const burstWave = smoothPulse(oscillate01(clock * burst + offset * 1.7));
 
-  return THREE.MathUtils.clamp(0.16 + longWave * 0.68 + burstWave * 0.16, 0.16, 1);
+  return clamp(0.16 + longWave * 0.68 + burstWave * 0.16, 0.16, 1);
 }
 
 export function getJobAccent(jobId: string, state: JobState) {
   const seed = stringHash(jobId);
   const hue = hashNoise(seed * 0.173 + 1.27);
-  const color = new THREE.Color();
   const lightnessByState: Record<JobState, number> = {
     queued: 0.63,
     training: 0.6,
@@ -230,8 +242,7 @@ export function getJobAccent(jobId: string, state: JobState) {
     evaluating: 0.7,
     done: 0.58,
   };
-  color.setHSL(0.48 + hue * 0.18, saturationByState[state], lightnessByState[state]);
-  return `#${color.getHexString()}`;
+  return hslToHex(0.48 + hue * 0.18, saturationByState[state], lightnessByState[state]);
 }
 
 export function buildJobNodeCountMap(nodes: Node[]) {
@@ -438,7 +449,7 @@ export function buildScaledNodes(
   );
   const globalVisibility =
     syntheticCapacity > 0
-      ? THREE.MathUtils.clamp(syntheticVisibleCount / syntheticCapacity, 0, 1)
+      ? clamp(syntheticVisibleCount / syntheticCapacity, 0, 1)
       : 0;
   const centers: MeshCenter[] = [
     ...donorHotspots.map((spot, index) => ({
@@ -529,8 +540,8 @@ export function buildScaledNodes(
           : 0.24;
     const regionalPulse = getRegionPulse(clock, entry.center.meshRegion);
     const localPulse = smoothPulse(oscillate01(clock * entry.center.cadence + entry.center.phase));
-    const ramp = THREE.MathUtils.clamp((globalVisibility - regionLead) / regionWindow, 0, 1);
-    const visibility = THREE.MathUtils.clamp(
+    const ramp = clamp((globalVisibility - regionLead) / regionWindow, 0, 1);
+    const visibility = clamp(
       globalVisibility * 0.64 + ramp * 0.24 + regionalPulse * 0.08 + localPulse * 0.04,
       0,
       1,
@@ -575,12 +586,12 @@ export function buildScaledNodes(
         normalNoise(center.seed * 0.91 + localIndex * 0.37, center.seed * 1.27 + localIndex * 0.53) *
         center.spreadLat *
         spreadScale;
-      const lat = THREE.MathUtils.clamp(center.lat + latOffset, -79, 79);
+      const lat = clamp(center.lat + latOffset, -79, 79);
       const lngOffset =
         normalNoise(center.seed * 1.61 + localIndex * 0.49, center.seed * 2.17 + localIndex * 0.67) *
         center.spreadLng *
         spreadScale *
-        (1 / Math.max(Math.cos(THREE.MathUtils.degToRad(Math.abs(lat))), 0.4));
+        (1 / Math.max(Math.cos(degToRad(Math.abs(lat))), 0.4));
       const lng = wrapLongitude(center.lng + lngOffset);
       const assignmentRoll = hashNoise(center.seed * 2.31 + localIndex * 0.83);
       const ambientJob =

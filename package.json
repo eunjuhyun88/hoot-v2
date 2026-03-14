@@ -6,14 +6,10 @@
   "scripts": {
     "dev": "vite",
     "dev:svelte": "vite",
-    "dev:react": "vite --config vite.react.config.ts",
     "build": "vite build",
     "build:svelte": "vite build",
-    "build:react": "vite build --config vite.react.config.ts",
     "preview": "vite preview",
     "preview:svelte": "vite preview",
-    "preview:react": "vite preview --config vite.react.config.ts",
-    "migration:svelte:prepare": "node --experimental-strip-types scripts/prepare_svelte_migration.ts",
     "telemetry:from-autoresearch": "node --experimental-strip-types scripts/autoresearch_to_telemetry.ts",
     "telemetry:mock": "node --experimental-strip-types scripts/mock_telemetry_server.ts",
     "controller:loop": "node --experimental-strip-types scripts/autoresearch_loop_controller.ts",
@@ -23,14 +19,9 @@
   },
   "dependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.1.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "svelte": "^5.53.11",
-    "three": "^0.176.0"
+    "svelte": "^5.53.11"
   },
   "devDependencies": {
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
     "@types/topojson-client": "^3.1.5",
     "topojson-client": "^3.1.0",
     "typescript": "^5.8.3",
