@@ -3,6 +3,7 @@
   import { router } from "./router.ts";
   import { jobStore } from "./jobStore.ts";
   import MeshCanvas from "./MeshCanvas.svelte";
+  import PixelOwl from "./PixelOwl.svelte";
   import {
     createFixturePlayback,
     demoFixtureText,
@@ -172,7 +173,7 @@
   <!-- ════ HERO ════ -->
   <section class="hero">
     <div class="hero-bg">
-      <MeshCanvas nodes={renderNodes} jobs={model.jobs} workers={model.workers} />
+      <MeshCanvas nodes={renderNodes} jobs={model.jobs} workers={model.workers} viewerLocation={{ lat: 37.57, lng: 126.98 }} />
     </div>
 
     <div class="hero-content">
@@ -184,7 +185,13 @@
         and distributed compute. Large models are generalists — HOOT creates specialists.
       </p>
 
-      <div class="program-editor">
+      <div class="pe-editor-wrap">
+        <div class="pe-owl-track">
+          <div class="pe-walking-owl">
+            <PixelOwl size={0.22} mood="idle" />
+          </div>
+        </div>
+        <div class="program-editor">
         <div class="pe-chrome">
           <div class="pe-dots">
             <span class="pe-dot red"></span>
@@ -192,7 +199,6 @@
             <span class="pe-dot green"></span>
           </div>
           <span class="pe-filename">program.md</span>
-          <span class="pe-badge">RESEARCH PROGRAM</span>
         </div>
         <div class="pe-body">
           <div class="pe-line-numbers">
@@ -209,24 +215,59 @@
         <div class="pe-footer">
           <div class="pe-meta">
             <span class="pe-tag">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="3" y="1" width="2" height="2" fill="currentColor"/>
+                <rect x="5" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="7" y="5" width="2" height="2" fill="currentColor" opacity="0.7"/>
+                <rect x="1" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="3" y="9" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="9" y="1" width="2" height="2" fill="currentColor" opacity="0.4"/>
+              </svg>
               60+ train.py mutations
             </span>
             <span class="pe-tag">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="1" y="5" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="5" y="7" width="2" height="2" fill="currentColor"/>
+                <rect x="7" y="1" width="2" height="2" fill="currentColor"/>
+                <rect x="9" y="5" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              </svg>
               val_bpb hill-climbing
             </span>
             <span class="pe-tag">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="4" width="6" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="4" y="14" width="6" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="6" height="6" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="1" y="1" width="4" height="4" fill="currentColor"/>
+                <rect x="7" y="1" width="4" height="4" fill="currentColor" opacity="0.7"/>
+                <rect x="1" y="7" width="4" height="4" fill="currentColor" opacity="0.7"/>
+                <rect x="7" y="7" width="4" height="4" fill="currentColor"/>
+              </svg>
               Distributed GPU mesh
             </span>
             <span class="pe-tag accent">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="4" y="1" width="4" height="2" fill="currentColor"/>
+                <rect x="2" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="8" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="2" y="5" width="2" height="4" fill="currentColor"/>
+                <rect x="8" y="5" width="2" height="4" fill="currentColor"/>
+                <rect x="4" y="9" width="4" height="2" fill="currentColor"/>
+                <rect x="5" y="3" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="5" y="5" width="2" height="2" fill="currentColor" opacity="0.3"/>
+                <rect x="7" y="5" width="2" height="2" fill="currentColor" opacity="0.4"/>
+              </svg>
               ~5 min
             </span>
           </div>
           <button class="pe-submit" on:click={handleSearch}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+              <rect x="6" y="0" width="2" height="2" fill="currentColor"/>
+              <rect x="5" y="2" width="2" height="2" fill="currentColor"/>
+              <rect x="3" y="4" width="4" height="2" fill="currentColor"/>
+              <rect x="5" y="6" width="2" height="2" fill="currentColor"/>
+              <rect x="4" y="8" width="2" height="2" fill="currentColor"/>
+              <rect x="3" y="10" width="2" height="2" fill="currentColor"/>
+            </svg>
             Launch Autoresearch
           </button>
         </div>
@@ -237,13 +278,21 @@
           {/each}
         </div>
       </div>
+      </div>
 
       <div class="hero-actions">
         <button class="dl-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+            <rect x="7" y="1" width="2" height="2" fill="currentColor"/>
+            <rect x="7" y="3" width="2" height="2" fill="currentColor"/>
+            <rect x="7" y="5" width="2" height="2" fill="currentColor"/>
+            <rect x="7" y="7" width="2" height="2" fill="currentColor"/>
+            <rect x="5" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+            <rect x="9" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+            <rect x="3" y="9" width="2" height="2" fill="currentColor" opacity="0.4"/>
+            <rect x="11" y="9" width="2" height="2" fill="currentColor" opacity="0.4"/>
+            <rect x="1" y="11" width="14" height="2" fill="currentColor" opacity="0.3"/>
+            <rect x="1" y="13" width="14" height="2" fill="currentColor"/>
           </svg>
           Download for macOS
         </button>
@@ -307,7 +356,12 @@
         <p>Enter a research topic. An AI agent designs the ML pipeline, selects features, and configures the search space.</p>
       </div>
       <div class="step-arr">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+            <rect x="1" y="7" width="10" height="2" fill="currentColor" opacity="0.4"/>
+            <rect x="9" y="5" width="2" height="2" fill="currentColor"/>
+            <rect x="11" y="7" width="2" height="2" fill="currentColor"/>
+            <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
+          </svg>
       </div>
       <div class="step">
         <div class="step-n">2</div>
@@ -315,7 +369,12 @@
         <p>A mesh of GPU nodes trains, evaluates, and evolves models in parallel — 12 experiments per hour per node.</p>
       </div>
       <div class="step-arr">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+            <rect x="1" y="7" width="10" height="2" fill="currentColor" opacity="0.4"/>
+            <rect x="9" y="5" width="2" height="2" fill="currentColor"/>
+            <rect x="11" y="7" width="2" height="2" fill="currentColor"/>
+            <rect x="9" y="9" width="2" height="2" fill="currentColor"/>
+          </svg>
       </div>
       <div class="step">
         <div class="step-n">3</div>
@@ -358,9 +417,15 @@
     <div class="ex-grid">
       <button class="ex-card" on:click={() => router.navigate('research')}>
         <div class="ex-icon acc">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M23 6l-9.5 9.5-5-5L1 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <polyline points="17 6 23 6 23 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg width="22" height="22" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+            <rect x="1" y="13" width="14" height="2" fill="currentColor" opacity="0.3"/>
+            <rect x="1" y="1" width="2" height="14" fill="currentColor" opacity="0.3"/>
+            <rect x="3" y="9" width="2" height="2" fill="currentColor"/>
+            <rect x="5" y="7" width="2" height="2" fill="currentColor"/>
+            <rect x="7" y="9" width="2" height="2" fill="currentColor"/>
+            <rect x="9" y="5" width="2" height="2" fill="currentColor"/>
+            <rect x="11" y="3" width="2" height="2" fill="currentColor"/>
+            <rect x="13" y="1" width="2" height="2" fill="currentColor"/>
           </svg>
         </div>
         <h3>Autoresearch</h3>
@@ -369,11 +434,11 @@
       </button>
       <button class="ex-card" on:click={() => router.navigate('models')}>
         <div class="ex-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
-            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
-            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
-            <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+          <svg width="22" height="22" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+            <rect x="1" y="1" width="6" height="6" fill="currentColor"/>
+            <rect x="9" y="1" width="6" height="6" fill="currentColor" opacity="0.7"/>
+            <rect x="1" y="9" width="6" height="6" fill="currentColor" opacity="0.7"/>
+            <rect x="9" y="9" width="6" height="6" fill="currentColor"/>
           </svg>
         </div>
         <h3>Model Hub</h3>
@@ -382,9 +447,17 @@
       </button>
       <button class="ex-card" on:click={() => router.navigate('network')}>
         <div class="ex-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.5"/>
+          <svg width="22" height="22" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+            <rect x="5" y="1" width="6" height="2" fill="currentColor"/>
+            <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
+            <rect x="11" y="3" width="2" height="2" fill="currentColor"/>
+            <rect x="1" y="5" width="2" height="6" fill="currentColor"/>
+            <rect x="13" y="5" width="2" height="6" fill="currentColor"/>
+            <rect x="3" y="11" width="2" height="2" fill="currentColor"/>
+            <rect x="11" y="11" width="2" height="2" fill="currentColor"/>
+            <rect x="5" y="13" width="6" height="2" fill="currentColor"/>
+            <rect x="1" y="7" width="14" height="2" fill="currentColor" opacity="0.35"/>
+            <rect x="7" y="1" width="2" height="14" fill="currentColor" opacity="0.35"/>
           </svg>
         </div>
         <h3>Live Network</h3>
@@ -429,6 +502,11 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
+  :global(.px-icon) {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
   .hero-h1 {
     font-family: var(--font-display, 'Playfair Display', serif);
     font-size: 3.4rem;
@@ -447,9 +525,13 @@
   }
 
   /* Program Editor */
-  .program-editor {
+  .pe-editor-wrap {
+    position: relative;
     max-width: 640px;
     margin: 0 auto 32px;
+  }
+
+  .program-editor {
     border: 1px solid var(--border, #E5E0DA);
     border-radius: var(--radius-md, 10px);
     background: var(--surface, #fff);
@@ -487,16 +569,33 @@
     color: var(--text-secondary, #6b6560);
     margin-left: 4px;
   }
-  .pe-badge {
-    margin-left: auto;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.5rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--accent, #D97757);
-    background: rgba(217, 119, 87, 0.06);
-    padding: 2px 8px;
-    border-radius: var(--radius-pill, 100px);
+  /* ── Walking Owl on top of editor ── */
+  .pe-owl-track {
+    position: absolute;
+    top: -22px;
+    left: 0;
+    right: 0;
+    height: 24px;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .pe-walking-owl {
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    animation: owlPatrol 10s linear infinite, owlStep 0.35s ease-in-out infinite;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12));
+  }
+  @keyframes owlPatrol {
+    0%   { left: 20px;  transform: scaleX(1); }
+    45%  { left: calc(100% - 44px); transform: scaleX(1); }
+    50%  { left: calc(100% - 44px); transform: scaleX(-1); }
+    95%  { left: 20px;  transform: scaleX(-1); }
+    100% { left: 20px;  transform: scaleX(1); }
+  }
+  @keyframes owlStep {
+    0%, 100% { margin-bottom: 0; }
+    50%      { margin-bottom: 2px; }
   }
   .pe-body {
     display: flex;

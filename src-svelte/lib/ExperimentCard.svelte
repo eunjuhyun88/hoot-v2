@@ -40,7 +40,14 @@
     <span class="exp-id">#{experiment.id}</span>
     <span class="exp-badge" style="color:{cfg.color}; background:{cfg.bg}">
       {#if isRunning}
-        <span class="spinner"></span>
+        <span class="px-eyes">
+          <svg width="14" height="8" viewBox="0 0 14 8" fill="none" class="px-eye-icon" shape-rendering="crispEdges">
+            <rect x="1" y="1" width="4" height="4" fill="currentColor" class="eye-l"/>
+            <rect x="9" y="1" width="4" height="4" fill="currentColor" class="eye-r"/>
+            <rect x="2" y="2" width="2" height="2" fill="#fff" class="pupil-l"/>
+            <rect x="10" y="2" width="2" height="2" fill="#fff" class="pupil-r"/>
+          </svg>
+        </span>
       {:else if experiment.status === 'keep'}
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
           <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -207,19 +214,29 @@
     white-space: nowrap;
   }
 
-  /* ── Spinner with drop-shadow glow ── */
-  .spinner {
-    width: 8px;
-    height: 8px;
-    border: 1.5px solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spin 800ms linear infinite;
-    filter: drop-shadow(0 0 3px currentColor);
+  /* ── Pixel owl eyes indicator ── */
+  .px-eyes {
+    display: flex;
+    align-items: center;
+    line-height: 0;
   }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+  .px-eye-icon {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  .px-eye-icon .pupil-l,
+  .px-eye-icon .pupil-r {
+    animation: eyeLook 2.4s ease-in-out infinite;
+  }
+  .px-eye-icon .pupil-r {
+    animation-delay: 0.1s;
+  }
+  @keyframes eyeLook {
+    0%, 40%  { transform: translateX(0); }
+    50%      { transform: translateX(1px); }
+    60%, 85% { transform: translateX(0); }
+    90%      { transform: translateX(-1px); }
+    100%     { transform: translateX(0); }
   }
 
   /* ── Middle section ── */

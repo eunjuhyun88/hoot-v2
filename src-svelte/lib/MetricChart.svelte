@@ -31,6 +31,32 @@
     ? linePath + ` L${sx(data[data.length - 1].x).toFixed(1)},${(PAD.top + plotH).toFixed(1)} L${sx(data[0].x).toFixed(1)},${(PAD.top + plotH).toFixed(1)} Z`
     : '';
 
+  // Running minimum frontier (the "ratchet" — only descends)
+  $: frontierPath = (() => {
+    if (data.length < 2) return '';
+    let minSoFar = data[0].y;
+    const pts: string[] = [`M${sx(data[0].x).toFixed(1)},${sy(data[0].y).toFixed(1)}`];
+    for (let i = 1; i < data.length; i++) {
+      if (data[i].y < minSoFar) {
+        // Draw horizontal to this x, then drop down
+        pts.push(`L${sx(data[i].x).toFixed(1)},${sy(minSoFar).toFixed(1)}`);
+        minSoFar = data[i].y;
+        pts.push(`L${sx(data[i].x).toFixed(1)},${sy(minSoFar).toFixed(1)}`);
+      }
+    }
+    // Extend to rightmost x
+    pts.push(`L${sx(data[data.length - 1].x).toFixed(1)},${sy(minSoFar).toFixed(1)}`);
+    return pts.join(' ');
+  })();
+
+  // Frontier area fill (below the frontier line)
+  $: frontierAreaPath = (() => {
+    if (!frontierPath) return '';
+    return frontierPath
+      + ` L${sx(data[data.length - 1].x).toFixed(1)},${(PAD.top + plotH).toFixed(1)}`
+      + ` L${sx(data[0].x).toFixed(1)},${(PAD.top + plotH).toFixed(1)} Z`;
+  })();
+
   // Y-axis ticks
   $: yTicks = (() => {
     if (!data.length) return [];
@@ -48,7 +74,9 @@
   // ---------- Animation state ----------
   let mounted = false;
   let lineLength = 0;
+  let frontierLength = 0;
   let lineEl: SVGPathElement | undefined;
+  let frontierEl: SVGPathElement | undefined;
 
   onMount(() => {
     mounted = true;
@@ -58,6 +86,9 @@
   $: if (lineEl && linePath) {
     lineLength = lineEl.getTotalLength();
   }
+  $: if (frontierEl && frontierPath) {
+    frontierLength = frontierEl.getTotalLength();
+  }
 </script>
 
 <div class="chart-container" class:mounted>
@@ -65,13 +96,24 @@
     <!-- Gradient, glow & filter defs (placed first so refs resolve) -->
     <defs>
       <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--accent, #D97757)" stop-opacity="0.4"/>
+        <stop offset="0%" stop-color="var(--accent, #D97757)" stop-opacity="0.12"/>
         <stop offset="100%" stop-color="var(--accent, #D97757)" stop-opacity="0"/>
+      </linearGradient>
+
+      <!-- Frontier area gradient (green) -->
+      <linearGradient id="frontierGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#27864a" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#27864a" stop-opacity="0.01"/>
       </linearGradient>
 
       <!-- Drop-shadow glow on line -->
       <filter id="line-glow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="rgba(217,119,87,0.25)" />
+        <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="rgba(217,119,87,0.2)" />
+      </filter>
+
+      <!-- Frontier line glow -->
+      <filter id="frontier-glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="rgba(39,134,74,0.35)" />
       </filter>
 
       <!-- Brighter glow for best-point -->
@@ -110,7 +152,16 @@
       />
     {/if}
 
-    <!-- Line with draw animation + drop-shadow glow -->
+    <!-- Frontier area fill (green zone below running minimum) -->
+    {#if frontierAreaPath}
+      <path
+        class="frontier-area"
+        d={frontierAreaPath}
+        fill="url(#frontierGrad)"
+      />
+    {/if}
+
+    <!-- Raw experiment line (thin, muted) -->
     {#if linePath}
       <path
         bind:this={lineEl}
@@ -118,25 +169,41 @@
         d={linePath}
         fill="none"
         stroke="var(--accent, #D97757)"
-        stroke-width="1.5"
+        stroke-width="1"
         stroke-linecap="round"
         stroke-linejoin="round"
-        filter="url(#line-glow)"
+        stroke-opacity="0.35"
         style="stroke-dasharray:{lineLength};stroke-dashoffset:{mounted ? 0 : lineLength}"
       />
     {/if}
 
-    <!-- Data points with staggered opacity fade-in -->
+    <!-- Running minimum frontier line (bold green step function) -->
+    {#if frontierPath}
+      <path
+        bind:this={frontierEl}
+        class="frontier-path"
+        d={frontierPath}
+        fill="none"
+        stroke="#27864a"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        filter="url(#frontier-glow)"
+        style="stroke-dasharray:{frontierLength};stroke-dashoffset:{mounted ? 0 : frontierLength}"
+      />
+    {/if}
+
+    <!-- Data points: keep=green big, discard=gray small, crash=red -->
     {#each data as d, i}
       <circle
         class="data-point"
         class:is-best={i === bestIndex}
         cx={sx(d.x)}
         cy={sy(d.y)}
-        r={i === bestIndex ? 4 : 2}
-        fill={d.status === 'keep' ? 'var(--green, #27864a)' : 'var(--red, #c0392b)'}
-        stroke={i === bestIndex ? '#fff' : 'none'}
-        stroke-width={i === bestIndex ? 1.5 : 0}
+        r={i === bestIndex ? 5 : d.status === 'keep' ? 3.5 : 2}
+        fill={d.status === 'keep' ? '#27864a' : d.status === 'crash' ? '#c0392b' : 'rgba(154,149,144,0.4)'}
+        stroke={i === bestIndex ? '#fff' : d.status === 'keep' ? 'rgba(39,134,74,0.3)' : 'none'}
+        stroke-width={i === bestIndex ? 2 : d.status === 'keep' ? 1 : 0}
         filter={i === bestIndex ? 'url(#best-glow)' : undefined}
         style="transition-delay:{mounted ? (60 + i * 40) : 0}ms"
       />
@@ -175,9 +242,21 @@
       y={height - 2}
       text-anchor="middle"
       fill="var(--text-muted, #9a9590)"
-      font-size="9"
+      font-size="8"
       font-family="var(--font-mono, 'JetBrains Mono', monospace)"
-    >experiment #</text>
+      letter-spacing="0.06em"
+    >EXPERIMENT #</text>
+
+    <!-- Y-axis label -->
+    <text
+      x={4}
+      y={PAD.top - 2}
+      text-anchor="start"
+      fill="var(--text-muted, #9a9590)"
+      font-size="8"
+      font-family="var(--font-mono, 'JetBrains Mono', monospace)"
+      letter-spacing="0.06em"
+    >VAL_BPB</text>
   </svg>
 
   {#if data.length === 0}
@@ -221,7 +300,19 @@
     transition: opacity 0.9s ease 0.4s;
   }
   .mounted .area-path {
-    opacity: 0.3;
+    opacity: 0.25;
+  }
+
+  /* ─── Frontier (running minimum) ─── */
+  .frontier-path {
+    transition: stroke-dashoffset 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
+  }
+  .frontier-area {
+    opacity: 0;
+    transition: opacity 1s ease 0.6s;
+  }
+  .mounted .frontier-area {
+    opacity: 1;
   }
 
   /* ─── Data point fade-in ─── */

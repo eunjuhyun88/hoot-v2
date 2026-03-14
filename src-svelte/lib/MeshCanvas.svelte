@@ -4,6 +4,52 @@
   import { isWorkerActiveState } from "../../src/core/meshSim.ts";
   import { isLandAt } from "./landMask.ts";
 
+  // ── Mini Pixel Owl for "My GPU" node ──
+  const OWL_COLORS: Record<string, string> = {
+    'K': '#2D2D2D', 'T': '#D97757', 't': '#E8956E', 'S': '#C4644A',
+    'W': '#FFFFFF', 'P': '#1A1A1A', 'F': '#FAF0EB', 'f': '#EDD8CB',
+    'C': '#E8D5C4', 'G': '#C8960F', 'g': '#A67A0A', 'H': '#1A1A1A',
+  };
+  const OWL_MINI: string[] = [
+    '____KK__KK____',
+    '___KtTKKTtK___',
+    '___KtTTTTtK___',
+    '__KtTTTTTTtK__',
+    '_KTTTTTTTTTtK_',
+    'KTTTTTTTTTTTTK',
+    'KTFFFFFFFFFFFFFFK',
+    'KTFWWWFFWWWFTK',
+    'KTFWPPFFPPWFTK',
+    'KTFWWWffWWWfTK',
+    '_KTfFFGFFFfTK_',
+    'KSTTTTGTTTTSK',
+    '_KSTCCCCCCTSSK',
+    '__KKTTTTTTKK__',
+    '___KgKKKgKK___',
+  ];
+
+  let owlImageCache: ImageBitmap | null = null;
+
+  function buildOwlBitmap(pixelSize: number): Promise<ImageBitmap> {
+    const maxW = Math.max(...OWL_MINI.map(r => r.length));
+    const cw = maxW * pixelSize;
+    const ch = OWL_MINI.length * pixelSize;
+    const off = new OffscreenCanvas(cw, ch);
+    const oc = off.getContext('2d')!;
+    for (let row = 0; row < OWL_MINI.length; row++) {
+      const line = OWL_MINI[row];
+      for (let col = 0; col < line.length; col++) {
+        const ch2 = line[col];
+        if (ch2 === '_') continue;
+        const color = OWL_COLORS[ch2];
+        if (!color) continue;
+        oc.fillStyle = color;
+        oc.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+      }
+    }
+    return off.transferToImageBitmap ? Promise.resolve(off.transferToImageBitmap()) : createImageBitmap(off);
+  }
+
   export let nodes: Node[] = [];
   export let jobs: Job[] = [];
   export let workers: Worker[] = [];
@@ -380,37 +426,47 @@
 
       // Pin dot — STATE-BASED COLORS
       const dr = isActive ? (isTop ? 4.5 : 3) * sc : 1.5 * sc;
+
+      // Draw pixel owl for MY GPU instead of a dot
+      if (pin.isMyGpu && owlImageCache) {
+        const owlSize = Math.max(20, 28 * sc);
+        const aspect = owlImageCache.width / owlImageCache.height;
+        const ow = owlSize * aspect;
+        const oh = owlSize;
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(owlImageCache, sx - ow / 2, sy - oh + 2, ow, oh);
+        ctx.restore();
+      } else {
       ctx.beginPath();
       ctx.arc(sx, sy, dr, 0, Math.PI * 2);
-
-      let pinColor: string;
-      if (pin.isMyGpu) {
-        // "YOUR GPU" — always accent, bigger
-        pinColor = `rgba(217, 119, 87, 0.95)`;
-      } else if (pin.trainingCount > 0) {
-        // Training/Executing — accent orange
-        pinColor = `rgba(217, 119, 87, ${isTop ? 0.85 : 0.6})`;
-      } else if (pin.evaluatingCount > 0) {
-        // Evaluating — gold
-        pinColor = `rgba(183, 134, 14, ${isTop ? 0.85 : 0.6})`;
-      } else if (pin.availableCount > 0) {
-        // Available — green
-        pinColor = `rgba(39, 134, 74, ${isTop ? 0.85 : 0.55})`;
-      } else if (isActive) {
-        // Connected/online — blue (original)
-        pinColor = `rgba(60, 160, 255, ${isTop ? 0.9 : 0.55})`;
-      } else {
-        pinColor = 'rgba(160, 155, 148, 0.2)';
       }
-      ctx.fillStyle = pinColor;
-      ctx.fill();
 
-      // White center (top pins only)
-      if (isActive && isTop) {
-        ctx.beginPath();
-        ctx.arc(sx, sy, dr * 0.35, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      if (!(pin.isMyGpu && owlImageCache)) {
+        let pinColor: string;
+        if (pin.isMyGpu) {
+          pinColor = `rgba(217, 119, 87, 0.95)`;
+        } else if (pin.trainingCount > 0) {
+          pinColor = `rgba(217, 119, 87, ${isTop ? 0.85 : 0.6})`;
+        } else if (pin.evaluatingCount > 0) {
+          pinColor = `rgba(183, 134, 14, ${isTop ? 0.85 : 0.6})`;
+        } else if (pin.availableCount > 0) {
+          pinColor = `rgba(39, 134, 74, ${isTop ? 0.85 : 0.55})`;
+        } else if (isActive) {
+          pinColor = `rgba(60, 160, 255, ${isTop ? 0.9 : 0.55})`;
+        } else {
+          pinColor = 'rgba(160, 155, 148, 0.2)';
+        }
+        ctx.fillStyle = pinColor;
         ctx.fill();
+
+        // White center (top pins only)
+        if (isActive && isTop) {
+          ctx.beginPath();
+          ctx.arc(sx, sy, dr * 0.35, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.fill();
+        }
       }
     }
 
@@ -559,6 +615,8 @@
     resize();
     buildDots();
     buildPins();
+    // Pre-build owl bitmap for "my GPU" pin
+    buildOwlBitmap(2).then(bmp => { owlImageCache = bmp; });
     animate();
     const ro = new ResizeObserver(resize);
     if (canvas.parentElement) ro.observe(canvas.parentElement);

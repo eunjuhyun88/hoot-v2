@@ -1,4 +1,6 @@
 <script lang="ts">
+  import PixelOwl from "./PixelOwl.svelte";
+
   type FooterLink = {
     label: string;
     href: string;
@@ -27,6 +29,7 @@
   <div class="site-footer-inner">
     <div class="footer-brand-block">
       <a class="footer-brand" href="#/">
+        <span class="footer-owl"><PixelOwl size={0.22} mood="sleep" /></span>
         <span class="footer-brand-mark">HOOT</span>
         <span class="footer-brand-name">PROTOCOL</span>
       </a>
@@ -113,10 +116,20 @@
 
   .footer-brand {
     display: inline-flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     text-decoration: none;
     width: fit-content;
+  }
+
+  .footer-owl {
+    display: flex;
+    align-items: center;
+    opacity: 0.7;
+    transition: opacity 300ms ease;
+  }
+  .footer-brand:hover .footer-owl {
+    opacity: 1;
   }
 
   .footer-brand-mark {

@@ -144,7 +144,7 @@
 
   function handleNewResearch() {
     jobStore.reset();
-    router.navigate('dashboard');
+    quickTopic = '';
   }
 
   // Terminal auto-scroll
@@ -189,7 +189,13 @@
       <h2 class="idle-title">Your Autonomous Research Lab</h2>
       <p class="idle-desc">Write a research program below. AI agents will design experiments, train models, and surface the best results.</p>
 
-      <div class="idle-editor">
+      <div class="ie-editor-wrap">
+        <div class="ie-owl-track">
+          <div class="ie-walking-owl">
+            <PixelOwl size={0.22} mood="idle" />
+          </div>
+        </div>
+        <div class="idle-editor">
         <div class="ie-chrome">
           <div class="ie-dots">
             <span class="ie-dot red"></span>
@@ -197,7 +203,6 @@
             <span class="ie-dot green"></span>
           </div>
           <span class="ie-filename">program.md</span>
-          <span class="ie-badge">RESEARCH PROGRAM</span>
         </div>
         <div class="ie-body">
           <div class="ie-line-numbers">
@@ -214,23 +219,52 @@
         <div class="ie-footer">
           <div class="ie-tags">
             <span class="ie-tag">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="3" y="1" width="2" height="2" fill="currentColor"/>
+                <rect x="5" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="7" y="5" width="2" height="2" fill="currentColor" opacity="0.7"/>
+                <rect x="1" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="3" y="9" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="9" y="1" width="2" height="2" fill="currentColor" opacity="0.4"/>
+              </svg>
               60+ train.py mutations
             </span>
             <span class="ie-tag">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="1" y="5" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="3" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="5" y="7" width="2" height="2" fill="currentColor"/>
+                <rect x="7" y="1" width="2" height="2" fill="currentColor"/>
+                <rect x="9" y="5" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              </svg>
               val_bpb hill-climbing
             </span>
             <span class="ie-tag accent">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="4" y="1" width="4" height="2" fill="currentColor"/>
+                <rect x="2" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="8" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="2" y="5" width="2" height="4" fill="currentColor"/>
+                <rect x="8" y="5" width="2" height="4" fill="currentColor"/>
+                <rect x="4" y="9" width="4" height="2" fill="currentColor"/>
+                <rect x="5" y="3" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              </svg>
               ~5 min
             </span>
           </div>
           <button class="ie-submit" on:click={handleQuickStart} disabled={!quickTopic.trim()}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" class="px-icon" shape-rendering="crispEdges">
+              <rect x="6" y="0" width="2" height="2" fill="currentColor"/>
+              <rect x="5" y="2" width="2" height="2" fill="currentColor"/>
+              <rect x="3" y="4" width="4" height="2" fill="currentColor"/>
+              <rect x="5" y="6" width="2" height="2" fill="currentColor"/>
+              <rect x="4" y="8" width="2" height="2" fill="currentColor"/>
+              <rect x="3" y="10" width="2" height="2" fill="currentColor"/>
+            </svg>
             Launch Autoresearch
           </button>
         </div>
+      </div>
       </div>
 
       <div class="idle-steps">
@@ -321,8 +355,13 @@
         <!-- Hill-climbing chart -->
         <div class="run-chart-panel">
           <div class="panel-head">
-            <h3 class="panel-title">Hill-Climbing Progress</h3>
-            <span class="panel-badge">{history.length} data points</span>
+            <h3 class="panel-title">val_bpb Descent</h3>
+            <div class="panel-head-right">
+              <span class="panel-legend"><span class="legend-dot green"></span>keep</span>
+              <span class="panel-legend"><span class="legend-dot gray"></span>discard</span>
+              <span class="panel-legend"><span class="legend-line"></span>frontier</span>
+              <span class="panel-badge">{history.length} runs</span>
+            </div>
           </div>
           <div class="chart-wrap">
             <MetricChart data={history} bestIndex={chartBestIdx} width={420} height={160} />
@@ -438,10 +477,15 @@
   }
 
   /* ── Idle Editor (program.md style) ── */
-  .idle-editor {
+  .ie-editor-wrap {
+    position: relative;
     width: 100%;
     max-width: 580px;
     margin-bottom: 20px;
+  }
+
+  .idle-editor {
+    width: 100%;
     border: 1px solid var(--border, #E5E0DA);
     border-radius: 10px;
     background: var(--surface, #fff);
@@ -475,16 +519,33 @@
     color: var(--text-secondary, #6b6560);
     margin-left: 4px;
   }
-  .ie-badge {
-    margin-left: auto;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.5rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--accent, #D97757);
-    background: rgba(217, 119, 87, 0.06);
-    padding: 2px 8px;
-    border-radius: 100px;
+  /* ── Walking Owl on top of editor ── */
+  .ie-owl-track {
+    position: absolute;
+    top: -22px;
+    left: 0;
+    right: 0;
+    height: 24px;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .ie-walking-owl {
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    animation: ieOwlPatrol 10s linear infinite, ieOwlStep 0.35s ease-in-out infinite;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12));
+  }
+  @keyframes ieOwlPatrol {
+    0%   { left: 20px;  transform: scaleX(1); }
+    48%  { left: calc(100% - 44px); transform: scaleX(1); }
+    50%  { left: calc(100% - 44px); transform: scaleX(-1); }
+    98%  { left: 20px;  transform: scaleX(-1); }
+    100% { left: 20px;  transform: scaleX(1); }
+  }
+  @keyframes ieOwlStep {
+    0%, 100% { margin-bottom: 0; }
+    50%      { margin-bottom: 2px; }
   }
 
   .ie-body {
@@ -943,6 +1004,36 @@
     letter-spacing: 0.08em;
     color: var(--text-secondary, #6b6560);
     margin: 0;
+  }
+  .panel-head-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.5rem;
+    color: var(--text-muted, #9a9590);
+    letter-spacing: 0.03em;
+  }
+  .legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-dot.green { background: #27864a; }
+  .legend-dot.gray { background: rgba(154,149,144,0.5); }
+  .legend-line {
+    width: 14px;
+    height: 2.5px;
+    border-radius: 1px;
+    background: #27864a;
+    flex-shrink: 0;
+    box-shadow: 0 0 4px rgba(39,134,74,0.3);
   }
   .panel-badge {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
