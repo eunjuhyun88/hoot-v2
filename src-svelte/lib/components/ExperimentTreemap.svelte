@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount, onDestroy } from 'svelte';
   import { selectedExperimentId } from '../stores/selectionStore.ts';
   import {
     CATEGORY_LABELS, CATEGORY_SHORT, CATEGORY_COLORS,
@@ -157,17 +157,44 @@
 
   // ── Compute cells for current drill level ──
   const PAD = 2;
-  let containerW = 0;
-  let containerH = 0;
+  let containerW = 1;
+  let containerH = 1;
+  let wrapEl: HTMLDivElement;
+  const BREADCRUMB_H = 28;
+  let resizeTick = 0;
+
+  function measureWrap() {
+    if (!wrapEl) return;
+    const w = wrapEl.offsetWidth;
+    const h = wrapEl.offsetHeight;
+    if (w > 10 && h > 10) {
+      containerW = w;
+      containerH = Math.max(1, h - BREADCRUMB_H);
+    }
+  }
+
+  // Measure on mount + whenever experiments change
+  onMount(() => {
+    measureWrap();
+    const onResize = () => { resizeTick++; measureWrap(); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  });
+
+  // Re-measure when wrapEl appears or experiments update
+  $: if (wrapEl && experiments) {
+    measureWrap();
+  }
 
   // All deps passed as args so Svelte 4 tracks them properly
-  $: cells = computeCells(catData, containerW, containerH, drillLevel, drillCategory, experiments, bestMetric);
+  $: cells = computeCells(catData, containerW, containerH, drillLevel, drillCategory, experiments, bestMetric, resizeTick);
 
   function computeCells(
     cd: Map<ModCategory, CatEntry>,
     w: number, h: number,
     level: DrillLevel, cat: ModCategory | null,
     exps: Experiment[], best: number,
+    _tick?: number,
   ): TreemapCell[] {
     if (w <= 0 || h <= 0) return [];
     if (level === 'root') return buildRootCells(cd, w, h);
@@ -288,7 +315,7 @@
   })();
 </script>
 
-<div class="treemap-wrap">
+<div class="treemap-wrap" bind:this={wrapEl}>
   <!-- Breadcrumb -->
   <div class="tm-breadcrumb">
     {#each breadcrumb as crumb, i}
@@ -305,11 +332,9 @@
   </div>
 
   <!-- Treemap SVG -->
-  <div class="tm-svg-wrap" bind:clientWidth={containerW} bind:clientHeight={containerH}>
   <svg
-    width={containerW}
-    height={containerH}
     viewBox="0 0 {containerW} {containerH}"
+    preserveAspectRatio="none"
     class="tm-svg"
     on:mouseleave={() => { hoveredCell = null; }}
   >
@@ -378,7 +403,6 @@
       >Awaiting experiment data…</text>
     {/if}
   </svg>
-  </div>
 
   <!-- Tooltip -->
   {#if hoveredCell}
@@ -410,19 +434,19 @@
     position: relative;
     width: 100%;
     height: 100%;
-    display: flex;
-    flex-direction: column;
     overflow: hidden;
   }
 
   /* ── Breadcrumb ── */
   .tm-breadcrumb {
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     gap: 4px;
     padding: 6px 10px 4px;
-    flex-shrink: 0;
-    min-height: 24px;
+    height: 28px;
+    box-sizing: border-box;
   }
   .tm-crumb {
     font: 500 9px/1 'Inter', -apple-system, sans-serif;
@@ -457,16 +481,13 @@
   .tm-back:hover { background: #f5f5f5; color: #555; }
 
   /* ── SVG ── */
-  .tm-svg-wrap {
-    flex: 1;
-    min-height: 0;
-    position: relative;
-    overflow: hidden;
-  }
   .tm-svg {
+    position: absolute;
+    top: 28px;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: block;
-    width: 100%;
-    height: 100%;
   }
 
   .tm-cell {

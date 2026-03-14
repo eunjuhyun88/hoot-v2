@@ -4,9 +4,8 @@
   import { router } from '../stores/router.ts';
   import {
     jobStore, keepCount, crashCount, completedCount, activeNodeCount,
-    metricHistory, experimentTree,
+    experimentTree,
     branchSummary, improvementDelta, bestBranch, isPaused,
-    type BranchInfo,
   } from '../stores/jobStore.ts';
   import { selectedExperimentId } from '../stores/selectionStore.ts';
   import { CATEGORY_COLORS } from '../data/modifications.ts';
@@ -18,6 +17,7 @@
   import ActivityStream from '../components/ActivityStream.svelte';
   import ResearchStats from '../components/ResearchStats.svelte';
   import ContextPanel from '../components/ContextPanel.svelte';
+  import ResearchFocusModal from '../components/ResearchFocusModal.svelte';
 
   import ExperimentTreemap from '../components/ExperimentTreemap.svelte';
   import ExperimentTree from '../components/ExperimentTree.svelte';
@@ -32,6 +32,44 @@
   $: bestBr = $bestBranch;
   $: paused = $isPaused;
   $: runtimeReadonly = job.sourceMode === 'runtime' && !job.controlsAvailable;
+
+  type FocusView = 'convergence' | 'activity' | 'treemap' | 'context' | 'lineage' | 'mesh';
+
+  const FOCUS_META: Record<FocusView, { title: string; hint: string }> = {
+    convergence: {
+      title: 'Convergence Timeline',
+      hint: 'Track metric movement with a larger canvas so inflection points and outliers stay readable.',
+    },
+    activity: {
+      title: 'Activity Feed',
+      hint: 'Review the live experiment stream with more breathing room and faster scanning.',
+    },
+    treemap: {
+      title: 'Experiment Map',
+      hint: 'Drill into research categories and compare experiment clusters at a readable scale.',
+    },
+    context: {
+      title: 'Research Detail Panel',
+      hint: 'Expand the selected experiment or run summary without squeezing the rest of the dashboard.',
+    },
+    lineage: {
+      title: 'Lineage Tree',
+      hint: 'Inspect ancestry, promotions, and verification states in a wider branch graph.',
+    },
+    mesh: {
+      title: 'Mesh Network',
+      hint: 'View node activity and swarm convergence together in a full analysis canvas.',
+    },
+  };
+
+  let focusView: FocusView | null = null;
+  let innerWidth = 1440;
+  let innerHeight = 900;
+
+  $: focusMeta = focusView ? FOCUS_META[focusView] : null;
+  $: focusChartWidth = Math.max(760, Math.min(1320, innerWidth - 160));
+  $: focusChartHeight = Math.max(320, Math.min(720, innerHeight - 260));
+  $: focusPanelHeight = Math.max(460, Math.min(860, innerHeight - 220));
 
   // Mobile tab switching (only applies ≤600px)
   let mobileTab: 'charts' | 'activity' | 'network' = 'activity';
@@ -107,6 +145,8 @@
   function handleStop() { jobStore.stopJob(); }
   function handleNewResearch() { jobStore.reset(); }
   function handlePause() { jobStore.togglePause(); }
+  function openFocus(view: FocusView) { focusView = view; }
+  function closeFocus() { focusView = null; }
   function handleDeploy(e: CustomEvent<{ target: string }>) {
     console.log('Deploy requested:', e.detail.target);
     alert(`Deploy to ${e.detail.target} — coming soon!`);
@@ -147,6 +187,8 @@
     return { topic: query.get('topic') || undefined };
   }
 </script>
+
+<svelte:window bind:innerWidth bind:innerHeight />
 
 <div class="research-page" class:idle={phase === 'idle'} class:running={phase === 'running' || phase === 'setup'}>
 
@@ -203,6 +245,17 @@
     <div class="tile-header">
       <span class="tile-title">Convergence</span>
       <span class="tile-hint">val_bpb over experiments</span>
+      <button
+        class="tile-focus-btn"
+        type="button"
+        aria-label="Expand convergence chart"
+        title="Expand convergence chart"
+        on:click={() => openFocus('convergence')}
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+        </svg>
+      </button>
     </div>
     {#if job.experiments.length > 0}
       <ConvergenceChart experiments={job.experiments} bestMetric={job.bestMetric} baselineMetric={job.baselineMetric} width={500} height={72} />
@@ -291,7 +344,12 @@
 
   <!-- ═══ ACTIVITY STREAM ═══ -->
   <div class="tile mtab-activity" class:mtab-hidden={mobileTab !== 'activity'} style="grid-area: stream">
-    <ActivityStream experiments={job.experiments} bestMetric={job.bestMetric} />
+    <ActivityStream
+      experiments={job.experiments}
+      bestMetric={job.bestMetric}
+      expandable
+      on:expand={() => openFocus('activity')}
+    />
   </div>
 
   <!-- ═══ TREEMAP (drill-down experiment explorer) ═══ -->
@@ -299,6 +357,17 @@
     <div class="tile-header">
       <span class="tile-title">Experiment Map</span>
       <span class="tile-hint">drill down by category</span>
+      <button
+        class="tile-focus-btn"
+        type="button"
+        aria-label="Expand experiment map"
+        title="Expand experiment map"
+        on:click={() => openFocus('treemap')}
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+        </svg>
+      </button>
     </div>
     {#if job.experiments.length > 0}
       <ExperimentTreemap experiments={job.experiments} bestMetric={job.bestMetric} />
@@ -318,10 +387,12 @@
       {branches}
       experiments={job.experiments}
       totalExperiments={totalExp}
+      expandable
       on:launch={handleLaunch}
       on:newresearch={handleNewResearch}
       on:deploy={handleDeploy}
       on:retrain={handleRetrain}
+      on:expand={() => openFocus('context')}
     />
   </div>
 
@@ -330,6 +401,17 @@
     <div class="tile-header">
       <span class="tile-title">Lineage</span>
       <span class="tile-hint">experiment tree &amp; ancestry</span>
+      <button
+        class="tile-focus-btn"
+        type="button"
+        aria-label="Expand lineage tree"
+        title="Expand lineage tree"
+        on:click={() => openFocus('lineage')}
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+        </svg>
+      </button>
     </div>
     {#if $experimentTree.length > 0}
       <ExperimentTree data={$experimentTree} bestMetric={job.bestMetric} />
@@ -343,6 +425,17 @@
     <div class="tile-header">
       <span class="tile-title">Mesh Network</span>
       <span class="tile-hint">distributed GPU nodes</span>
+      <button
+        class="tile-focus-btn"
+        type="button"
+        aria-label="Expand mesh network"
+        title="Expand mesh network"
+        on:click={() => openFocus('mesh')}
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+        </svg>
+      </button>
     </div>
     {#if job.experiments.length > 0}
       <DistributedView experiments={job.experiments} bestMetric={job.bestMetric} />
@@ -379,6 +472,56 @@
     </div>
   </div>
 </div>
+
+{#if focusMeta}
+  <ResearchFocusModal open={true} title={focusMeta.title} hint={focusMeta.hint} on:close={closeFocus}>
+    {#if focusView === 'convergence'}
+      <div class="focus-stage focus-stage--chart">
+        <ConvergenceChart
+          experiments={job.experiments}
+          bestMetric={job.bestMetric}
+          baselineMetric={job.baselineMetric}
+          width={focusChartWidth}
+          height={focusChartHeight}
+        />
+      </div>
+    {:else if focusView === 'activity'}
+      <div class="focus-stage focus-stage--panel" style={`height:${focusPanelHeight}px`}>
+        <ActivityStream experiments={job.experiments} bestMetric={job.bestMetric} expanded />
+      </div>
+    {:else if focusView === 'treemap'}
+      <div class="focus-stage focus-stage--fill" style={`height:${focusPanelHeight}px`}>
+        <ExperimentTreemap experiments={job.experiments} bestMetric={job.bestMetric} />
+      </div>
+    {:else if focusView === 'context'}
+      <div class="focus-stage focus-stage--panel focus-stage--detail" style={`height:${focusPanelHeight}px`}>
+        <ContextPanel
+          bestMetric={job.bestMetric}
+          {phase}
+          topic={job.topic}
+          {progress}
+          sessionId={job.experiments.length > 0 ? job.experiments[0].nodeId.slice(-6) : ''}
+          {branches}
+          experiments={job.experiments}
+          totalExperiments={totalExp}
+          expanded
+          on:launch={handleLaunch}
+          on:newresearch={handleNewResearch}
+          on:deploy={handleDeploy}
+          on:retrain={handleRetrain}
+        />
+      </div>
+    {:else if focusView === 'lineage'}
+      <div class="focus-stage focus-stage--scroll">
+        <ExperimentTree data={$experimentTree} bestMetric={job.bestMetric} width={focusChartWidth} />
+      </div>
+    {:else if focusView === 'mesh'}
+      <div class="focus-stage focus-stage--scroll">
+        <DistributedView experiments={job.experiments} bestMetric={job.bestMetric} width={focusChartWidth} />
+      </div>
+    {/if}
+  </ResearchFocusModal>
+{/if}
 
 <style>
   /* ═══ GRID LAYOUT ═══ */
@@ -554,6 +697,58 @@
   .tile-hint {
     font: 400 8px/1 'Inter', -apple-system, sans-serif;
     color: #ccc;
+  }
+  .tile-focus-btn {
+    margin-left: auto;
+    width: 24px; height: 24px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(82,67,51,0.1);
+    border-radius: 7px;
+    background: rgba(255,255,255,0.9);
+    color: #8d7f70;
+    cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+  .tile-focus-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(217,119,87,0.24);
+    color: #D97757;
+  }
+  .tile-focus-btn svg {
+    width: 13px; height: 13px;
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* ═══ FOCUS STAGE ═══ */
+  .focus-stage {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.82), rgba(249,245,240,0.86));
+    border: 1px solid rgba(82,67,51,0.08);
+    border-radius: 22px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+  }
+  .focus-stage--chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 360px;
+    padding: 20px;
+  }
+  .focus-stage--fill {
+    overflow: hidden;
+  }
+  .focus-stage--panel {
+    max-width: 1080px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+  .focus-stage--detail {
+    max-width: 980px;
+  }
+  .focus-stage--scroll {
+    overflow: auto;
+    padding: 20px;
   }
 
   /* ═══ EMPTY TILES ═══ */

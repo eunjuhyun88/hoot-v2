@@ -7,7 +7,13 @@
   export let experiments: Experiment[] = [];
   export let bestMetric: number = Infinity;
 
-  const dispatch = createEventDispatcher<{ select: number }>();
+  export let expandable = false;
+  export let expanded = false;
+
+  const dispatch = createEventDispatcher<{
+    select: number;
+    expand: void;
+  }>();
 
   $: recent = experiments
     .filter(e => e.status !== 'training')
@@ -31,7 +37,7 @@
   }
 </script>
 
-<div class="stream">
+<div class="stream" class:expanded>
   <div class="stream-head">
     <span class="stream-title">Feed</span>
     <span class="stream-count">{recent.length}</span>
@@ -40,6 +46,19 @@
         <span class="live-dot"></span>
         {trainingList.length} training
       </span>
+    {/if}
+    {#if expandable}
+      <button
+        class="stream-expand"
+        type="button"
+        aria-label="Expand activity feed"
+        title="Expand activity feed"
+        on:click|stopPropagation={() => dispatch('expand')}
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+        </svg>
+      </button>
     {/if}
   </div>
 
@@ -96,6 +115,27 @@
     margin-left: auto;
     font: 500 9px/1 'Inter', -apple-system, sans-serif;
     color: #D97757;
+  }
+  .stream-expand {
+    width: 28px; height: 28px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(82,67,51,0.1);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.9);
+    color: #8d7f70;
+    cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease, color 150ms ease;
+    flex-shrink: 0;
+  }
+  .stream-expand:hover {
+    transform: translateY(-1px);
+    border-color: rgba(217,119,87,0.24);
+    color: #D97757;
+  }
+  .stream-expand svg {
+    width: 14px; height: 14px;
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
   }
   .live-dot {
     width: 5px; height: 5px; border-radius: 50%;
@@ -167,5 +207,51 @@
   .st-best {
     color: #d4a017; font-size: 10px; flex-shrink: 0;
     text-shadow: 0 0 4px rgba(212,160,23,0.3);
+  }
+
+  .stream.expanded .stream-head {
+    padding: 12px 16px 8px;
+    gap: 8px;
+  }
+  .stream.expanded .stream-title,
+  .stream.expanded .stream-count,
+  .stream.expanded .stream-live {
+    font-size: 11px;
+  }
+  .stream.expanded .stream-count {
+    padding: 3px 7px;
+    border-radius: 999px;
+  }
+  .stream.expanded .stream-expand {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .stream.expanded .st-row {
+    gap: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+  .stream.expanded .st-dot {
+    width: 6px;
+    height: 6px;
+  }
+  .stream.expanded .st-spinner {
+    width: 7px;
+    height: 7px;
+  }
+  .stream.expanded .st-cat {
+    min-width: 52px;
+    font-size: 10px;
+  }
+  .stream.expanded .st-metric {
+    font-size: 12px;
+  }
+  .stream.expanded .st-dur,
+  .stream.expanded .st-desc {
+    font-size: 10px;
+  }
+  .stream.expanded .st-best {
+    font-size: 12px;
   }
 </style>

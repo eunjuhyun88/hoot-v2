@@ -14,6 +14,8 @@
   export let branches: BranchInfo[] = [];
   export let experiments: Experiment[] = [];
   export let totalExperiments: number = 0;
+  export let expandable = false;
+  export let expanded = false;
 
   const dispatch = createEventDispatcher<{
     launch: string;
@@ -22,6 +24,7 @@
     newresearch: void;
     deploy: { target: string };
     retrain: { code: string; parentId: number | null };
+    expand: void;
   }>();
 
   let inputText = '';
@@ -150,16 +153,29 @@
   }
 </script>
 
-<div class="ctx-panel">
+<div class="ctx-panel" class:expanded>
 
   <!-- ═══ DETAIL: experiment selected ═══ -->
   {#if exp}
     <div class="ctx-header">
-      <button class="back-btn" on:click={clearSelection}>
+      <button class="back-btn" type="button" aria-label="Back to research overview" on:click={clearSelection}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
       </button>
       <span class="ctx-title">Experiment #{exp.id}</span>
       {#if isNewBest}<span class="best-tag">★ Best</span>{/if}
+      {#if expandable}
+        <button
+          class="ctx-expand-btn"
+          type="button"
+          aria-label="Expand research details"
+          title="Expand research details"
+          on:click|stopPropagation={() => dispatch('expand')}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+          </svg>
+        </button>
+      {/if}
     </div>
 
     <div class="detail-grid">
@@ -257,6 +273,19 @@
     <div class="ctx-header">
       <span class="ctx-icon">⚡</span>
       <span class="ctx-title">Start Research</span>
+      {#if expandable}
+        <button
+          class="ctx-expand-btn"
+          type="button"
+          aria-label="Expand research details"
+          title="Expand research details"
+          on:click|stopPropagation={() => dispatch('expand')}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+          </svg>
+        </button>
+      {/if}
     </div>
 
     <div class="guide-section">
@@ -305,6 +334,19 @@
     <div class="ctx-header">
       <span class="owl-mini"><PixelOwl size={0.2} mood="research" /></span>
       <span class="ctx-title">Research Running</span>
+      {#if expandable}
+        <button
+          class="ctx-expand-btn"
+          type="button"
+          aria-label="Expand research details"
+          title="Expand research details"
+          on:click|stopPropagation={() => dispatch('expand')}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+          </svg>
+        </button>
+      {/if}
       <span class="progress-badge">{progress}%</span>
     </div>
 
@@ -373,6 +415,19 @@
     <div class="ctx-header complete-header">
       <svg class="check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
       <span class="ctx-title">Research Complete</span>
+      {#if expandable}
+        <button
+          class="ctx-expand-btn"
+          type="button"
+          aria-label="Expand research details"
+          title="Expand research details"
+          on:click|stopPropagation={() => dispatch('expand')}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" />
+          </svg>
+        </button>
+      {/if}
     </div>
 
     <!-- Summary stats -->
@@ -517,6 +572,30 @@
     color: #222;
   }
   .ctx-icon { font-size: 14px; }
+  .ctx-expand-btn {
+    width: 28px; height: 28px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(82,67,51,0.1);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.92);
+    color: #8d7f70;
+    cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease, color 150ms ease;
+    flex-shrink: 0;
+  }
+  .ctx-expand-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(217,119,87,0.24);
+    color: #D97757;
+  }
+  .ctx-expand-btn svg {
+    width: 14px; height: 14px;
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ctx-header > .ctx-expand-btn:last-child {
+    margin-left: auto;
+  }
   .back-btn {
     display: flex; align-items: center; justify-content: center;
     width: 26px; height: 26px; border: none; border-radius: 6px;
@@ -991,5 +1070,75 @@
   .owl-celebrate {
     display: flex; justify-content: center;
     padding: 12px 14px 4px;
+  }
+
+  .ctx-panel.expanded .ctx-header {
+    padding: 14px 18px;
+    gap: 10px;
+  }
+  .ctx-panel.expanded .ctx-title {
+    font-size: 15px;
+  }
+  .ctx-panel.expanded .ctx-expand-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+  .ctx-panel.expanded .detail-grid,
+  .ctx-panel.expanded .guide-section,
+  .ctx-panel.expanded .run-meta,
+  .ctx-panel.expanded .branch-section,
+  .ctx-panel.expanded .submit-section,
+  .ctx-panel.expanded .summary-card,
+  .ctx-panel.expanded .code-section,
+  .ctx-panel.expanded .next-actions,
+  .ctx-panel.expanded .fork-section,
+  .ctx-panel.expanded .presets-section,
+  .ctx-panel.expanded .info-bar,
+  .ctx-panel.expanded .owl-greeting,
+  .ctx-panel.expanded .owl-celebrate {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .ctx-panel.expanded .detail-grid {
+    gap: 10px;
+  }
+  .ctx-panel.expanded .detail-label,
+  .ctx-panel.expanded .fork-label,
+  .ctx-panel.expanded .section-label,
+  .ctx-panel.expanded .submit-label,
+  .ctx-panel.expanded .input-label,
+  .ctx-panel.expanded .presets-label,
+  .ctx-panel.expanded .summary-title,
+  .ctx-panel.expanded .info-lbl {
+    font-size: 11px;
+  }
+  .ctx-panel.expanded .detail-value,
+  .ctx-panel.expanded .run-topic,
+  .ctx-panel.expanded .summary-text,
+  .ctx-panel.expanded .guide-text,
+  .ctx-panel.expanded .submit-input,
+  .ctx-panel.expanded .fork-input,
+  .ctx-panel.expanded .topic-input,
+  .ctx-panel.expanded .preset-name,
+  .ctx-panel.expanded .do-name,
+  .ctx-panel.expanded .next-name,
+  .ctx-panel.expanded .owl-msg {
+    font-size: 13px;
+  }
+  .ctx-panel.expanded .metric-val,
+  .ctx-panel.expanded .best-val,
+  .ctx-panel.expanded .gb-metric,
+  .ctx-panel.expanded .info-val {
+    font-size: 16px;
+  }
+  .ctx-panel.expanded .branch-row,
+  .ctx-panel.expanded .summary-card,
+  .ctx-panel.expanded .best-banner,
+  .ctx-panel.expanded .code-editor {
+    border-radius: 10px;
+  }
+  .ctx-panel.expanded .code-editor {
+    min-height: 280px;
   }
 </style>
