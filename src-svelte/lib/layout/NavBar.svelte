@@ -2,6 +2,7 @@
   import { router, type AppView } from "../stores/router.ts";
   import { jobStore, completedCount } from "../stores/jobStore.ts";
   import { wallet, WALLET_OPTIONS } from "../stores/walletStore.ts";
+  import { unlockedPages } from "../stores/stageStore.ts";
   import PixelOwl from "../components/PixelOwl.svelte";
   import PixelIcon from "../components/PixelIcon.svelte";
 
@@ -9,13 +10,14 @@
 
   const navItems: { view: AppView; label: string; icon: PixelIconType }[] = [
     { view: "dashboard", label: "Dashboard", icon: "sparkle" },
-    { view: "research", label: "Magnet", icon: "chart" },
+    { view: "research", label: "Magnet Research", icon: "chart" },
     { view: "models", label: "Models", icon: "grid" },
     { view: "network", label: "Network", icon: "globe" },
     { view: "protocol", label: "Protocol", icon: "protocol" },
   ];
 
   $: currentView = $router;
+  $: visibleNavItems = navItems.filter(item => $unlockedPages.includes(item.view));
   $: isAIActive = $jobStore.phase === 'running' || $jobStore.phase === 'setup';
   $: owlMood = $jobStore.phase === 'running' ? 'research' : $jobStore.phase === 'setup' ? 'research' : 'idle';
   $: researchProgress = $jobStore.totalExperiments > 0
@@ -69,7 +71,7 @@
 
     <!-- Desktop Nav -->
     <nav class="nav desktop-nav">
-      {#each navItems as item}
+      {#each visibleNavItems as item}
         <button
           class="nav-item"
           class:active={currentView === item.view}
@@ -156,7 +158,7 @@
 {#if mobileMenuOpen}
   <button type="button" class="mobile-overlay" aria-label="Close navigation menu" on:click={() => mobileMenuOpen = false}></button>
   <nav class="mobile-menu">
-    {#each navItems as item, i}
+    {#each visibleNavItems as item, i}
       <button
         class="mobile-nav-item"
         class:active={currentView === item.view}

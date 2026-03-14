@@ -1,5 +1,6 @@
 <script lang="ts">
   import { router, type AppView } from "./lib/stores/router.ts";
+  import { unlockedPages } from "./lib/stores/stageStore.ts";
   import { fade } from "svelte/transition";
   import NavBar from "./lib/layout/NavBar.svelte";
   import DashboardPage from "./lib/pages/DashboardPage.svelte";
@@ -19,6 +20,11 @@
     ontology: () => import("./lib/pages/OntologyPage.svelte"),
     pipeline: () => import("./lib/pages/PipelinePage.svelte"),
   };
+
+  // Stage guard: redirect to dashboard if page is locked
+  $: if (!$unlockedPages.includes($router) && $router !== 'dashboard') {
+    router.navigate('dashboard');
+  }
 
   // Page transition key — increments on route change
   $: routeKey = $router;
