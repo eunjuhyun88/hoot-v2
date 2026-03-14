@@ -20,7 +20,7 @@
 - **Don't reduce info, only add** — user explicitly rejected removing visualizations
 
 ## Project State
-- Branch: `codex/dashboard-widget-lane` (clean after dashboard/runtime UI refactor + local artifact cleanup)
+- Branch: `codex/dashboard-widget-lane` (active UI iteration lane for dashboard/research work)
 - `feat/next-iteration` is fast-forwarded to the current dashboard lane and remains the approved integration branch
 - All builds pass (`npm run build`)
 - No test runner configured — verify via build
@@ -104,6 +104,10 @@
   - runtime-api exposes `POST /api/runtime/control`
   - runtime mesh includes controller control state (`supportsCommands`, `paused`, boosted/paused categories, `lastCommandAt`)
   - `jobStore` runtime mode can issue pause/boost/pause-category/stop commands
+- **Research surface now supports focus/expand viewing**:
+  - `AutoresearchPage` cards can open a larger focus overlay
+  - convergence / activity / treemap / context / lineage / mesh views can be re-rendered in an expanded modal
+  - activity/detail panels get larger typography in expanded mode for chart/info inspection
 - **Canonical multi-agent branching guide added**:
   - `docs/AGENT_BRANCHING.md`
   - root routers (`README.md`, `AGENTS.md`, `CLAUDE.md`) now require it for parallel agent work or handoffs
@@ -134,6 +138,10 @@
   - `88cdb29 refactor: stabilize experiment treemap reactivity`
   - `c93cb5c chore: record merge readiness state`
   - local runtime/worktree artifacts are no longer tracked under `.claude/worktrees/*`, `.claude/launch.json`, or `runtime/autoresearch-loop*`
+- **Post-cleanup caveat**:
+  - after the merge-readiness cleanup, new uncommitted web-surface changes appeared again in the root worktree
+  - affected paths include `ActivityStream.svelte`, `ContextPanel.svelte`, `ExperimentTreemap.svelte`, `AutoresearchPage.svelte`, and `ResearchFocusModal.svelte`
+  - further cleanup on this lane should treat those as new active WIP, not as already-reviewed merge-ready state
 - **Stale Claude worktree was synced to latest enforcement commit**:
   - `.claude/worktrees/kind-leavitt` fast-forwarded from `546a59f` to `d0d1338`
   - worktree is now clean, but still intentionally blocked by `agent:guard` because branch is `claude/kind-leavitt`

@@ -259,6 +259,42 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
     - `codex/multi-agent-enforcement`
     - `feat/next-iteration`
 
+---
+
+## 2026-03-15 (cont): Research tab focus/expand viewing
+
+### Context
+사용자 요청: 리서치 탭에서 차트와 정보 패널을 참고 영상처럼 크게 확대해서 볼 수 있게 개선
+
+### Completed
+- **Focused viewing flow added**:
+  - new `ResearchFocusModal.svelte` overlay component added
+  - `AutoresearchPage.svelte` now exposes focus actions for:
+    - Convergence
+    - Activity Feed
+    - Experiment Map
+    - Research Detail Panel
+    - Lineage Tree
+    - Mesh Network
+- **Expanded info readability added**:
+  - `ActivityStream.svelte` now supports `expandable` and `expanded` modes
+  - `ContextPanel.svelte` now supports `expandable` and `expanded` modes
+  - expanded mode increases spacing/typography instead of only stretching the container
+- **Reference UX translated**:
+  - analyzed `/Users/ej/Downloads/68bee6393b2e35f8ee2dacb85124e7868a910217.MP4`
+  - mirrored the “inline chart + fullscreen/focus action + hover/detail inspection” interaction pattern
+
+### Verification
+- `npm run build` ✓
+  - build succeeds after focus modal integration
+  - remaining Svelte warnings are pre-existing/out-of-scope:
+    - `AppDock.svelte` click/a11y warning
+    - `ConvergenceChart.svelte` / `ExperimentTreemap.svelte` svg-role warning
+    - `ContextPanel.svelte` unused `.running-dot` selector
+
+### Pending
+- Optional browser visual QA for focus-mode spacing and mobile overlay behavior
+
 - **Other-agent lane audit completed**:
   - active coordination claim still only:
     - `W-20260315-agent-lane-enforcement`
@@ -402,6 +438,15 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
   - moved derived-cell computation onto explicit argument-based functions so Svelte 4 reactivity does not rely on fake dependency touches
 - `chore: record merge readiness state`
   - refreshed `memory/*` and generated context artifacts after the final branch cleanup
+
+### Follow-up Note
+- after the merge-readiness cleanup was committed, the root worktree picked up fresh web-surface WIP again:
+  - `src-svelte/lib/components/ActivityStream.svelte`
+  - `src-svelte/lib/components/ContextPanel.svelte`
+  - `src-svelte/lib/components/ExperimentTreemap.svelte`
+  - `src-svelte/lib/pages/AutoresearchPage.svelte`
+  - `src-svelte/lib/components/ResearchFocusModal.svelte`
+- because those are new same-surface edits outside the finalized cleanup set, further "cleanup" work should pause until ownership of that WIP is clarified
 
 ---
 
