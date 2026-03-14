@@ -21,7 +21,7 @@
 
 ## Project State
 - Branch: `codex/dashboard-widget-lane` (clean after dashboard/runtime UI refactor + local artifact cleanup)
-- `feat/next-iteration` is fast-forwarded to `4a19153` and now matches `codex/dashboard-widget-lane`
+- `feat/next-iteration` is fast-forwarded to the current dashboard lane and remains the approved integration branch
 - All builds pass (`npm run build`)
 - No test runner configured — verify via build
 - `memento-kit` core repo layer integrated
@@ -123,14 +123,16 @@
   - this rule is also surfaced by `scripts/dev/agent-guard.mjs`, `.claude/hooks/session-start.sh`, and `scripts/dev/start-agent-run.mjs`
 - **Current branch audit snapshot (2026-03-15)**:
   - `main` still matches `origin/main` at `26982c1`
-  - local `feat/next-iteration` is `4a19153`, ahead of `origin/feat/next-iteration` (`d7b73a6`) by 17 commits
-  - current implementation lane is `codex/dashboard-widget-lane` at `4a19153`
+  - local `feat/next-iteration` now matches the current `codex/dashboard-widget-lane` head and is still ahead of `origin/feat/next-iteration`
+  - current implementation lane is clean and ready for integration
   - `main -> feat/next-iteration` is now fast-forward ready locally
   - `.claude/worktrees/crazy-lumiere` remains the only dirty non-canonical lane on `claude/crazy-lumiere`
 - **Main-merge cleanup landed on the dashboard lane**:
   - `cd847a3 chore: stop tracking local runtime artifacts`
   - `e4ac3d7 refactor: consolidate dashboard runtime ui state`
   - `4a19153 chore: refresh generated context artifacts`
+  - `88cdb29 refactor: stabilize experiment treemap reactivity`
+  - `c93cb5c chore: record merge readiness state`
   - local runtime/worktree artifacts are no longer tracked under `.claude/worktrees/*`, `.claude/launch.json`, or `runtime/autoresearch-loop*`
 - **Stale Claude worktree was synced to latest enforcement commit**:
   - `.claude/worktrees/kind-leavitt` fast-forwarded from `546a59f` to `d0d1338`

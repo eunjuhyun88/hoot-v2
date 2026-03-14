@@ -365,7 +365,7 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
   - commit: `4a19153 chore: refresh generated context artifacts`
 
 - **Approved integration branch fast-forwarded**:
-  - `feat/next-iteration` now points to `4a19153`
+  - `feat/next-iteration` is kept aligned with the current dashboard lane head
   - `main` remains `26982c1`
   - `git merge-base --is-ancestor main feat/next-iteration` now returns success, so local `main -> feat/next-iteration` is fast-forward ready
 
@@ -395,6 +395,13 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
 - push `feat/next-iteration` to origin when ready
 - if desired, fast-forward `main` from `feat/next-iteration`
 - decide the fate of the stale `claude/crazy-lumiere` WIP
+
+### Additional Completed
+- `refactor: stabilize experiment treemap reactivity`
+  - `src-svelte/lib/components/ExperimentTreemap.svelte`
+  - moved derived-cell computation onto explicit argument-based functions so Svelte 4 reactivity does not rely on fake dependency touches
+- `chore: record merge readiness state`
+  - refreshed `memory/*` and generated context artifacts after the final branch cleanup
 
 ---
 
