@@ -51,9 +51,11 @@
   })();
 
   // ── Build category-level data ──
-  $: catData = (() => {
-    const map = new Map<ModCategory, { total: number; keeps: number; metrics: number[] }>();
-    for (const e of experiments) {
+  type CatEntry = { total: number; keeps: number; metrics: number[] };
+
+  function buildCatData(exps: Experiment[]): Map<ModCategory, CatEntry> {
+    const map = new Map<ModCategory, CatEntry>();
+    for (const e of exps) {
       if (e.status === 'training') continue;
       const cat = resolveExperimentCategory(e.modification);
       if (!map.has(cat)) map.set(cat, { total: 0, keeps: 0, metrics: [] });
@@ -63,7 +65,9 @@
       if (e.metric > 0) d.metrics.push(e.metric);
     }
     return map;
-  })();
+  }
+
+  $: catData = buildCatData(experiments);
 
   // ── Squarified treemap layout ──
   function squarify(items: { id: string; value: number }[], x: number, y: number, w: number, h: number): { id: string; x: number; y: number; w: number; h: number }[] {
@@ -169,31 +173,34 @@
     }
   });
 
-  // Explicit deps for Svelte 4 reactivity: catData, containerW, containerH, drillLevel, drillCategory, experiments, bestMetric
-  $: cells = (() => {
-    // Touch reactive deps so Svelte tracks them
-    const _cd = catData;
-    const _w = containerW;
-    const _h = containerH;
-    const _e = experiments;
-    const _b = bestMetric;
-    if (drillLevel === 'root') return buildRootCells();
-    if (drillLevel === 'category' && drillCategory) return buildCategoryCells(drillCategory);
-    return [];
-  })();
+  // All deps passed as args so Svelte 4 tracks them properly
+  $: cells = computeCells(catData, containerW, containerH, drillLevel, drillCategory, experiments, bestMetric);
 
-  function buildRootCells(): TreemapCell[] {
+  function computeCells(
+    cd: Map<ModCategory, CatEntry>,
+    w: number, h: number,
+    level: DrillLevel, cat: ModCategory | null,
+    exps: Experiment[], best: number,
+  ): TreemapCell[] {
+    if (w <= 0 || h <= 0) return [];
+    if (level === 'root') return buildRootCells(cd, w, h);
+    if (level === 'category' && cat) return buildCategoryCells(cat, exps, w, h, best);
+    return [];
+  }
+
+  function buildRootCells(cd: Map<ModCategory, CatEntry>, w: number, h: number): TreemapCell[] {
     const items: { id: string; value: number }[] = [];
-    for (const [cat, d] of catData) {
+    for (const [cat, d] of cd) {
       if (d.total > 0) items.push({ id: cat, value: d.total });
     }
-    const layout = squarify(items, PAD, PAD, containerW - PAD * 2, containerH - PAD * 2);
+    if (items.length === 0) return [];
+    const layout = squarify(items, PAD, PAD, w - PAD * 2, h - PAD * 2);
     return layout.map(l => {
       const cat = l.id as ModCategory;
-      const d = catData.get(cat)!;
+      const d = cd.get(cat)!;
       const keepRate = d.total > 0 ? d.keeps / d.total : 0;
       const avg = d.metrics.length > 0 ? d.metrics.reduce((a, b) => a + b, 0) / d.metrics.length : 0;
-      const best = d.metrics.length > 0 ? Math.min(...d.metrics) : Infinity;
+      const bestM = d.metrics.length > 0 ? Math.min(...d.metrics) : Infinity;
       return {
         id: cat,
         label: CATEGORY_LABELS[cat] ?? cat,
@@ -202,30 +209,30 @@
         color: CATEGORY_COLORS[cat] ?? '#9a9590',
         x: l.x, y: l.y, w: l.w, h: l.h,
         keepRate, total: d.total, keeps: d.keeps,
-        avgMetric: avg, bestMetric: best,
+        avgMetric: avg, bestMetric: bestM,
         category: cat,
       };
     });
   }
 
-  function buildCategoryCells(cat: ModCategory): TreemapCell[] {
-    const exps = experiments.filter(e => {
+  function buildCategoryCells(cat: ModCategory, exps: Experiment[], w: number, h: number, best: number): TreemapCell[] {
+    const filtered = exps.filter(e => {
       if (e.status === 'training') return false;
       return resolveExperimentCategory(e.modification) === cat;
     });
-    if (exps.length === 0) return [];
+    if (filtered.length === 0) return [];
 
-    const items = exps.map(e => ({
+    const items = filtered.map(e => ({
       id: String(e.id),
       value: Math.max(1, e.duration || 1),
     }));
-    const layout = squarify(items, PAD, PAD, containerW - PAD * 2, containerH - PAD * 2);
+    const layout = squarify(items, PAD, PAD, w - PAD * 2, h - PAD * 2);
 
     const catColor = CATEGORY_COLORS[cat] ?? '#9a9590';
     return layout.map(l => {
-      const e = exps.find(ex => String(ex.id) === l.id)!;
+      const e = filtered.find(ex => String(ex.id) === l.id)!;
       const isKeep = e.status === 'keep';
-      const isBest = e.metric > 0 && e.metric <= bestMetric;
+      const isBest = e.metric > 0 && e.metric <= best;
       return {
         id: l.id,
         label: `#${e.id} ${e.modification}`,
