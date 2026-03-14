@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import { selectedExperimentId } from '../stores/selectionStore.ts';
   import {
     CATEGORY_LABELS, CATEGORY_SHORT, CATEGORY_COLORS,
@@ -157,21 +157,8 @@
 
   // ── Compute cells for current drill level ──
   const PAD = 2;
-  let containerW = 400;
-  let containerH = 260;
-  let containerEl: HTMLDivElement;
-
-  onMount(() => {
-    if (containerEl) {
-      const ro = new ResizeObserver(entries => {
-        const { width, height } = entries[0].contentRect;
-        containerW = width;
-        containerH = height - 28; // subtract breadcrumb height
-      });
-      ro.observe(containerEl);
-      return () => ro.disconnect();
-    }
-  });
+  let containerW = 0;
+  let containerH = 0;
 
   // All deps passed as args so Svelte 4 tracks them properly
   $: cells = computeCells(catData, containerW, containerH, drillLevel, drillCategory, experiments, bestMetric);
@@ -301,7 +288,7 @@
   })();
 </script>
 
-<div class="treemap-wrap" bind:this={containerEl}>
+<div class="treemap-wrap">
   <!-- Breadcrumb -->
   <div class="tm-breadcrumb">
     {#each breadcrumb as crumb, i}
@@ -318,6 +305,7 @@
   </div>
 
   <!-- Treemap SVG -->
+  <div class="tm-svg-wrap" bind:clientWidth={containerW} bind:clientHeight={containerH}>
   <svg
     width={containerW}
     height={containerH}
@@ -390,6 +378,7 @@
       >Awaiting experiment data…</text>
     {/if}
   </svg>
+  </div>
 
   <!-- Tooltip -->
   {#if hoveredCell}
@@ -468,10 +457,16 @@
   .tm-back:hover { background: #f5f5f5; color: #555; }
 
   /* ── SVG ── */
+  .tm-svg-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
   .tm-svg {
     display: block;
-    flex: 1;
     width: 100%;
+    height: 100%;
   }
 
   .tm-cell {
