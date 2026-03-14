@@ -6,9 +6,10 @@
 
   const navItems: { view: AppView; label: string; icon: string }[] = [
     { view: "dashboard", label: "Dashboard", icon: "sparkle" },
-    { view: "research", label: "Research", icon: "brain" },
+    { view: "research", label: "Magnet", icon: "brain" },
     { view: "models", label: "Models", icon: "grid" },
     { view: "network", label: "Network", icon: "globe" },
+    { view: "protocol", label: "Protocol", icon: "protocol" },
   ];
 
   $: currentView = $router;
@@ -137,6 +138,24 @@
                 <rect x="9" y="3" width="2" height="2" fill="currentColor" opacity="0.25"/>
                 <rect x="5" y="11" width="2" height="2" fill="currentColor" opacity="0.25"/>
                 <rect x="9" y="11" width="2" height="2" fill="currentColor" opacity="0.25"/>
+              </svg>
+            {:else if item.icon === "protocol"}
+              <!-- Pixel chain/link (protocol) -->
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+                <rect x="3" y="1" width="4" height="2" fill="currentColor"/>
+                <rect x="1" y="3" width="2" height="4" fill="currentColor"/>
+                <rect x="7" y="3" width="2" height="2" fill="currentColor"/>
+                <rect x="3" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="5" y="5" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="7" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="9" y="9" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="11" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+                <rect x="9" y="5" width="4" height="2" fill="currentColor"/>
+                <rect x="13" y="7" width="2" height="4" fill="currentColor"/>
+                <rect x="9" y="11" width="4" height="2" fill="currentColor"/>
+                <rect x="7" y="11" width="2" height="2" fill="currentColor"/>
+                <rect x="1" y="5" width="2" height="2" fill="currentColor"/>
+                <rect x="3" y="5" width="2" height="2" fill="currentColor"/>
               </svg>
             {/if}
           </span>
@@ -283,6 +302,23 @@
               <rect x="9" y="3" width="2" height="2" fill="currentColor" opacity="0.25"/>
               <rect x="5" y="11" width="2" height="2" fill="currentColor" opacity="0.25"/>
               <rect x="9" y="11" width="2" height="2" fill="currentColor" opacity="0.25"/>
+            </svg>
+          {:else if item.icon === "protocol"}
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" class="px-icon" shape-rendering="crispEdges">
+              <rect x="3" y="1" width="4" height="2" fill="currentColor"/>
+              <rect x="1" y="3" width="2" height="4" fill="currentColor"/>
+              <rect x="7" y="3" width="2" height="2" fill="currentColor"/>
+              <rect x="3" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              <rect x="5" y="5" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              <rect x="7" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              <rect x="9" y="9" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              <rect x="11" y="7" width="2" height="2" fill="currentColor" opacity="0.5"/>
+              <rect x="9" y="5" width="4" height="2" fill="currentColor"/>
+              <rect x="13" y="7" width="2" height="4" fill="currentColor"/>
+              <rect x="9" y="11" width="4" height="2" fill="currentColor"/>
+              <rect x="7" y="11" width="2" height="2" fill="currentColor"/>
+              <rect x="1" y="5" width="2" height="2" fill="currentColor"/>
+              <rect x="3" y="5" width="2" height="2" fill="currentColor"/>
             </svg>
           {/if}
         </span>

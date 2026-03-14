@@ -1,12 +1,14 @@
 <script lang="ts">
   import { router } from "./lib/router.ts";
-  import { fade, fly } from "svelte/transition";
+  import { fade } from "svelte/transition";
   import NavBar from "./lib/NavBar.svelte";
   import DashboardPage from "./lib/DashboardPage.svelte";
   import ModelsPage from "./lib/ModelsPage.svelte";
   import AutoresearchPage from "./lib/AutoresearchPage.svelte";
   import NetworkView from "./lib/NetworkView.svelte";
   import ModelDetailPage from "./lib/ModelDetailPage.svelte";
+  import EconomicsPage from "./lib/EconomicsPage.svelte";
+  import OntologyPage from "./lib/OntologyPage.svelte";
   import SiteFooter from "./lib/SiteFooter.svelte";
   import SplashScreen from "./lib/SplashScreen.svelte";
   import "./lib/tokens.css";
@@ -21,7 +23,7 @@
   <title>HOOT Protocol — Autonomous Research Mesh</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 </svelte:head>
 
 {#if showSplash}
@@ -43,6 +45,10 @@
           <NetworkView />
         {:else if $router === 'model-detail'}
           <ModelDetailPage />
+        {:else if $router === 'protocol'}
+          <EconomicsPage />
+        {:else if $router === 'ontology'}
+          <OntologyPage />
         {/if}
       </div>
     {/key}
