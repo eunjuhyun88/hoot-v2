@@ -238,6 +238,55 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
 - `npm run build` ✓
 - current lane migrated:
   - `git checkout -b codex/multi-agent-enforcement`
+
+---
+
+## 2026-03-15 (cont): merge sync + stale worktree enforcement
+
+### Context
+사용자 요청: "커밋머지 하고 전체다른 에이전트 뭐하나 봐봐"
+
+### Completed
+- **Current lane commit finalized**:
+  - `d0d1338 feat: wire runtime control plane`
+  - prior autosave head remained:
+    - `78d6b11 chore(context): autosave stop [AUTO-20260314T1942-codex-multi-agent-enforcement]`
+
+- **Integration branch sync completed**:
+  - temporary worktree created at `/tmp/mesh-merge-ff`
+  - `feat/next-iteration` fast-forwarded to `d0d1338`
+  - `git branch --contains d0d1338` now shows:
+    - `codex/multi-agent-enforcement`
+    - `feat/next-iteration`
+
+- **Other-agent lane audit completed**:
+  - active coordination claim still only:
+    - `W-20260315-agent-lane-enforcement`
+  - only additional local agent worktree found:
+    - `.claude/worktrees/kind-leavitt`
+    - branch `claude/kind-leavitt`
+    - old head `546a59f`
+    - no active claim
+
+- **Stale Claude worktree synced safely**:
+  - local untracked `.claude/launch.json` copied to:
+    - `.agent-context/quarantine/kind-leavitt-launch.json`
+  - `.claude/worktrees/kind-leavitt` fast-forwarded to `d0d1338`
+  - worktree is now clean at latest integrated head
+
+### Verification
+- root `git log --oneline --decorate -5` shows:
+  - `d0d1338 (HEAD -> codex/multi-agent-enforcement, feat/next-iteration) feat: wire runtime control plane`
+- `git worktree list --porcelain` shows:
+  - `/Users/ej/mesh-autoresearch-visualizer` on `codex/multi-agent-enforcement`
+  - `/Users/ej/mesh-autoresearch-visualizer/.claude/worktrees/kind-leavitt` on `claude/kind-leavitt`
+- `npm run coord:list` still shows only one active claim
+- `npm run agent:guard` in `.claude/worktrees/kind-leavitt` now fails as intended with:
+  - `agent work must run on a codex/ branch, but current branch is claude/kind-leavitt`
+
+### Pending
+- if `claude/kind-leavitt` needs to continue, it must be migrated into a fresh `codex/*` worktree and claimed properly
+- root worktree still contains unrelated dirty UI/runtime artifacts outside the runtime-control merge
   - `npm run coord:claim -- --work-id "W-20260315-agent-lane-enforcement" ...`
   - `npm run agent:guard` ✓
   - `npm run coord:check` ✓

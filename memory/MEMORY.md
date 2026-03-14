@@ -18,6 +18,7 @@
 
 ## Project State
 - Branch: `codex/multi-agent-enforcement` (uncommitted changes)
+- `feat/next-iteration` is fast-forwarded to `d0d1338` and now matches `codex/multi-agent-enforcement`
 - All builds pass (`npm run build`)
 - No test runner configured — verify via build
 - `memento-kit` core repo layer integrated
@@ -103,6 +104,10 @@
   - non-`codex/` agent branches are now intentionally blocked
   - current lane was migrated to `codex/multi-agent-enforcement`
   - active claim: `W-20260315-agent-lane-enforcement`
+- **Stale Claude worktree was synced to latest enforcement commit**:
+  - `.claude/worktrees/kind-leavitt` fast-forwarded from `546a59f` to `d0d1338`
+  - worktree is now clean, but still intentionally blocked by `agent:guard` because branch is `claude/kind-leavitt`
+  - backup copy of prior local `.claude/launch.json` saved at `.agent-context/quarantine/kind-leavitt-launch.json`
 
 ## Topic Files
 - [session-log.md](session-log.md) — what was done, pending tasks
