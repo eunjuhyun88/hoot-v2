@@ -242,6 +242,12 @@ Both `workspaces` and `mesh` accept an optional `runtimeRoot` query string, for 
 http://localhost:8790/api/runtime/workspaces?runtimeRoot=runtime/autoresearch-loop-pin-test
 ```
 
+The research UI now prefers this runtime source when available. You can force a specific backend/runtime pack in the browser with:
+
+```text
+/#/research?runtimeApi=http://localhost:8790&runtimeRoot=runtime/autoresearch-loop-pin-test
+```
+
 ## Current Architecture
 
 - `src/Visualizer.tsx` is the only editable visualizer file

@@ -119,6 +119,9 @@ Reference repo reviewed: [karpathy/autoresearch](https://github.com/karpathy/aut
 - controller worktrees now default to the pinned `karpathy/autoresearch` checkout
 - supervisor prompts now reference `karpathy/nanochat@6ed7d1d` round-1 files for concrete baseline ideas
 - runtime-api now reads controller/supervisor filesystem artifacts to expose real workspace and mesh summaries
+- frontend `jobStore` now has a transition mode:
+  - runtime-backed mirror for existing runtime packs
+  - local simulator only as fallback when no runtime is available
 
 ### Runtime persistence
 - Start with SQLite for local durability and restart recovery.
@@ -232,6 +235,11 @@ Reference repo reviewed: [karpathy/autoresearch](https://github.com/karpathy/aut
 - Replace `jobStore` simulation responsibilities with API client + frontend view store.
 - Make `AutoresearchPage`, `DashboardPage`, and `NetworkView` consume the same runtime source.
 - Keep visual components, but feed them normalized view models.
+- Status:
+  - partial cutover complete
+  - `AutoresearchPage` now prefers runtime mesh
+  - `DashboardPage` / `NetworkView` can opportunistically mirror runtime when idle
+  - command/control unification still pending
 
 ### Phase 4 — Continuous Autoresearch Operations
 - Attach supervisor/control flows to persisted jobs.

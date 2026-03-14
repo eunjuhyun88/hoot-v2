@@ -67,6 +67,12 @@ Turn the current repo into a continuously running autoresearch product surface w
 - summaries are built from `manifest.json`, `supervisor-state.json`, `results.tsv`, `run.log`, and `agent_status.md`
 - `runtimeRoot` can be selected via query string for parallel runtime packs
 
+### Frontend read cutover
+- `jobStore` now supports `runtime` source mode in addition to the local simulator
+- `AutoresearchPage` now attempts runtime autodiscovery first and falls back to local simulation only if no runtime is available
+- `DashboardPage` and `NetworkView` also opportunistically mirror runtime state when the store is idle
+- `RunningDashboard` shows runtime read-only mode and disables pause/boost controls until the control plane is unified
+
 ## Current Problems
 
 1. `src-svelte/lib/stores/jobStore.ts` still owns state, timers, and simulation.

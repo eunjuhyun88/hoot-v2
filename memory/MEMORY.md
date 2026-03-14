@@ -83,6 +83,10 @@
   - `/api/runtime/workspaces`
   - `/api/runtime/mesh`
   - `runtimeRoot` query parameter supported for parallel runtime packs
+- **Frontend store now supports runtime mirroring**:
+  - `jobStore` can mirror `/api/runtime/mesh`
+  - `AutoresearchPage` prefers runtime mesh over browser simulation
+  - local simulation remains as fallback only
 
 ## Topic Files
 - [session-log.md](session-log.md) — what was done, pending tasks

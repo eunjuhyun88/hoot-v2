@@ -118,6 +118,47 @@
 - `AutoresearchPage`가 `/api/runtime/mesh` + job SSE를 소비하도록 전환
 - controller event stream을 runtime-api event model로 정규화
 - in-memory job API를 persisted runtime ownership으로 교체
+
+---
+
+## 2026-03-15 (cont): Frontend runtime-backed read cutover
+
+### Context
+runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `AutoresearchPage`와 shared `jobStore`를 runtime mesh 우선 구조로 전환
+
+### Completed
+- **Category inference generalized**:
+  - `resolveExperimentCategory()` added in `src-svelte/lib/data/modifications.ts`
+  - runtime result descriptions now map into existing chart categories heuristically
+
+- **jobStore runtime mode added**:
+  - `sourceMode`, `controlsAvailable`, `runtimeApiBase`, `runtimeRoot`, `runtimeStatus`, `runtimeError`
+  - `connectRuntime()` polls `/api/runtime/mesh`
+  - runtime mesh is normalized back into existing `AutoresearchJob` + `Experiment[]` shape
+  - local simulator API remains intact for fallback
+
+- **Pages updated**:
+  - `AutoresearchPage` now attempts runtime autodiscovery on mount
+  - explicit route params supported: `runtimeApi`, `runtimeRoot`
+  - `DashboardPage` and `NetworkView` now opportunistically mirror runtime when idle
+
+- **RunningDashboard updated**:
+  - runtime read-only banner text
+  - pause/boost/pause-category controls disabled when the source is runtime mirror mode
+
+### Verification
+- `npm run build` ✓
+- runtime-api still serves `mesh/workspaces/upstream` ✓
+- build artifacts include updated `AutoresearchPage` and `NetworkView` bundles ✓
+
+### Key Findings
+- full command-plane cutover is not done yet, but the main research UI no longer has to rely purely on in-browser simulation when a runtime pack exists
+- preserving the old `jobStore` API let Dashboard/NavBar/RunningDashboard keep working while shifting the source of truth underneath
+
+### Pending
+- route command actions (`pause`, `boost`, etc.) through runtime-api once controller/supervisor command ownership is unified
+- move Dashboard fixture jobs to runtime-api mesh summaries instead of mixed local fixture + store state
+- normalize controller `/events` into the runtime-api SSE contract
 - 4 phase 전환 (idle → setup → running → complete) ✓
 - Pause/Resume 토글 → 실험 생성 중지/재개 ✓
 - Branch Boost → 골드 보더 + "Boosted" 텍스트 ✓
