@@ -103,6 +103,35 @@
   let mobileTab: MobileTab = 'activity';
   $: mobileTabIndex = MOBILE_TABS.indexOf(mobileTab);
 
+  // ── Bloomberg-style column resize ──
+  let resizingCol: 'left' | 'right' | null = null;
+  let leftColW = 180;  // px
+  let rightColW = 260; // px
+  $: gridCols = `${leftColW}px minmax(80px, 1fr) 1fr 1fr ${rightColW}px`;
+
+  function startResize(col: 'left' | 'right', e: MouseEvent) {
+    e.preventDefault();
+    resizingCol = col;
+    const startX = e.clientX;
+    const startW = col === 'left' ? leftColW : rightColW;
+
+    function onMove(ev: MouseEvent) {
+      const dx = ev.clientX - startX;
+      if (col === 'left') {
+        leftColW = Math.max(100, Math.min(320, startW + dx));
+      } else {
+        rightColW = Math.max(160, Math.min(400, startW - dx));
+      }
+    }
+    function onUp() {
+      resizingCol = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
   // Progress + ETA (cached — only recalculated when inputs change)
   $: totalExp = job.totalExperiments || 60;
   $: completed = $completedCount;
@@ -190,7 +219,7 @@
 
 <svelte:window bind:innerWidth bind:innerHeight />
 
-<div class="research-page" class:idle={phase === 'idle'} class:running={phase === 'running' || phase === 'setup'}>
+<div class="research-page" class:idle={phase === 'idle'} class:running={phase === 'running' || phase === 'setup'} class:resizing={resizingCol !== null} style="--grid-cols: {gridCols}">
 
   <!-- ═══ PROMPT BAR ═══ -->
   <div class="tile prompt-tile" style="grid-area: prompt">
@@ -251,6 +280,10 @@
       </div>
     {/if}
   </div>
+
+  <!-- ═══ RESIZE HANDLE: left ═══ -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="resize-handle resize-left" on:mousedown={(e) => startResize('left', e)}></div>
 
   <!-- ═══ CONVERGENCE CHART ═══ -->
   <div class="tile titled-tile converge-tile" style="grid-area: converge">
@@ -424,6 +457,9 @@
   </div>
 
   <!-- ═══ CONTEXT PANEL (terminal) ═══ -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="resize-handle resize-right" on:mousedown={(e) => startResize('right', e)}></div>
+
   <div class="tile context-tile" style="grid-area: context">
     <ContextPanel
       bestMetric={job.bestMetric}
@@ -614,15 +650,15 @@
   .research-page {
     height: calc(100vh - 48px);
     display: grid;
-    grid-template-columns: minmax(160px, 200px) minmax(100px, 1fr) 1fr 1fr 280px;
-    grid-template-rows: auto minmax(100px, 140px) minmax(80px, 1fr) 1fr 36px;
+    grid-template-columns: var(--grid-cols, 180px minmax(80px, 1fr) 1fr 1fr 260px);
+    grid-template-rows: auto minmax(56px, 80px) minmax(80px, 1fr) 1fr 32px;
     grid-template-areas:
       "prompt    prompt    prompt    prompt    prompt"
       "hero      converge  converge  converge  stats"
       "branches  stream    scatter   effect    context"
       "branches  treemap   lineage   mesh      terminal"
       "footer    footer    footer    footer    footer";
-    gap: 6px;
+    gap: 2px;
     overflow: hidden;
     background: var(--page-bg, #FAF9F7);
     transition: grid-template-columns 400ms ease, grid-template-rows 400ms ease;
@@ -658,13 +694,38 @@
     display: none;
   }
 
+  /* ═══ RESIZE HANDLES ═══ */
+  .resize-handle {
+    position: absolute; z-index: 10;
+    top: 0; bottom: 0; width: 5px;
+    cursor: col-resize;
+    background: transparent;
+    transition: background 150ms;
+  }
+  .resize-handle:hover, .research-page.resizing .resize-handle {
+    background: rgba(217, 119, 87, 0.3);
+  }
+  .resize-left {
+    grid-row: 2 / -2;
+    grid-column: 1 / 2;
+    justify-self: end;
+  }
+  .resize-right {
+    grid-row: 2 / -2;
+    grid-column: 5 / 6;
+    justify-self: start;
+  }
+  .research-page.resizing { user-select: none; cursor: col-resize; }
+  .research-page.idle .resize-handle { display: none; }
+
   .tile {
     background: var(--surface, #fff);
     border: 1px solid var(--border-subtle, #EDEAE5);
-    border-radius: 10px;
-    box-shadow: var(--shadow-sm, 0 1px 4px rgba(0,0,0,0.04));
+    border-radius: 4px;
+    box-shadow: none;
     overflow: hidden;
     min-height: 0;
+    position: relative;
   }
 
   .prompt-tile {
@@ -695,7 +756,7 @@
   /* ═══ ACTIVE OPS ═══ */
   .hero-tile {
     display: flex; flex-direction: column;
-    padding: 6px 8px; gap: 0;
+    padding: 4px 6px; gap: 0;
     overflow-y: auto;
   }
   .ops-list { display: flex; flex-direction: column; gap: 2px; }
@@ -829,8 +890,8 @@
     display: flex; flex-direction: column;
   }
   .tile-header {
-    display: flex; align-items: baseline; gap: 6px;
-    padding: 8px 12px 4px; flex-shrink: 0;
+    display: flex; align-items: baseline; gap: 4px;
+    padding: 4px 8px 2px; flex-shrink: 0;
   }
   .tile-title {
     font: 600 10px/1 'Inter', -apple-system, sans-serif;
