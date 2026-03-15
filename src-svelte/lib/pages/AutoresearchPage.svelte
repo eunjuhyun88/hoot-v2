@@ -241,7 +241,8 @@
         class="tile-focus-btn"
         type="button"
         aria-label="Expand convergence chart"
-        title="Expand convergence chart"
+        data-hint={FOCUS_META.convergence.hint}
+        title={FOCUS_META.convergence.title}
         on:click={() => openFocus('convergence')}
       >
         <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -358,7 +359,7 @@
     <div class="tile-header">
       <span class="tile-title">Scatter</span>
       <span class="tile-hint">{$scatterData.length} pts</span>
-      <button class="tile-focus-btn" type="button" aria-label="Expand scatter" title="Expand scatter" on:click={() => openFocus('scatter')}>
+      <button class="tile-focus-btn" type="button" aria-label="Expand scatter" data-hint={FOCUS_META.scatter.hint} title={FOCUS_META.scatter.title} on:click={() => openFocus('scatter')}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" /></svg>
       </button>
     </div>
@@ -374,7 +375,7 @@
     <div class="tile-header">
       <span class="tile-title">Effect</span>
       <span class="tile-hint">keep rate</span>
-      <button class="tile-focus-btn" type="button" aria-label="Expand effect" title="Expand effect" on:click={() => openFocus('effect')}>
+      <button class="tile-focus-btn" type="button" aria-label="Expand effect" data-hint={FOCUS_META.effect.hint} title={FOCUS_META.effect.title} on:click={() => openFocus('effect')}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" /></svg>
       </button>
     </div>
@@ -390,7 +391,7 @@
     <div class="tile-header">
       <span class="tile-title">Experiment Map</span>
       <span class="tile-hint">drill down by category</span>
-      <button class="tile-focus-btn" type="button" aria-label="Expand experiment map" title="Expand experiment map" on:click={() => openFocus('treemap')}>
+      <button class="tile-focus-btn" type="button" aria-label="Expand experiment map" data-hint={FOCUS_META.treemap.hint} title={FOCUS_META.treemap.title} on:click={() => openFocus('treemap')}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" /></svg>
       </button>
     </div>
@@ -443,7 +444,8 @@
         class="tile-focus-btn"
         type="button"
         aria-label="Expand lineage tree"
-        title="Expand lineage tree"
+        data-hint={FOCUS_META.lineage.hint}
+        title={FOCUS_META.lineage.title}
         on:click={() => openFocus('lineage')}
       >
         <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -467,7 +469,8 @@
         class="tile-focus-btn"
         type="button"
         aria-label="Expand mesh network"
-        title="Expand mesh network"
+        data-hint={FOCUS_META.mesh.hint}
+        title={FOCUS_META.mesh.title}
         on:click={() => openFocus('mesh')}
       >
         <svg viewBox="0 0 20 20" aria-hidden="true">
@@ -826,21 +829,25 @@
     border-color: rgba(217,119,87,0.24);
     color: #D97757;
   }
+  /* UX-A7: Enhanced preview tooltip with hint text */
   .tile-focus-btn::after {
-    content: attr(title);
+    content: attr(data-hint);
     position: absolute;
-    bottom: calc(100% + 6px);
+    bottom: calc(100% + 8px);
     right: 0;
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: rgba(30,25,20,0.88);
+    width: max-content;
+    max-width: 220px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(30,25,20,0.92);
     color: #f5ede8;
-    font: 500 10px/1.2 'Inter', -apple-system, sans-serif;
-    white-space: nowrap;
+    font: 500 10.5px/1.4 'Inter', -apple-system, sans-serif;
+    white-space: normal;
     pointer-events: none;
     opacity: 0;
     transform: translateY(4px);
     transition: opacity 150ms, transform 150ms;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
   }
   .tile-focus-btn:hover::after {
     opacity: 1;
@@ -1001,6 +1008,19 @@
   }
   .mtab-btn.mtab-active {
     color: var(--accent, #D97757);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .research-page { transition: none; }
+    .branch-row { transition: none; }
+    .branch-row.active-training { animation: none; }
+    .tile-focus-btn { transition: none; }
+    .tile-focus-btn::after { transition: none; }
+    .fd-bar { transition: none; }
+    .fd-bar--active { animation: none; }
+    .mtab-indicator { transition: none; }
+    :global(.skeleton-bar) { animation: none; }
+    .br-btn { transition: none; }
   }
 
   /* ═══ RESPONSIVE ═══ */
