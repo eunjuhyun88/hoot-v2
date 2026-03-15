@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
   import { router } from '../stores/router.ts';
   import {
     jobStore, keepCount, crashCount, completedCount, activeNodeCount,
@@ -29,7 +28,6 @@
   // Reactive state
   $: job = $jobStore;
   $: phase = job.phase;
-  $: branches = $branchSummary;
   $: delta = $improvementDelta;
   $: bestBr = $bestBranch;
   $: paused = $isPaused;
@@ -202,35 +200,11 @@
     jobStore.startJob(`${prevTopic} (improved: ${e.detail.instruction})`);
   }
 
-  // Auto-connect on mount
+  // Auto-connect on mount (no auto-start — user must click)
   onMount(() => {
     const rc = readRuntimeConfig();
-    void (async () => {
-      const connected = await jobStore.connectRuntime(rc);
-      if (!connected) {
-        const params = getCurrentRouteParams();
-        if (params.topic && get(jobStore).phase === 'idle') {
-          jobStore.startJob(params.topic);
-        }
-      }
-    })();
-
-    const unsub = router.params.subscribe(p => {
-      const current = get(jobStore);
-      if (current.sourceMode === 'runtime') return;
-      if (p.topic && current.phase === 'idle') {
-        jobStore.startJob(p.topic);
-      }
-    });
-    return () => { unsub(); };
+    void jobStore.connectRuntime(rc);
   });
-
-  function getCurrentRouteParams() {
-    const hash = window.location.hash.slice(1) || '/';
-    const queryIndex = hash.indexOf('?');
-    const query = new URLSearchParams(queryIndex >= 0 ? hash.slice(queryIndex + 1) : '');
-    return { topic: query.get('topic') || undefined };
-  }
 </script>
 
 <svelte:window bind:innerWidth bind:innerHeight />
@@ -303,7 +277,7 @@
       </button>
     </div>
     {#if job.experiments.length > 0}
-      <ConvergenceChart experiments={job.experiments} bestMetric={job.bestMetric} baselineMetric={job.baselineMetric} width={960} height={50} />
+      <ConvergenceChart experiments={job.experiments} bestMetric={job.bestMetric} baselineMetric={job.baselineMetric} width={960} height={120} />
     {:else}
       <div class="empty-inner"><span class="empty-hint">Waiting for data…</span></div>
     {/if}
@@ -331,9 +305,9 @@
   <!-- ═══ BRANCHES ═══ -->
   <div class="tile branches-tile mtab-activity" class:mtab-hidden={mobileTab !== 'activity'} style="grid-area: branches">
     <div class="section-head">Branches</div>
-    {#if branches.length > 0}
+    {#if $branchSummary.length > 0}
       <div class="branch-list">
-        {#each branches as branch, i}
+        {#each $branchSummary as branch, i}
           <div
             class="branch-row"
             class:active-training={branch.active}
@@ -390,7 +364,7 @@
   <!-- ═══ ACTIVITY STREAM ═══ -->
   <div class="tile mtab-activity" class:mtab-hidden={mobileTab !== 'activity'} style="grid-area: stream">
     <ActivityStream
-      experiments={job.experiments}
+      experiments={$jobStore.experiments}
       bestMetric={job.bestMetric}
       expandable
       on:expand={() => openFocus('activity')}
@@ -453,8 +427,8 @@
       topic={job.topic}
       {progress}
       sessionId={job.experiments.length > 0 ? job.experiments[0].nodeId.slice(-6) : ''}
-      {branches}
-      experiments={job.experiments}
+      branches={$branchSummary}
+      experiments={$jobStore.experiments}
       totalExperiments={totalExp}
       expandable
       on:launch={handleLaunch}
@@ -557,7 +531,7 @@
       </div>
     {:else if focusView === 'activity'}
       <div class="focus-stage focus-stage--panel" style={`height:${focusPanelHeight}px`}>
-        <ActivityStream experiments={job.experiments} bestMetric={job.bestMetric} expanded />
+        <ActivityStream experiments={$jobStore.experiments} bestMetric={job.bestMetric} expanded />
       </div>
     {:else if focusView === 'treemap'}
       <div class="focus-stage focus-stage--fill" style={`height:${focusPanelHeight}px`}>
@@ -571,15 +545,15 @@
           topic={job.topic}
           {progress}
           sessionId={job.experiments.length > 0 ? job.experiments[0].nodeId.slice(-6) : ''}
-          {branches}
-          experiments={job.experiments}
+          branches={$branchSummary}
+          experiments={$jobStore.experiments}
           totalExperiments={totalExp}
           expanded
           on:launch={handleLaunch}
           on:newresearch={handleNewResearch}
           on:deploy={handleDeploy}
           on:retrain={handleRetrain}
-      on:improve={handleImprove}
+          on:improve={handleImprove}
         />
       </div>
     {:else if focusView === 'scatter'}
@@ -608,7 +582,7 @@
     height: calc(100vh - 48px);
     display: grid;
     grid-template-columns: 150px minmax(100px, 1fr) 1fr 1fr 260px;
-    grid-template-rows: auto 68px minmax(100px, 1fr) 1fr 64px;
+    grid-template-rows: auto 56px minmax(80px, 1fr) 1fr 36px;
     grid-template-areas:
       "prompt    prompt    prompt    prompt    prompt"
       "hero      converge  converge  converge  stats"
@@ -637,7 +611,9 @@
     box-shadow: none;
   }
   .context-tile {
-    background: var(--surface, #fff);
+    background: transparent;
+    border: none;
+    box-shadow: none;
     padding: 0;
   }
   .converge-tile :global(svg.convergence-chart) {
@@ -853,7 +829,7 @@
   .footer-tile {
     display: flex; flex-direction: column;
     justify-content: center;
-    padding: 8px 16px; gap: 6px;
+    padding: 4px 16px; gap: 3px;
   }
   .footer-dist {
     display: flex; align-items: center; gap: 12px;
@@ -862,7 +838,7 @@
     display: flex; align-items: baseline; gap: 4px;
   }
   .fd-val {
-    font: 700 12px/1 'Inter', -apple-system, sans-serif;
+    font: 700 10px/1 'Inter', -apple-system, sans-serif;
     color: #444;
     font-variant-numeric: tabular-nums;
   }
@@ -874,10 +850,10 @@
     letter-spacing: 0.04em;
   }
   .fd-sep {
-    width: 1px; height: 14px; background: #eee;
+    width: 1px; height: 10px; background: #eee;
   }
   .fd-progress {
-    width: 100%; height: 3px;
+    width: 100%; height: 2px;
     background: #f0f0f0; border-radius: 2px;
     overflow: hidden;
   }
@@ -912,12 +888,13 @@
   @media (max-width: 1024px) {
     .research-page {
       grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto auto auto auto auto auto;
+      grid-template-rows: auto auto auto auto auto auto auto auto;
       grid-template-areas:
         "prompt    prompt"
         "hero      stats"
         "converge  converge"
         "branches  stream"
+        "scatter   effect"
         "treemap   lineage"
         "mesh      context"
         "footer    footer";
@@ -932,13 +909,17 @@
       grid-template-columns: 1fr;
       grid-template-rows: auto auto auto auto auto auto auto auto auto auto auto auto;
       grid-template-areas:
-        "prompt" "hero" "stats" "mtabs" "converge"
+        "prompt" "hero" "stats" "mtabs"
+        "context" "converge"
         "branches" "stream"
         "treemap" "lineage" "mesh"
-        "context" "footer";
+        "footer";
       gap: 8px;
       padding: 0 6px 6px;
     }
+    .hero-owl { display: none; }
+    .branch-list { max-height: 200px; }
+    .br-actions { display: none; }
     .mobile-tabs {
       display: flex;
       gap: 4px;
