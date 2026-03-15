@@ -50,11 +50,13 @@
       </div>
 
       {#if tabs.length > 0}
-        <div class="focus-tabs">
+        <div class="focus-tabs" role="tablist" aria-label="Research focus views">
           {#each tabs as tab}
             <button
               class="focus-tab"
               class:active={activeTab === tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               on:click={() => dispatch('tabchange', tab.id)}
             >{tab.label}</button>
           {/each}
@@ -72,7 +74,7 @@
   .focus-overlay {
     position: fixed;
     inset: 0;
-    z-index: 240;
+    z-index: var(--z-overlay, 240);
     display: flex;
     align-items: center;
     justify-content: center;

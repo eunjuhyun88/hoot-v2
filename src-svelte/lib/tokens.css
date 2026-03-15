@@ -104,6 +104,14 @@
   --dur-slow: 500ms;
   --dur-entrance: 700ms;
 
+  /* ── Z-index scale ── */
+  --z-base: 1;
+  --z-widget: 3;
+  --z-sticky: 10;
+  --z-dropdown: 100;
+  --z-overlay: 240;
+  --z-modal: 300;
+
   /* ── Mobile ── */
   --mobile-nav-height: 56px;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
@@ -212,6 +220,12 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── Focus-visible outline (global a11y) ── */
+:focus-visible {
+  outline: 2px solid var(--accent, #D97757);
+  outline-offset: 2px;
 }
 
 /* ── Global overflow prevention ── */

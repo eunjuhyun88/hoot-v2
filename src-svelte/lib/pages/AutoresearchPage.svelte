@@ -249,10 +249,10 @@
   </div>
 
   <!-- ═══ MOBILE TAB CONTROL ═══ -->
-  <div class="mobile-tabs">
-    <button class="mtab-btn" class:mtab-active={mobileTab === 'activity'} on:click={() => mobileTab = 'activity'}>Activity</button>
-    <button class="mtab-btn" class:mtab-active={mobileTab === 'charts'} on:click={() => mobileTab = 'charts'}>Charts</button>
-    <button class="mtab-btn" class:mtab-active={mobileTab === 'network'} on:click={() => mobileTab = 'network'}>Mesh</button>
+  <div class="mobile-tabs" role="tablist" aria-label="Mobile content sections">
+    <button class="mtab-btn" class:mtab-active={mobileTab === 'activity'} role="tab" aria-selected={mobileTab === 'activity'} on:click={() => mobileTab = 'activity'}>Activity</button>
+    <button class="mtab-btn" class:mtab-active={mobileTab === 'charts'} role="tab" aria-selected={mobileTab === 'charts'} on:click={() => mobileTab = 'charts'}>Charts</button>
+    <button class="mtab-btn" class:mtab-active={mobileTab === 'network'} role="tab" aria-selected={mobileTab === 'network'} on:click={() => mobileTab = 'network'}>Mesh</button>
   </div>
 
   <!-- ═══ BRANCHES ═══ -->
@@ -908,7 +908,7 @@
       justify-content: center;
       position: sticky;
       top: 0;
-      z-index: 3;
+      z-index: var(--z-widget, 3);
       background: linear-gradient(180deg, rgba(250, 249, 247, 0.96), rgba(250, 249, 247, 0.88));
       backdrop-filter: blur(10px);
       border-radius: 12px;
