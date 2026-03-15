@@ -1,14 +1,12 @@
 <script lang="ts">
-  import { onMount, afterUpdate } from "svelte";
+  import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import MeshCanvas from "../components/MeshCanvas.svelte";
   import { dashboardStore } from "../stores/dashboardStore.ts";
-  import { agentStore, type AgentMessage } from "../stores/agentStore.ts";
+  import { agentStore } from "../stores/agentStore.ts";
   import { wallet } from "../stores/walletStore.ts";
   import { router } from "../stores/router.ts";
   import PixelIcon from "../components/PixelIcon.svelte";
-
-  let chatScrollEl: HTMLDivElement;
 
   onMount(() => {
     dashboardStore.init();
@@ -16,18 +14,9 @@
     return () => dashboardStore.destroy();
   });
 
-  afterUpdate(() => {
-    if (chatScrollEl) chatScrollEl.scrollTop = chatScrollEl.scrollHeight;
-  });
-
   $: ds = $dashboardStore;
-  $: msgList = $agentStore_messages;
-  const agentStore_messages = agentStore.messages;
 
-  // Show chat if there are messages beyond the greeting
-  $: hasConversation = msgList.length > 1;
-
-  // Running jobs hero
+  // Running jobs
   $: heroJob = ds.liveJobs.find(j => j.status === 'running');
   $: heroProgress = heroJob
     ? Math.round(((heroJob.metrics?.epoch ?? 0) / Math.max(heroJob.metrics?.totalEpochs ?? 1, 1)) * 100)
@@ -36,18 +25,9 @@
   function nav(view: string) {
     router.navigate(view as any);
   }
-
-  function handleAction(key: string) {
-    agentStore.handleAction(key);
-  }
-
-  function formatTime(ts: number): string {
-    return new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-  }
 </script>
 
 <div class="studio-home" class:mounted={ds.mounted}>
-  <!-- Globe background -->
   <div class="globe-layer">
     <MeshCanvas
       nodes={ds.renderNodes}
@@ -57,129 +37,76 @@
     />
   </div>
 
-  <!-- Dashboard content -->
   <div class="dash-content">
-    <!-- Agent Chat + Running Research (inline hero) -->
-    <div class="hero-zone" in:fly={{ y: 12, duration: 250 }}>
-      <!-- Running research banner -->
-      {#if heroJob}
-        <button class="running-banner" on:click={() => nav('research')}>
-          <span class="running-dot"></span>
-          <span class="running-topic">{heroJob.topic}</span>
-          <span class="running-pct">{heroProgress}%</span>
-          <span class="running-link">보기 →</span>
-        </button>
-      {/if}
-
-      <!-- Agent conversation area -->
-      <div class="agent-chat" bind:this={chatScrollEl}>
-        {#each msgList as msg (msg.id)}
-          <div class="chat-msg chat-msg--{msg.role}">
-            {#if msg.role === 'agent'}
-              <span class="chat-avatar">🦉</span>
-            {/if}
-            <div class="chat-bubble">
-              <p class="chat-text">{msg.text}</p>
-              {#if msg.meta?.progress !== undefined}
-                <div class="chat-progress">
-                  <div class="chat-progress-bar" style="width: {msg.meta.progress}%"></div>
-                </div>
-              {/if}
-              {#if msg.actions?.length}
-                <div class="chat-actions">
-                  {#each msg.actions as action}
-                    <button
-                      class="chat-action chat-action--{action.variant || 'secondary'}"
-                      on:click={() => handleAction(action.key)}
-                    >{action.label}</button>
-                  {/each}
-                </div>
-              {/if}
-              <span class="chat-time">{formatTime(msg.timestamp)}</span>
-            </div>
+    <!-- Running Research Hero -->
+    {#if heroJob}
+      <button class="running-hero" on:click={() => nav('research')} in:fly={{ y: 10, duration: 220 }}>
+        <div class="rh-left">
+          <div class="rh-badge"><span class="rh-dot"></span>LIVE</div>
+          <span class="rh-topic">{heroJob.topic}</span>
+        </div>
+        <div class="rh-right">
+          <div class="rh-progress">
+            <div class="rh-progress-bar" style="width: {heroProgress}%"></div>
           </div>
-        {/each}
-      </div>
-    </div>
-
-    <!-- Status Grid -->
-    <div class="stat-grid">
-      <button class="stat-card" on:click={() => nav('research')}>
-        <div class="stat-icon"><PixelIcon type="research" size={20} /></div>
-        <div class="stat-body">
-          <span class="stat-value">{ds.researchSummary.runningJobs}</span>
-          <span class="stat-label">Running Jobs</span>
+          <div class="rh-meta">
+            <span>{heroProgress}%</span>
+            <span>{heroJob.metrics?.bestMetric?.toFixed(4) ?? '—'} best</span>
+            <span class="rh-goto">보기 →</span>
+          </div>
         </div>
-        <span class="stat-sub">{ds.researchSummary.totalFindings} findings</span>
       </button>
-
-      <button class="stat-card" on:click={() => nav('models')}>
-        <div class="stat-icon"><PixelIcon type="grid" size={20} /></div>
-        <div class="stat-body">
-          <span class="stat-value">{ds.modelsSummary.count}</span>
-          <span class="stat-label">Models</span>
-        </div>
-        <span class="stat-sub">{ds.modelsSummary.rentedOut} rented</span>
-      </button>
-
-      <button class="stat-card" on:click={() => nav('network')}>
-        <div class="stat-icon"><PixelIcon type="globe" size={20} /></div>
-        <div class="stat-body">
-          <span class="stat-value">{ds.networkSummary.nodes}</span>
-          <span class="stat-label">Nodes</span>
-        </div>
-        <span class="stat-sub">{ds.networkSummary.gpuCount} GPUs</span>
-      </button>
-
-      <button class="stat-card" on:click={() => nav('protocol')}>
-        <div class="stat-icon"><PixelIcon type="protocol" size={20} /></div>
-        <div class="stat-body">
-          <span class="stat-value">{ds.protocolSummary.tvl}</span>
-          <span class="stat-label">TVL</span>
-        </div>
-        <span class="stat-sub">{ds.protocolSummary.bondCount} bonds</span>
-      </button>
-    </div>
-
-    <!-- Recent Events -->
-    {#if ds.events.length > 0}
-      <div class="events-section">
-        <h3 class="section-title">최근 활동</h3>
-        <div class="events-list">
-          {#each ds.events.slice(0, 6) as event}
-            <div class="event-row">
-              <span class="event-icon">
-                {#if event.type === 'research'}🔬
-                {:else if event.type === 'model'}🤖
-                {:else if event.type === 'network'}🌐
-                {:else if event.type === 'protocol'}📊
-                {:else}📋{/if}
-              </span>
-              <span class="event-text">{event.message}</span>
-              <span class="event-time">{new Date(event.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-          {/each}
-        </div>
-      </div>
     {/if}
 
-    <!-- Portfolio (if logged in) -->
-    {#if $wallet.connected}
-      <div class="portfolio-section">
-        <h3 class="section-title">내 포트폴리오</h3>
-        <div class="portfolio-row">
-          <div class="portfolio-stat">
-            <span class="portfolio-value">{ds.portfolioSummary.bondCount}</span>
-            <span class="portfolio-label">Bonds</span>
-          </div>
-          <div class="portfolio-stat">
-            <span class="portfolio-value">{ds.portfolioSummary.totalStaked}</span>
-            <span class="portfolio-label">Staked</span>
-          </div>
-          <div class="portfolio-stat">
-            <span class="portfolio-value">{ds.portfolioSummary.earnings}</span>
-            <span class="portfolio-label">Earnings</span>
-          </div>
+    <!-- Status Strip -->
+    <div class="status-strip">
+      <button class="ss-item" on:click={() => nav('research')}>
+        <PixelIcon type="research" size={16} />
+        <span class="ss-val">{ds.researchSummary.runningJobs}</span>
+        <span class="ss-label">Jobs</span>
+      </button>
+      <div class="ss-div"></div>
+      <button class="ss-item" on:click={() => nav('models')}>
+        <PixelIcon type="grid" size={16} />
+        <span class="ss-val">{ds.modelsSummary.count}</span>
+        <span class="ss-label">Models</span>
+      </button>
+      <div class="ss-div"></div>
+      <button class="ss-item" on:click={() => nav('network')}>
+        <PixelIcon type="globe" size={16} />
+        <span class="ss-val">{ds.networkSummary.nodes}</span>
+        <span class="ss-label">Nodes</span>
+      </button>
+      <div class="ss-div"></div>
+      <button class="ss-item" on:click={() => nav('protocol')}>
+        <PixelIcon type="protocol" size={16} />
+        <span class="ss-val">{ds.protocolSummary.tvl}</span>
+        <span class="ss-label">TVL</span>
+      </button>
+      {#if $wallet.connected}
+        <div class="ss-div"></div>
+        <button class="ss-item" on:click={() => nav('protocol')}>
+          <PixelIcon type="portfolio" size={16} />
+          <span class="ss-val">{ds.portfolioSummary.bondCount}</span>
+          <span class="ss-label">Bonds</span>
+        </button>
+      {/if}
+    </div>
+
+    <!-- Activity Feed -->
+    {#if ds.events.length > 0}
+      <div class="activity-section">
+        <h3 class="section-label">최근 활동</h3>
+        <div class="activity-list">
+          {#each ds.events.slice(0, 5) as event}
+            <div class="activity-row">
+              <span class="activity-dot" class:activity-dot--research={event.type === 'research'}
+                class:activity-dot--model={event.type === 'model'}
+                class:activity-dot--network={event.type === 'network'}></span>
+              <span class="activity-text">{event.message}</span>
+              <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          {/each}
         </div>
       </div>
     {/if}
@@ -187,7 +114,6 @@
 </div>
 
 <style>
-  /* ═══════ CONTAINER ═══════ */
   .studio-home {
     opacity: 0;
     transition: opacity var(--dur-slow, 600ms) ease;
@@ -201,353 +127,150 @@
   }
   .studio-home.mounted { opacity: 1; }
 
-  /* ═══════ GLOBE BACKGROUND ═══════ */
   .globe-layer {
     position: absolute;
     inset: 0;
     z-index: 0;
-    filter: saturate(0.3) sepia(0.02) opacity(0.08);
+    filter: saturate(0.3) sepia(0.02) opacity(0.06);
     pointer-events: none;
   }
 
-  /* ═══════ DASHBOARD CONTENT ═══════ */
   .dash-content {
     position: relative;
     z-index: 1;
     flex: 1;
-    max-width: 680px;
+    max-width: 640px;
     width: 100%;
     margin: 0 auto;
-    padding: 28px 20px 100px; /* bottom padding for AgentBar */
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  /* ═══════ HERO ZONE (chat + running banner) ═══════ */
-  .hero-zone {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    background: var(--surface, #fff);
-    border: 1px solid var(--border, #E5E0DA);
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-  }
-
-  /* Running research banner */
-  .running-banner {
-    appearance: none;
-    border: none;
-    border-bottom: 1px solid var(--border-subtle, #EDEAE5);
-    background: rgba(217, 119, 87, 0.06);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: background 150ms;
-    width: 100%;
-    text-align: left;
-  }
-  .running-banner:hover { background: rgba(217, 119, 87, 0.1); }
-
-  .running-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent, #D97757);
-    animation: pulse 1.5s ease infinite;
-    flex-shrink: 0;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-  .running-topic {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--text-primary, #2D2D2D);
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .running-pct {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--accent, #D97757);
-  }
-  .running-link {
-    font-size: 0.68rem;
-    color: var(--text-muted, #9a9590);
-    flex-shrink: 0;
-  }
-
-  /* Agent chat area */
-  .agent-chat {
-    max-height: 280px;
-    overflow-y: auto;
-    padding: 16px;
+    padding: 20px 20px 100px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0,0,0,0.06) transparent;
   }
 
-  .chat-msg {
-    display: flex;
-    gap: 8px;
-    max-width: 100%;
-  }
-  .chat-msg--user { justify-content: flex-end; }
-  .chat-msg--system { justify-content: center; }
-
-  .chat-avatar {
-    font-size: 0.9rem;
-    line-height: 1;
-    flex-shrink: 0;
-    margin-top: 4px;
-  }
-
-  .chat-bubble { max-width: 85%; }
-
-  .chat-msg--user .chat-bubble {
-    background: var(--accent, #D97757);
-    color: #fff;
-    border-radius: 14px 14px 4px 14px;
-    padding: 8px 14px;
-  }
-  .chat-msg--agent .chat-bubble {
-    background: var(--page-bg, #FAF9F7);
-    color: var(--text-primary, #2D2D2D);
-    border-radius: 14px 14px 14px 4px;
-    padding: 8px 14px;
-  }
-  .chat-msg--system .chat-bubble { background: none; text-align: center; }
-  .chat-msg--system .chat-text {
-    font-size: 0.68rem;
-    color: var(--text-muted, #9a9590);
-    font-style: italic;
-  }
-
-  .chat-text {
-    font-size: 0.82rem;
-    line-height: 1.55;
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  .chat-time {
-    display: block;
-    font-size: 0.54rem;
-    color: var(--text-muted, #9a9590);
-    margin-top: 3px;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  }
-  .chat-msg--user .chat-time {
-    color: rgba(255, 255, 255, 0.45);
-    text-align: right;
-  }
-
-  .chat-progress {
-    width: 100%; height: 3px;
-    background: rgba(0, 0, 0, 0.06);
-    border-radius: 2px;
-    margin-top: 6px;
-    overflow: hidden;
-  }
-  .chat-progress-bar {
-    height: 100%;
-    background: var(--accent, #D97757);
-    border-radius: 2px;
-    transition: width 300ms ease;
-  }
-
-  .chat-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .chat-action {
+  /* ═══════ RUNNING HERO ═══════ */
+  .running-hero {
     appearance: none;
-    border: 1px solid var(--border, #E5E0DA);
-    background: var(--surface, #fff);
-    color: var(--text-primary, #2D2D2D);
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 5px 14px;
-    border-radius: 100px;
-    cursor: pointer;
-    transition: all 150ms ease;
-    font-family: var(--font-body, 'Inter', sans-serif);
-  }
-  .chat-action:hover {
-    border-color: var(--accent, #D97757);
-    color: var(--accent, #D97757);
-  }
-  .chat-action--primary {
-    background: var(--accent, #D97757);
-    color: #fff;
-    border-color: var(--accent, #D97757);
-  }
-  .chat-action--primary:hover {
-    background: color-mix(in srgb, var(--accent, #D97757) 85%, #000);
-    color: #fff;
-  }
-
-  /* ═══════ STAT GRID ═══════ */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-
-  .stat-card {
-    appearance: none;
-    border: 1px solid var(--border-subtle, #EDEAE5);
-    background: var(--surface, #fff);
+    border: 1px solid rgba(217, 119, 87, 0.25);
+    background: linear-gradient(135deg, rgba(217, 119, 87, 0.06) 0%, rgba(217, 119, 87, 0.02) 100%);
     border-radius: 14px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    padding: 14px 18px;
     cursor: pointer;
-    transition: all 150ms ease;
+    transition: all 180ms ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
     text-align: left;
   }
-  .stat-card:hover {
+  .running-hero:hover {
     border-color: var(--accent, #D97757);
-    box-shadow: 0 2px 12px rgba(217, 119, 87, 0.08);
-    transform: translateY(-1px);
-  }
-  .stat-card:active { transform: translateY(0) scale(0.98); }
-
-  .stat-icon {
-    color: var(--text-muted, #9a9590);
-    display: flex;
+    box-shadow: 0 2px 16px rgba(217, 119, 87, 0.12);
   }
 
-  .stat-body {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-  }
-  .stat-value {
+  .rh-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .rh-badge {
+    display: flex; align-items: center; gap: 5px;
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: 0.52rem; font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent, #D97757);
+    background: rgba(217, 119, 87, 0.1);
+    padding: 3px 8px; border-radius: 6px;
+  }
+  .rh-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent, #D97757);
+    animation: pulse 1.5s ease infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .rh-topic { font-size: 0.84rem; font-weight: 600; color: var(--text-primary, #2D2D2D); white-space: nowrap; }
+  .rh-right { flex: 1; min-width: 0; }
+  .rh-progress { width: 100%; height: 3px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden; }
+  .rh-progress-bar { height: 100%; background: var(--accent, #D97757); border-radius: 2px; transition: width 400ms ease; }
+  .rh-meta {
+    display: flex; gap: 12px; margin-top: 5px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.58rem; color: var(--text-muted, #9a9590);
+  }
+  .rh-goto { margin-left: auto; color: var(--accent, #D97757); font-weight: 600; }
+
+  /* ═══════ STATUS STRIP ═══════ */
+  .status-strip {
+    display: flex;
+    align-items: center;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    border-radius: 12px;
+    padding: 6px 4px;
+  }
+  .ss-item {
+    appearance: none; border: none; background: transparent;
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 6px 4px;
+    border-radius: 8px;
+    cursor: pointer; transition: all 120ms ease;
+    color: var(--text-muted, #9a9590);
+  }
+  .ss-item:hover { background: rgba(0,0,0,0.03); color: var(--text-primary, #2D2D2D); }
+  .ss-val {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.82rem; font-weight: 700;
     color: var(--text-primary, #2D2D2D);
     font-variant-numeric: tabular-nums;
   }
-  .stat-label {
+  .ss-label {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.62rem;
-    font-weight: 600;
+    font-size: 0.48rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
     color: var(--text-muted, #9a9590);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
-  .stat-sub {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.62rem;
-    color: var(--text-secondary, #6b6560);
-  }
+  .ss-div { width: 1px; height: 20px; background: var(--border-subtle, #EDEAE5); flex-shrink: 0; }
 
-  /* ═══════ EVENTS ═══════ */
-  .events-section, .portfolio-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .section-title {
+  /* ═══════ ACTIVITY ═══════ */
+  .activity-section { display: flex; flex-direction: column; gap: 8px; }
+  .section-label {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.62rem;
-    font-weight: 700;
+    font-size: 0.56rem; font-weight: 700;
     color: var(--text-muted, #9a9590);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin: 0;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin: 0; padding-left: 2px;
   }
-
-  .events-list {
+  .activity-list {
     background: var(--surface, #fff);
     border: 1px solid var(--border-subtle, #EDEAE5);
-    border-radius: 12px;
-    overflow: hidden;
+    border-radius: 10px; overflow: hidden;
   }
-
-  .event-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+  .activity-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px;
     border-bottom: 1px solid var(--border-subtle, #EDEAE5);
   }
-  .event-row:last-child { border-bottom: none; }
-
-  .event-icon { font-size: 0.8rem; flex-shrink: 0; }
-  .event-text {
-    flex: 1;
-    font-size: 0.78rem;
-    color: var(--text-primary, #2D2D2D);
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .activity-row:last-child { border-bottom: none; }
+  .activity-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--text-muted, #9a9590); flex-shrink: 0;
   }
-  .event-time {
+  .activity-dot--research { background: var(--accent, #D97757); }
+  .activity-dot--model { background: #2980b9; }
+  .activity-dot--network { background: var(--green, #27864a); }
+  .activity-text {
+    flex: 1; font-size: 0.72rem;
+    color: var(--text-primary, #2D2D2D);
+    min-width: 0; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .activity-time {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.58rem;
-    color: var(--text-muted, #9a9590);
+    font-size: 0.52rem; color: var(--text-muted, #9a9590);
     flex-shrink: 0;
   }
 
-  /* ═══════ PORTFOLIO ═══════ */
-  .portfolio-row {
-    display: flex;
-    gap: 12px;
-  }
-
-  .portfolio-stat {
-    flex: 1;
-    background: var(--surface, #fff);
-    border: 1px solid var(--border-subtle, #EDEAE5);
-    border-radius: 12px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    text-align: center;
-  }
-  .portfolio-value {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary, #2D2D2D);
-  }
-  .portfolio-label {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.54rem;
-    font-weight: 600;
-    color: var(--text-muted, #9a9590);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  /* ═══════ RESPONSIVE ═══════ */
   @media (max-width: 600px) {
-    .dash-content { padding: 16px 12px 88px; gap: 14px; }
-    .stat-grid { gap: 8px; }
-    .stat-card { padding: 12px; }
-    .stat-value { font-size: 1.1rem; }
-    .hero-card { padding: 16px; }
-    .portfolio-row { flex-direction: column; gap: 8px; }
+    .dash-content { padding: 12px 12px 88px; gap: 10px; }
+    .running-hero { padding: 10px 14px; flex-direction: column; align-items: stretch; gap: 8px; }
+    .status-strip { overflow-x: auto; }
+    .ss-label { display: none; }
   }
 </style>
