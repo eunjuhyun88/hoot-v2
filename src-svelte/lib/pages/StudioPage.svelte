@@ -179,48 +179,29 @@
         <button class="fc-advanced" on:click={() => nav('ontology')}>고급 설정 →</button>
       </div>
 
-      <!-- Quick Start Tiles -->
-      <div class="quick-tiles">
-        <button class="qt" on:click={() => goToCreate()}>
-          <PixelIcon type="research" size={16} />
-          <span class="qt-label">AI 연구</span>
-        </button>
-        <button class="qt" on:click={() => nav('network')}>
-          <PixelIcon type="globe" size={16} />
-          <span class="qt-label">GPU 등록</span>
-        </button>
-        <button class="qt" on:click={() => nav('models')}>
-          <PixelIcon type="grid" size={16} />
-          <span class="qt-label">모델 허브</span>
-        </button>
-        <button class="qt" on:click={() => nav('protocol')}>
-          <PixelIcon type="protocol" size={16} />
-          <span class="qt-label">데이터 기여</span>
-        </button>
+      <!-- Research Presets -->
+      <div class="preset-section">
+        <h3 class="section-label">추천 연구 주제</h3>
+        <div class="preset-grid">
+          {#each presets as p}
+            <button class="preset-card" on:click={() => goToCreate(p.name)}>
+              <span class="preset-name">{p.name}</span>
+              <span class="preset-desc">{p.description ?? ''}</span>
+            </button>
+          {/each}
+        </div>
       </div>
 
-      <!-- Models Card -->
-      <button class="flow-card flow-card--models" on:click={() => nav('models')}>
-        <div class="fc-header">
-          <PixelIcon type="grid" size={18} />
-          <span class="fc-title">Models</span>
-          <span class="fc-badge fc-badge--blue">{ds.modelsSummary.count} models</span>
-        </div>
-        <p class="fc-desc">연구로 학습된 모델 확인 · 배포 · 공유</p>
-        <span class="fc-action">모델 허브 →</span>
-      </button>
-
-      <!-- Activity -->
-      {#if ds.events.length > 0}
+      <!-- Recent Research Only (not all events) -->
+      {#if ds.events.filter(e => e.type === 'research').length > 0}
         <div class="activity-section">
-          <h3 class="section-label">연구 활동</h3>
+          <h3 class="section-label">최근 연구</h3>
           <div class="activity-list">
-            {#each ds.events.filter(e => e.type === 'research' || e.type === 'model').slice(0, 5) as event}
-              <button class="activity-row activity-row--clickable" on:click={() => nav(event.type === 'model' ? 'models' : 'research')}>
-                <span class="activity-dot" class:activity-dot--research={event.type === 'research'}
-                  class:activity-dot--model={event.type === 'model'}></span>
+            {#each ds.events.filter(e => e.type === 'research').slice(0, 4) as event}
+              <button class="activity-row activity-row--clickable" on:click={() => nav('research')}>
+                <span class="activity-dot activity-dot--research"></span>
                 <span class="activity-text">{event.message}</span>
-                <span class="activity-goto">{event.type === 'model' ? '모델 →' : '연구 →'}</span>
+                <span class="activity-goto">보기 →</span>
                 <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
               </button>
             {/each}
@@ -579,23 +560,23 @@
   }
   .fc-advanced:hover { color: var(--accent, #D97757); }
 
-  /* ═══════ QUICK START TILES ═══════ */
-  .quick-tiles {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  }
-  .qt {
+  /* ═══════ PRESET SECTION ═══════ */
+  .preset-section { display: flex; flex-direction: column; gap: 8px; }
+  .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .preset-card {
     appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
     background: var(--surface, #fff); border-radius: 10px;
-    padding: 12px 8px; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 14px; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; gap: 3px;
     transition: all 180ms; font-family: var(--font-body, 'Inter', sans-serif);
   }
-  .qt:hover {
+  .preset-card:hover {
     border-color: var(--accent, #D97757);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }
-  .qt-label { font-size: 0.6rem; font-weight: 600; color: var(--text-muted, #9a9590); }
+  .preset-name { font-size: 0.72rem; font-weight: 600; color: var(--text-primary, #2D2D2D); }
+  .preset-desc { font-size: 0.58rem; color: var(--text-muted, #9a9590); line-height: 1.4; }
 
   /* ═══════ ACTIVITY ═══════ */
   .activity-section { display: flex; flex-direction: column; gap: 8px; }
