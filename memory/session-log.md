@@ -586,6 +586,54 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
 
 ---
 
+## 2026-03-15 (cont): Research collaboration lane reset
+
+### Context
+사용자 요청: "협동방식 찾자"
+- `ContextPanel.svelte` 편집 중 repeated `file conflict detected` / whole-file write fallback 발생
+- 원인은 자동 리버트보다 same-file patch churn + concurrent session risk 쪽으로 판단
+- 레포 canonical docs(`AGENT_BRANCHING`, `MULTI_AGENT_COORDINATION`, `GIT_WORKFLOW`) 기준으로 기존 broad claim / shared worktree 방식은 부적합
+
+### Completed
+- **Stale coordination claim released**:
+  - `W-20260315-dashboard-widget-lane` archived with `coord:release`
+
+- **Three dedicated research worktrees created**:
+  - `/Users/ej/mesh-autoresearch-visualizer-research-context-panel`
+  - `/Users/ej/mesh-autoresearch-visualizer-research-semantic-zoom`
+  - `/Users/ej/mesh-autoresearch-visualizer-research-page-cutover`
+
+- **Lane checkpoints created**:
+  - `W-20260315-research-context-panel`
+  - `W-20260315-research-semantic-zoom`
+  - `W-20260315-research-page-cutover`
+
+- **Lane claims created and verified**:
+  - `codex/research-context-panel`
+    - owns `src-svelte/lib/components/ContextPanel.svelte`
+  - `codex/research-semantic-zoom`
+    - owns `src-svelte/lib/components/ExperimentTreemap.svelte`
+    - owns `src-svelte/lib/pages/ResearchZoomLabPage.svelte`
+  - `codex/research-page-cutover`
+    - owns `src-svelte/lib/pages/AutoresearchPage.svelte`
+    - owns `src-svelte/App.svelte`
+    - owns `src-svelte/lib/stores/router.ts`
+    - depends on the two child lanes above
+
+### Decisions
+- Research collaboration now uses strict single-writer ownership per file family.
+- `ContextPanel.svelte` is no longer a shared editing surface.
+- Final `AutoresearchPage` cutover must wait for child contract freeze from the ContextPanel and semantic-zoom lanes.
+
+### Verification
+- `npm run coord:list` in each new worktree shows exactly one active claim with the expected owned paths
+
+### Pending
+- Optional: introduce a small contract note for shared props/events between `ContextPanel`, `ExperimentTreemap`, and `AutoresearchPage`
+- Future implementation should happen inside the new lane worktrees, not in the root `main` worktree
+
+---
+
 ## 2026-03-15 (cont): Memento Kit integration
 
 ### Context
