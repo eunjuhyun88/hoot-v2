@@ -1,7 +1,7 @@
 <script lang="ts">
   import { router, type AppView } from "../stores/router.ts";
   import { jobStore, completedCount } from "../stores/jobStore.ts";
-  import { wallet, WALLET_OPTIONS } from "../stores/walletStore.ts";
+  import { wallet } from "../stores/walletStore.ts";
   import { unlockedPages } from "../stores/stageStore.ts";
   import PixelOwl from "../components/PixelOwl.svelte";
   import PixelIcon from "../components/PixelIcon.svelte";
@@ -37,10 +37,11 @@
     ? Math.round(($completedCount / $jobStore.totalExperiments) * 100)
     : 0;
 
-  let mobileMenuOpen = false;
-  let walletDropdownOpen = false;
+  import { createEventDispatcher } from 'svelte';
 
-  const wallets = WALLET_OPTIONS;
+  const dispatch = createEventDispatcher<{ openWallet: void }>();
+
+  let mobileMenuOpen = false;
 
   function navTo(view: AppView) {
     router.navigate(view);
@@ -48,21 +49,7 @@
   }
 
   function handleWalletClick() {
-    if ($wallet.connected) {
-      walletDropdownOpen = !walletDropdownOpen;
-    } else {
-      walletDropdownOpen = !walletDropdownOpen;
-    }
-  }
-
-  function selectWallet(name: string) {
-    wallet.connect(name);
-    walletDropdownOpen = false;
-  }
-
-  function handleDisconnect() {
-    wallet.disconnect();
-    walletDropdownOpen = false;
+    dispatch('openWallet');
   }
 </script>
 
@@ -120,9 +107,6 @@
           <button class="wallet-btn wallet-connected" on:click={handleWalletClick}>
             <span class="wallet-dot-live"></span>
             <span class="wallet-addr">{$wallet.address}</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-              <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
           </button>
         {:else}
           <button class="wallet-btn" on:click={handleWalletClick}>
@@ -133,29 +117,6 @@
             </svg>
             Connect
           </button>
-        {/if}
-        {#if walletDropdownOpen}
-          <div class="wallet-dropdown">
-            {#if $wallet.connected}
-              <div class="wallet-dd-info">
-                <span class="wallet-dd-name">{$wallet.name}</span>
-                <span class="wallet-dd-addr">{$wallet.address}</span>
-              </div>
-              <button class="wallet-dd-item wallet-dd-disconnect" on:click={handleDisconnect}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Disconnect
-              </button>
-            {:else}
-              {#each wallets as w}
-                <button class="wallet-dd-item" on:click={() => selectWallet(w.name)}>
-                  <span class="wallet-dd-icon">{w.icon}</span>
-                  <span>{w.name}</span>
-                </button>
-              {/each}
-            {/if}
-          </div>
         {/if}
       </div>
       <!-- Mobile hamburger -->
@@ -192,25 +153,19 @@
       </button>
     {/each}
     <div class="mobile-menu-footer">
-      {#if $wallet.connected}
-        <div class="mobile-wallet-info">
+      <button class="mobile-sign-in" on:click={() => { mobileMenuOpen = false; handleWalletClick(); }}>
+        {#if $wallet.connected}
           <span class="wallet-dot-live"></span>
-          <span class="mobile-wallet-addr">{$wallet.name} · {$wallet.address}</span>
-        </div>
-        <button class="mobile-sign-in mobile-disconnect" on:click={() => { wallet.disconnect(); mobileMenuOpen = false; }}>
+          {$wallet.name} · {$wallet.address}
+        {:else}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="2" y="6" width="20" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M16 13a1 1 0 100-2 1 1 0 000 2z" fill="currentColor"/>
+            <path d="M2 10h20" stroke="currentColor" stroke-width="1.5"/>
           </svg>
-          Disconnect
-        </button>
-      {:else}
-        {#each wallets as w}
-          <button class="mobile-sign-in" on:click={() => { selectWallet(w.name); mobileMenuOpen = false; }}>
-            <span>{w.icon}</span>
-            {w.name}
-          </button>
-        {/each}
-      {/if}
+          Connect Wallet
+        {/if}
+      </button>
     </div>
   </nav>
 {/if}

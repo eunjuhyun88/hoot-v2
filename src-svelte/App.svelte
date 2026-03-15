@@ -8,9 +8,12 @@
   import SplashScreen from "./lib/components/SplashScreen.svelte";
   import PageSkeleton from "./lib/components/PageSkeleton.svelte";
   import AgentBar from "./lib/components/AgentBar.svelte";
+  import ToastContainer from "./lib/components/ToastContainer.svelte";
+  import WalletModal from "./lib/components/WalletModal.svelte";
   import "./lib/tokens.css";
 
   let showSplash = true;
+  let walletModalOpen = false;
 
   // Lazy-loaded page components (everything except Dashboard which is the landing page)
   const pageLoaders: Record<string, () => Promise<{ default: any }>> = {
@@ -53,7 +56,7 @@
 {/if}
 
 <div class="app-shell" data-theme="light">
-  <NavBar />
+  <NavBar on:openWallet={() => walletModalOpen = true} />
   <div class="app-body">
     <main class="app-main">
       {#key routeKey}
@@ -80,6 +83,9 @@
     <AgentBar />
   {/if}
 </div>
+
+<ToastContainer />
+<WalletModal bind:open={walletModalOpen} on:close={() => walletModalOpen = false} />
 
 <style>
   :global(html, body, #app) {
