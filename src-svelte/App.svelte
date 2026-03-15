@@ -1,8 +1,10 @@
 <script lang="ts">
   import { router, type AppView } from "./lib/stores/router.ts";
   import { unlockedPages } from "./lib/stores/stageStore.ts";
+  import { agentStore } from "./lib/stores/agentStore.ts";
   import { fly, fade } from "svelte/transition";
   import NavBar from "./lib/layout/NavBar.svelte";
+  import AgentTerminal from "./lib/components/AgentTerminal.svelte";
   import DashboardPage from "./lib/pages/DashboardPage.svelte";
   import SiteFooter from "./lib/layout/SiteFooter.svelte";
   import SplashScreen from "./lib/components/SplashScreen.svelte";
@@ -32,6 +34,9 @@
   $: routeKey = $router;
   $: isDashboard = $router === 'dashboard';
   $: pagePromise = !isDashboard ? pageLoaders[$router]?.() : null;
+
+  $: panelOpen = $agentStore_panelOpen;
+  const agentStore_panelOpen = agentStore.panelOpen;
 </script>
 
 <svelte:head>
@@ -47,26 +52,29 @@
 
 <div class="app-shell" data-theme="light">
   <NavBar />
-  <main class="app-main">
-    {#key routeKey}
-      <div class="page-transition" in:fly={{ y: 12, duration: 280, delay: 60 }} out:fade={{ duration: 150 }}>
-        {#if isDashboard}
-          <DashboardPage />
-        {:else if pagePromise}
-          {#await pagePromise}
-            <PageSkeleton />
-          {:then mod}
-            <svelte:component this={mod.default} />
-          {:catch}
-            <div class="page-error">Failed to load page</div>
-          {/await}
-        {/if}
-      </div>
-    {/key}
-  </main>
-  {#if !isDashboard}
-    <SiteFooter />
-  {/if}
+  <div class="app-body" class:panel-open={panelOpen}>
+    <main class="app-main">
+      {#key routeKey}
+        <div class="page-transition" in:fly={{ y: 12, duration: 280, delay: 60 }} out:fade={{ duration: 150 }}>
+          {#if isDashboard}
+            <DashboardPage />
+          {:else if pagePromise}
+            {#await pagePromise}
+              <PageSkeleton />
+            {:then mod}
+              <svelte:component this={mod.default} />
+            {:catch}
+              <div class="page-error">Failed to load page</div>
+            {/await}
+          {/if}
+        </div>
+      {/key}
+      {#if !isDashboard}
+        <SiteFooter />
+      {/if}
+    </main>
+    <AgentTerminal />
+  </div>
 </div>
 
 <style>
@@ -95,11 +103,19 @@
     overflow-x: hidden;
   }
 
+  .app-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
   .app-main {
     flex: 1;
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow-y: auto;
+    min-width: 0;
   }
 
   .page-transition {
@@ -113,5 +129,12 @@
     text-align: center;
     color: var(--text-muted, #9a9590);
     font-size: 0.9rem;
+  }
+
+  /* ── Responsive: stack on mobile ── */
+  @media (max-width: 860px) {
+    .app-body {
+      flex-direction: column;
+    }
   }
 </style>

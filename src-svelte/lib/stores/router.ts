@@ -13,6 +13,8 @@ export interface RouteParams {
 const ROUTE_MAP: Record<string, AppView> = {
   '/': 'dashboard',
   '/dashboard': 'dashboard',
+  '/studio': 'dashboard',       // alias — Magnet Studio
+  '/magnet-studio': 'dashboard', // alias
   '/models': 'models',
   '/research': 'research',
   '/research-lab': 'research-lab',
