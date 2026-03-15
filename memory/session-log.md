@@ -70,6 +70,29 @@
 - real worker launch는 아직 GPU/data cache가 필요하지만, bootstrap/controller/supervisor/runtime-api 경계까지는 현재 머신에서도 검증 완료
 
 ### Pending
+
+---
+
+## 2026-03-15 (cont): Immediate ngrok exposure for current local services
+
+### Context
+사용자 요청: "엔그록 설정해줘 지금"
+
+### Completed
+- 기존 `ngrok` 에이전트와 기존 터널(`localhost:5174`)은 그대로 유지
+- 현재 로컬 서비스 상태 확인:
+  - Vite frontend: `http://localhost:5173`
+  - runtime API: `http://localhost:8790`
+- 로컬 `ngrok` agent API (`127.0.0.1:4040`)로 추가 터널 생성:
+  - `mesh-front-5173` → `http://localhost:5173`
+  - `mesh-api-8790` → `http://localhost:8790`
+- 외부 응답 확인:
+  - frontend public URL `200 OK`
+  - runtime API `/api/runtime/health` 응답 확인
+
+### Notes
+- 프런트와 API는 별도 터널로 열었고, 프런트 접속 시 `apiBase` 쿼리 파라미터로 runtime API 공개 URL을 지정하면 현재 구조에서 바로 동작
+- 이번 작업은 운영 설정만 수행했고 repo product code는 수정하지 않음
 - runtime-api가 controller/supervisor 상태를 직접 흡수하도록 합치기
 - `jobStore`를 runtime snapshot/SSE client로 축소
 - 실제 evaluator(build/perf/API gates)와 autoresearch keep/discard 판정 연결
