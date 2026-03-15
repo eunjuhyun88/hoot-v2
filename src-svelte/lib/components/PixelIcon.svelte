@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let type: "sparkle" | "grid" | "chart" | "globe" | "protocol" | "arrow" | "research" | "portfolio" = "sparkle";
+  export let type: "sparkle" | "grid" | "chart" | "globe" | "protocol" | "arrow" | "research" | "portfolio" | "ontology" = "sparkle";
   export let size: number = 16;
 </script>
 
@@ -69,6 +69,19 @@
     <rect x="7" y="11" width="2" height="2" fill="currentColor"/>
     <rect x="1" y="5" width="2" height="2" fill="currentColor"/>
     <rect x="3" y="5" width="2" height="2" fill="currentColor"/>
+  {:else if type === "ontology"}
+    <!-- Tree/branch structure icon -->
+    <rect x="7" y="1" width="2" height="2" fill="currentColor"/>
+    <rect x="7" y="3" width="2" height="4" fill="currentColor" opacity="0.4"/>
+    <rect x="7" y="7" width="2" height="2" fill="currentColor"/>
+    <rect x="3" y="9" width="2" height="2" fill="currentColor" opacity="0.4"/>
+    <rect x="5" y="9" width="2" height="2" fill="currentColor" opacity="0.4"/>
+    <rect x="9" y="9" width="2" height="2" fill="currentColor" opacity="0.4"/>
+    <rect x="11" y="9" width="2" height="2" fill="currentColor" opacity="0.4"/>
+    <rect x="1" y="11" width="4" height="2" fill="currentColor"/>
+    <rect x="5" y="11" width="2" height="2" fill="currentColor"/>
+    <rect x="9" y="11" width="2" height="2" fill="currentColor"/>
+    <rect x="11" y="11" width="4" height="2" fill="currentColor"/>
   {:else if type === "arrow"}
     <rect x="1" y="7" width="10" height="2" fill="currentColor" opacity="0.4"/>
     <rect x="9" y="5" width="2" height="2" fill="currentColor"/>

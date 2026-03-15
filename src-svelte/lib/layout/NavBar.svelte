@@ -6,11 +6,12 @@
   import PixelOwl from "../components/PixelOwl.svelte";
   import PixelIcon from "../components/PixelIcon.svelte";
 
-  type PixelIconType = "sparkle" | "grid" | "chart" | "globe" | "protocol";
+  type PixelIconType = "sparkle" | "grid" | "chart" | "globe" | "protocol" | "ontology";
 
   const navItems: { view: AppView; label: string; icon: PixelIconType }[] = [
     { view: "dashboard", label: "Dashboard", icon: "sparkle" },
     { view: "research", label: "Magnet Research", icon: "chart" },
+    { view: "ontology", label: "Research Ontology", icon: "ontology" },
     { view: "models", label: "Models", icon: "grid" },
     { view: "network", label: "Network", icon: "globe" },
     { view: "protocol", label: "Protocol", icon: "protocol" },
