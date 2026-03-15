@@ -173,6 +173,7 @@
     padding: 32px 0 16px;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
     gap: 16px;
     scrollbar-width: thin;
     scrollbar-color: rgba(0,0,0,0.08) transparent;
