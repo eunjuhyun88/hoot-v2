@@ -38,10 +38,12 @@
     : 0;
 
   import { createEventDispatcher } from 'svelte';
+  import { toasts } from '../stores/toastStore.ts';
 
-  const dispatch = createEventDispatcher<{ openWallet: void }>();
+  const dispatch = createEventDispatcher<{ openWallet: void; openDisconnectConfirm: void }>();
 
   let mobileMenuOpen = false;
+  let walletDropdownOpen = false;
 
   function navTo(view: AppView) {
     router.navigate(view);
@@ -49,9 +51,44 @@
   }
 
   function handleWalletClick() {
-    dispatch('openWallet');
+    if ($wallet.connected) {
+      walletDropdownOpen = !walletDropdownOpen;
+    } else {
+      dispatch('openWallet');
+    }
+  }
+
+  function copyAddress() {
+    if ($wallet.address) {
+      navigator.clipboard?.writeText($wallet.address);
+      toasts.success('주소 복사됨', $wallet.address);
+    }
+    walletDropdownOpen = false;
+  }
+
+  function openExplorer() {
+    // Simulated L1 explorer link
+    window.open(`https://etherscan.io/address/${$wallet.address}`, '_blank');
+    walletDropdownOpen = false;
+  }
+
+  function requestDisconnect() {
+    walletDropdownOpen = false;
+    dispatch('openDisconnectConfirm');
+  }
+
+  // Close dropdown on outside click
+  function handleWindowClick(e: MouseEvent) {
+    if (walletDropdownOpen) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.wallet-wrap')) {
+        walletDropdownOpen = false;
+      }
+    }
   }
 </script>
+
+<svelte:window on:click={handleWindowClick} />
 
 <header class="navbar" class:menu-open={mobileMenuOpen}>
   <div class="navbar-inner">
@@ -108,6 +145,26 @@
             <span class="wallet-dot-live"></span>
             <span class="wallet-addr">{$wallet.address}</span>
           </button>
+          {#if walletDropdownOpen}
+            <div class="wallet-dropdown">
+              <div class="wallet-dd-info">
+                <span class="wallet-dd-name">{$wallet.name}</span>
+                <span class="wallet-dd-addr">{$wallet.address}</span>
+              </div>
+              <button class="wallet-dd-item" on:click={copyAddress}>
+                <span class="wallet-dd-icon">📋</span>
+                주소 복사
+              </button>
+              <button class="wallet-dd-item" on:click={openExplorer}>
+                <span class="wallet-dd-icon">🔗</span>
+                L1 Explorer
+              </button>
+              <button class="wallet-dd-item wallet-dd-disconnect" on:click={requestDisconnect}>
+                <span class="wallet-dd-icon">🔌</span>
+                연결 해제
+              </button>
+            </div>
+          {/if}
         {:else}
           <button class="wallet-btn" on:click={handleWalletClick}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">

@@ -10,10 +10,21 @@
   import AgentBar from "./lib/components/AgentBar.svelte";
   import ToastContainer from "./lib/components/ToastContainer.svelte";
   import WalletModal from "./lib/components/WalletModal.svelte";
+  import DisconnectConfirmModal from "./lib/components/DisconnectConfirmModal.svelte";
+  import { wallet } from "./lib/stores/walletStore.ts";
+  import { toasts } from "./lib/stores/toastStore.ts";
   import "./lib/tokens.css";
 
   let showSplash = true;
   let walletModalOpen = false;
+  let disconnectConfirmOpen = false;
+
+  function handleDisconnect() {
+    const name = $wallet.name;
+    wallet.disconnect();
+    disconnectConfirmOpen = false;
+    toasts.info('지갑 연결 해제', `${name} 연결이 해제되었습니다`);
+  }
 
   // Lazy-loaded page components (everything except Dashboard which is the landing page)
   const pageLoaders: Record<string, () => Promise<{ default: any }>> = {
@@ -56,7 +67,7 @@
 {/if}
 
 <div class="app-shell" data-theme="light">
-  <NavBar on:openWallet={() => walletModalOpen = true} />
+  <NavBar on:openWallet={() => walletModalOpen = true} on:openDisconnectConfirm={() => disconnectConfirmOpen = true} />
   <div class="app-body">
     <main class="app-main">
       {#key routeKey}
@@ -86,6 +97,12 @@
 
 <ToastContainer />
 <WalletModal bind:open={walletModalOpen} on:close={() => walletModalOpen = false} />
+<DisconnectConfirmModal
+  open={disconnectConfirmOpen}
+  walletName={$wallet.name}
+  on:confirm={handleDisconnect}
+  on:cancel={() => disconnectConfirmOpen = false}
+/>
 
 <style>
   :global(html, body, #app) {
