@@ -8,6 +8,34 @@
   export let worker: Worker | null = null;
   export let selected: boolean = false;
   export let trustScore: number = 75;
+  export let showEarnings: boolean = false;
+
+  // Protocol tier derivation from bond amount (simulated)
+  type TierInfo = { tier: number; label: string; bond: number; weight: number; mode: string; };
+  function deriveTier(nodeId: string): TierInfo {
+    const h = Math.abs(hashCode(nodeId));
+    const tierRoll = h % 10;
+    if (tierRoll >= 8) return { tier: 3, label: 'Enterprise', bond: 10000, weight: 2.5, mode: 'BOTH' };
+    if (tierRoll >= 4) return { tier: 2, label: 'Standard', bond: 2000, weight: 1.5, mode: 'TRAINING' };
+    return { tier: 1, label: 'Lite', bond: 500, weight: 1.0, mode: 'INFERENCE' };
+  }
+  function hashCode(s: string): number {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return h;
+  }
+  $: tierInfo = deriveTier(node.id);
+  $: effectiveWeight = +(tierInfo.weight * (trustClamped / 100)).toFixed(3);
+  $: spotCheckRate = trustClamped < 50 ? 0.50 : trustClamped < 90 ? 0.20 : 0.10;
+  $: trustRecovery = Math.floor((100 - trustClamped) / 10);
+
+  // Simulated earnings
+  $: earnings = {
+    thisJob: +(1.2 + (Math.abs(hashCode(node.id + 'j')) % 200) / 100).toFixed(2),
+    today: +(2.5 + (Math.abs(hashCode(node.id + 'd')) % 300) / 100).toFixed(2),
+    sevenDay: +(12 + (Math.abs(hashCode(node.id + 'w')) % 800) / 100).toFixed(1),
+    total: +(120 + (Math.abs(hashCode(node.id + 't')) % 5000) / 100).toFixed(1),
+  };
 
   const dispatch = createEventDispatcher();
 
@@ -55,8 +83,9 @@
     <StatePill label={pillLabel} color={pillColor} />
   </div>
 
-  <!-- GPU Info -->
+  <!-- GPU Info + Tier -->
   <div class="gpu-info">
+    <span class="tier-badge" class:tier1={tierInfo.tier===1} class:tier2={tierInfo.tier===2} class:tier3={tierInfo.tier===3}>T{tierInfo.tier}</span>
     <span class="gpu-label">{gpuLabel}</span>
     {#if vramLabel}
       <span class="gpu-sep">&middot;</span>
@@ -64,6 +93,8 @@
     {/if}
     <span class="gpu-sep">&middot;</span>
     <span class="gpu-label">{regionLabel}</span>
+    <span class="gpu-sep">&middot;</span>
+    <span class="gpu-label mode-label">{tierInfo.mode}</span>
   </div>
 
   <!-- State Pipeline -->
@@ -109,7 +140,30 @@
     <div class="trust-track">
       <div class="trust-fill" style:width="{trustClamped}%"></div>
     </div>
+    <div class="trust-details">
+      <span class="td-item">Weight: {effectiveWeight}x</span>
+      <span class="td-sep">&middot;</span>
+      <span class="td-item">Spot-check: {(spotCheckRate * 100).toFixed(0)}%</span>
+      <span class="td-sep">&middot;</span>
+      <span class="td-item">Recovery: +{trustRecovery}/job</span>
+    </div>
   </div>
+
+  <!-- Earnings (optional) -->
+  {#if showEarnings}
+    <div class="earnings-section">
+      <div class="earnings-header">
+        <span class="meta-label">EARNINGS (Pool B)</span>
+      </div>
+      <div class="earnings-grid">
+        <div class="earn-item"><span class="earn-val">{earnings.thisJob}</span><span class="earn-label">This Job</span></div>
+        <div class="earn-item"><span class="earn-val">{earnings.today}</span><span class="earn-label">Today</span></div>
+        <div class="earn-item"><span class="earn-val">{earnings.sevenDay}</span><span class="earn-label">7 Days</span></div>
+        <div class="earn-item"><span class="earn-val accent">{earnings.total}</span><span class="earn-label">Total HOOT</span></div>
+      </div>
+      <div class="earn-note">GPU 95% / Treasury 5%</div>
+    </div>
+  {/if}
 
   <!-- Metric Delta -->
   {#if metricDelta !== null}
@@ -354,5 +408,81 @@
 
   .metric-delta.negative {
     color: var(--red, #c0392b);
+  }
+
+  /* ── Tier Badge ── */
+  .tier-badge {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.56rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: var(--radius-pill, 100px);
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .tier-badge.tier1 { background: rgba(154, 149, 144, 0.12); color: var(--text-muted, #9a9590); }
+  .tier-badge.tier2 { background: rgba(217, 119, 87, 0.12); color: var(--accent, #D97757); }
+  .tier-badge.tier3 { background: rgba(183, 134, 14, 0.12); color: var(--gold, #b7860e); }
+  .mode-label { text-transform: uppercase; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; }
+
+  /* ── Trust Details ── */
+  .trust-details {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+  }
+  .td-item {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.56rem;
+    color: var(--text-muted, #9a9590);
+    font-variant-numeric: tabular-nums;
+  }
+  .td-sep { color: var(--border, #E5E0DA); font-size: 0.5rem; }
+
+  /* ── Earnings ── */
+  .earnings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 2px;
+    border-top: 1px solid var(--border-subtle, #EDEAE5);
+  }
+  .earnings-header { display: flex; align-items: center; justify-content: space-between; }
+  .earnings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 4px;
+  }
+  .earn-item {
+    text-align: center;
+    padding: 4px 2px;
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid var(--border-subtle, #EDEAE5);
+  }
+  .earn-val {
+    display: block;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary, #2D2D2D);
+  }
+  .earn-val.accent { color: var(--accent, #D97757); }
+  .earn-label {
+    display: block;
+    font-size: 0.48rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted, #9a9590);
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .earn-note {
+    font-size: 0.52rem;
+    color: var(--text-muted, #9a9590);
+    text-align: center;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
   }
 </style>

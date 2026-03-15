@@ -258,7 +258,7 @@
           <div class="psection gpu-hero">
             {#if myNode}
               <h4 class="slabel">My Node</h4>
-              <NodeCard node={myNode} worker={myWorker} trustScore={myTrustScore} selected={true} />
+              <NodeCard node={myNode} worker={myWorker} trustScore={myTrustScore} selected={true} showEarnings={true} />
 
               <h4 class="slabel" style="margin-top: 16px;">Activity Log</h4>
               <div class="activity-log">
