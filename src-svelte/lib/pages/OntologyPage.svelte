@@ -22,14 +22,12 @@
   let launching = false;
   let expandedBranch: BranchTypeId | null = null;
 
-  // CSV upload state
-  let csvFile: File | null = null;
-  let csvPreviewRows: string[][] = [];
-  let csvPreviewCols: string[] = [];
-  let csvTotalRows = 0;
-  let dragOver = false;
+  // CSV upload state (consolidated into single object to reduce reactive overhead)
+  let csv = { file: null as File | null, previewRows: [] as string[][], previewCols: [] as string[], totalRows: 0, dragOver: false };
 
   // ─── Derived ─────────────────────────────────────
+  // O(1) branch lookup Map instead of .find() per render
+  $: branchMap = new Map(ontology.branches.map(b => [b.type, b]));
   $: enabledBranches = getEnabledBranches(ontology);
   $: totalExperiments = getTotalExperiments(ontology);
   $: estimatedBudget = estimateBudgetHoot(ontology);
@@ -94,7 +92,7 @@
   // ─── CSV Upload ──────────────────────────────────
   function handleFileDrop(e: DragEvent) {
     e.preventDefault();
-    dragOver = false;
+    csv = { ...csv, dragOver: false };
     const file = e.dataTransfer?.files?.[0];
     if (file && file.name.endsWith('.csv')) processCSV(file);
   }
@@ -106,24 +104,24 @@
   }
 
   function processCSV(file: File) {
-    csvFile = file;
+    csv = { ...csv, file };
     ontology.data = { ...ontology.data, source: 'csv' };
     const reader = new FileReader();
     reader.onload = () => {
       const text = reader.result as string;
       const lines = text.split('\n').filter(l => l.trim());
-      csvTotalRows = lines.length - 1;
-      csvPreviewCols = lines[0]?.split(',').map(c => c.trim()) ?? [];
-      csvPreviewRows = lines.slice(1, 6).map(l => l.split(',').map(c => c.trim()));
+      csv = {
+        ...csv,
+        totalRows: lines.length - 1,
+        previewCols: lines[0]?.split(',').map(c => c.trim()) ?? [],
+        previewRows: lines.slice(1, 6).map(l => l.split(',').map(c => c.trim())),
+      };
     };
     reader.readAsText(file.slice(0, 1024 * 50));
   }
 
   function clearCSV() {
-    csvFile = null;
-    csvPreviewRows = [];
-    csvPreviewCols = [];
-    csvTotalRows = 0;
+    csv = { file: null, previewRows: [], previewCols: [], totalRows: 0, dragOver: false };
     ontology.data = { ...ontology.data, source: 'auto' };
   }
 
@@ -145,7 +143,7 @@
   }
 
   function getBranch(type: BranchTypeId): OntologyBranch | undefined {
-    return ontology.branches.find(b => b.type === type);
+    return branchMap.get(type);
   }
 </script>
 
@@ -304,19 +302,19 @@
             </div>
 
           {:else if ontology.data.source === 'csv'}
-            {#if csvFile}
+            {#if csv.file}
               <div class="csv-loaded">
                 <div class="csv-meta">
-                  <span class="csv-name">{csvFile.name}</span>
-                  <span class="csv-size">{(csvFile.size / 1024).toFixed(1)} KB · {csvTotalRows} rows · {csvPreviewCols.length} cols</span>
+                  <span class="csv-name">{csv.file.name}</span>
+                  <span class="csv-size">{(csv.file.size / 1024).toFixed(1)} KB · {csv.totalRows} rows · {csv.previewCols.length} cols</span>
                   <button class="csv-clear" on:click={clearCSV}>Remove</button>
                 </div>
-                {#if csvPreviewCols.length > 0}
+                {#if csv.previewCols.length > 0}
                   <div class="csv-preview">
                     <table>
-                      <thead><tr>{#each csvPreviewCols as col}<th>{col}</th>{/each}</tr></thead>
+                      <thead><tr>{#each csv.previewCols as col}<th>{col}</th>{/each}</tr></thead>
                       <tbody>
-                        {#each csvPreviewRows as row}
+                        {#each csv.previewRows as row}
                           <tr>{#each row as cell}<td>{cell}</td>{/each}</tr>
                         {/each}
                       </tbody>
@@ -328,9 +326,9 @@
               <!-- svelte-ignore a11y-no-static-element-interactions -->
               <div
                 class="upload-zone"
-                class:drag-over={dragOver}
-                on:dragover|preventDefault={() => dragOver = true}
-                on:dragleave={() => dragOver = false}
+                class:drag-over={csv.dragOver}
+                on:dragover|preventDefault={() => csv = { ...csv, dragOver: true }}
+                on:dragleave={() => csv = { ...csv, dragOver: false }}
                 on:drop={handleFileDrop}
                 on:click={() => document.getElementById('csv-input')?.click()}
               >
