@@ -1,12 +1,14 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, afterUpdate } from "svelte";
   import { fly } from "svelte/transition";
   import MeshCanvas from "../components/MeshCanvas.svelte";
   import { dashboardStore } from "../stores/dashboardStore.ts";
-  import { agentStore } from "../stores/agentStore.ts";
+  import { agentStore, type AgentMessage } from "../stores/agentStore.ts";
   import { wallet } from "../stores/walletStore.ts";
   import { router } from "../stores/router.ts";
   import PixelIcon from "../components/PixelIcon.svelte";
+
+  let chatScrollEl: HTMLDivElement;
 
   onMount(() => {
     dashboardStore.init();
@@ -14,7 +16,16 @@
     return () => dashboardStore.destroy();
   });
 
+  afterUpdate(() => {
+    if (chatScrollEl) chatScrollEl.scrollTop = chatScrollEl.scrollHeight;
+  });
+
   $: ds = $dashboardStore;
+  $: msgList = $agentStore_messages;
+  const agentStore_messages = agentStore.messages;
+
+  // Show chat if there are messages beyond the greeting
+  $: hasConversation = msgList.length > 1;
 
   // Running jobs hero
   $: heroJob = ds.liveJobs.find(j => j.status === 'running');
@@ -24,6 +35,14 @@
 
   function nav(view: string) {
     router.navigate(view as any);
+  }
+
+  function handleAction(key: string) {
+    agentStore.handleAction(key);
+  }
+
+  function formatTime(ts: number): string {
+    return new Date(ts).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
   }
 </script>
 
@@ -40,31 +59,48 @@
 
   <!-- Dashboard content -->
   <div class="dash-content">
-    <!-- Hero: Running Research -->
-    {#if heroJob}
-      <button class="hero-card" on:click={() => nav('research')} in:fly={{ y: 12, duration: 250 }}>
-        <div class="hero-top">
-          <span class="hero-badge">RUNNING</span>
-          <span class="hero-topic">{heroJob.topic}</span>
-        </div>
-        <div class="hero-progress">
-          <div class="hero-progress-bar" style="width: {heroProgress}%"></div>
-        </div>
-        <div class="hero-stats">
-          <span class="hero-stat">{heroProgress}% 완료</span>
-          <span class="hero-stat">{heroJob.metrics?.bestMetric?.toFixed(4) ?? '—'} best</span>
-          <span class="hero-stat hero-link">리서치 보기 →</span>
-        </div>
-      </button>
-    {:else}
-      <div class="hero-card hero-idle" in:fly={{ y: 12, duration: 250 }}>
-        <span class="hero-owl">🦉</span>
-        <div class="hero-idle-text">
-          <p class="hero-title">HOOT Magnet Studio</p>
-          <p class="hero-subtitle">에이전트 바에서 연구 주제를 입력하세요</p>
-        </div>
+    <!-- Agent Chat + Running Research (inline hero) -->
+    <div class="hero-zone" in:fly={{ y: 12, duration: 250 }}>
+      <!-- Running research banner -->
+      {#if heroJob}
+        <button class="running-banner" on:click={() => nav('research')}>
+          <span class="running-dot"></span>
+          <span class="running-topic">{heroJob.topic}</span>
+          <span class="running-pct">{heroProgress}%</span>
+          <span class="running-link">보기 →</span>
+        </button>
+      {/if}
+
+      <!-- Agent conversation area -->
+      <div class="agent-chat" bind:this={chatScrollEl}>
+        {#each msgList as msg (msg.id)}
+          <div class="chat-msg chat-msg--{msg.role}">
+            {#if msg.role === 'agent'}
+              <span class="chat-avatar">🦉</span>
+            {/if}
+            <div class="chat-bubble">
+              <p class="chat-text">{msg.text}</p>
+              {#if msg.meta?.progress !== undefined}
+                <div class="chat-progress">
+                  <div class="chat-progress-bar" style="width: {msg.meta.progress}%"></div>
+                </div>
+              {/if}
+              {#if msg.actions?.length}
+                <div class="chat-actions">
+                  {#each msg.actions as action}
+                    <button
+                      class="chat-action chat-action--{action.variant || 'secondary'}"
+                      on:click={() => handleAction(action.key)}
+                    >{action.label}</button>
+                  {/each}
+                </div>
+              {/if}
+              <span class="chat-time">{formatTime(msg.timestamp)}</span>
+            </div>
+          </div>
+        {/each}
       </div>
-    {/if}
+    </div>
 
     <!-- Status Grid -->
     <div class="stat-grid">
@@ -188,103 +224,181 @@
     gap: 20px;
   }
 
-  /* ═══════ HERO CARD ═══════ */
-  .hero-card {
-    appearance: none;
-    border: 1px solid var(--border, #E5E0DA);
+  /* ═══════ HERO ZONE (chat + running banner) ═══════ */
+  .hero-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     background: var(--surface, #fff);
+    border: 1px solid var(--border, #E5E0DA);
     border-radius: 16px;
-    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+
+  /* Running research banner */
+  .running-banner {
+    appearance: none;
+    border: none;
+    border-bottom: 1px solid var(--border-subtle, #EDEAE5);
+    background: rgba(217, 119, 87, 0.06);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     cursor: pointer;
-    transition: all 180ms ease;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-    text-align: left;
+    transition: background 150ms;
     width: 100%;
+    text-align: left;
   }
-  .hero-card:hover {
-    border-color: var(--accent, #D97757);
-    box-shadow: 0 4px 20px rgba(217, 119, 87, 0.12);
-    transform: translateY(-1px);
-  }
+  .running-banner:hover { background: rgba(217, 119, 87, 0.1); }
 
-  .hero-idle {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    cursor: default;
-  }
-  .hero-idle:hover {
-    transform: none;
-    border-color: var(--border, #E5E0DA);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  }
-
-  .hero-owl { font-size: 2rem; }
-  .hero-idle-text { display: flex; flex-direction: column; gap: 4px; }
-  .hero-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary, #2D2D2D);
-    margin: 0;
-    font-family: var(--font-display, 'Playfair Display', serif);
-  }
-  .hero-subtitle {
-    font-size: 0.82rem;
-    color: var(--text-muted, #9a9590);
-    margin: 0;
-  }
-
-  .hero-top {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-  .hero-badge {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: #fff;
+  .running-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
     background: var(--accent, #D97757);
-    padding: 2px 8px;
-    border-radius: 4px;
+    animation: pulse 1.5s ease infinite;
+    flex-shrink: 0;
   }
-  .hero-topic {
-    font-size: 0.92rem;
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .running-topic {
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--text-primary, #2D2D2D);
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .running-pct {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--accent, #D97757);
+  }
+  .running-link {
+    font-size: 0.68rem;
+    color: var(--text-muted, #9a9590);
+    flex-shrink: 0;
   }
 
-  .hero-progress {
-    width: 100%;
-    height: 4px;
+  /* Agent chat area */
+  .agent-chat {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,0,0,0.06) transparent;
+  }
+
+  .chat-msg {
+    display: flex;
+    gap: 8px;
+    max-width: 100%;
+  }
+  .chat-msg--user { justify-content: flex-end; }
+  .chat-msg--system { justify-content: center; }
+
+  .chat-avatar {
+    font-size: 0.9rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .chat-bubble { max-width: 85%; }
+
+  .chat-msg--user .chat-bubble {
+    background: var(--accent, #D97757);
+    color: #fff;
+    border-radius: 14px 14px 4px 14px;
+    padding: 8px 14px;
+  }
+  .chat-msg--agent .chat-bubble {
+    background: var(--page-bg, #FAF9F7);
+    color: var(--text-primary, #2D2D2D);
+    border-radius: 14px 14px 14px 4px;
+    padding: 8px 14px;
+  }
+  .chat-msg--system .chat-bubble { background: none; text-align: center; }
+  .chat-msg--system .chat-text {
+    font-size: 0.68rem;
+    color: var(--text-muted, #9a9590);
+    font-style: italic;
+  }
+
+  .chat-text {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .chat-time {
+    display: block;
+    font-size: 0.54rem;
+    color: var(--text-muted, #9a9590);
+    margin-top: 3px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .chat-msg--user .chat-time {
+    color: rgba(255, 255, 255, 0.45);
+    text-align: right;
+  }
+
+  .chat-progress {
+    width: 100%; height: 3px;
     background: rgba(0, 0, 0, 0.06);
     border-radius: 2px;
+    margin-top: 6px;
     overflow: hidden;
-    margin-bottom: 10px;
   }
-  .hero-progress-bar {
+  .chat-progress-bar {
     height: 100%;
     background: var(--accent, #D97757);
     border-radius: 2px;
-    transition: width 400ms ease;
+    transition: width 300ms ease;
   }
 
-  .hero-stats {
+  .chat-actions {
     display: flex;
-    gap: 16px;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
   }
-  .hero-stat {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.7rem;
-    color: var(--text-muted, #9a9590);
-  }
-  .hero-link {
-    margin-left: auto;
-    color: var(--accent, #D97757);
+  .chat-action {
+    appearance: none;
+    border: 1px solid var(--border, #E5E0DA);
+    background: var(--surface, #fff);
+    color: var(--text-primary, #2D2D2D);
+    font-size: 0.72rem;
     font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    font-family: var(--font-body, 'Inter', sans-serif);
+  }
+  .chat-action:hover {
+    border-color: var(--accent, #D97757);
+    color: var(--accent, #D97757);
+  }
+  .chat-action--primary {
+    background: var(--accent, #D97757);
+    color: #fff;
+    border-color: var(--accent, #D97757);
+  }
+  .chat-action--primary:hover {
+    background: color-mix(in srgb, var(--accent, #D97757) 85%, #000);
+    color: #fff;
   }
 
   /* ═══════ STAT GRID ═══════ */
