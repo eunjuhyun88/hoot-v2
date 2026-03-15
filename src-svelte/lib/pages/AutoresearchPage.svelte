@@ -480,60 +480,62 @@
     on:close={closeFocus}
     on:tabchange={(e) => { focusView = e.detail as FocusView; }}
   >
-    {#if focusView === 'convergence'}
-      <div class="focus-stage focus-stage--chart">
-        <ConvergenceChart
-          experiments={job.experiments}
-          bestMetric={job.bestMetric}
-          baselineMetric={job.baselineMetric}
-          width={focusChartWidth}
-          height={focusChartHeight}
-        />
-      </div>
-    {:else if focusView === 'activity'}
-      <div class="focus-stage focus-stage--panel" style={`height:${focusPanelHeight}px`}>
-        <ActivityStream experiments={$jobStore.experiments} bestMetric={job.bestMetric} expanded />
-      </div>
-    {:else if focusView === 'treemap'}
-      <div class="focus-stage focus-stage--fill" style={`height:${focusPanelHeight}px`}>
-        <ExperimentTreemap experiments={job.experiments} bestMetric={job.bestMetric} />
-      </div>
-    {:else if focusView === 'context'}
-      <div class="focus-stage focus-stage--panel focus-stage--detail" style={`height:${focusPanelHeight}px`}>
-        <ContextPanel
-          bestMetric={job.bestMetric}
-          {phase}
-          topic={job.topic}
-          {progress}
-          sessionId={job.experiments.length > 0 ? job.experiments[0].nodeId.slice(-6) : ''}
-          branches={$branchSummary}
-          experiments={$jobStore.experiments}
-          totalExperiments={totalExp}
-          expanded
-          on:launch={handleLaunch}
-          on:newresearch={handleNewResearch}
-          on:deploy={handleDeploy}
-          on:retrain={handleRetrain}
-          on:improve={handleImprove}
-        />
-      </div>
-    {:else if focusView === 'scatter'}
-      <div class="focus-stage focus-stage--chart">
-        <ParamScatterChart data={$scatterData} width={focusChartWidth} height={focusChartHeight} />
-      </div>
-    {:else if focusView === 'effect'}
-      <div class="focus-stage focus-stage--fill" style={`height:${focusPanelHeight}px`}>
-        <ModificationHeatmap data={$heatmapData} width={focusChartWidth} height={focusPanelHeight} />
-      </div>
-    {:else if focusView === 'lineage'}
-      <div class="focus-stage focus-stage--scroll">
-        <ExperimentTree data={$experimentTree} bestMetric={job.bestMetric} width={focusChartWidth} />
-      </div>
-    {:else if focusView === 'mesh'}
-      <div class="focus-stage focus-stage--scroll">
-        <DistributedView experiments={job.experiments} bestMetric={job.bestMetric} width={focusChartWidth} />
-      </div>
-    {/if}
+    {#key focusView}
+      {#if focusView === 'convergence'}
+        <div class="focus-stage focus-stage--chart">
+          <ConvergenceChart
+            experiments={job.experiments}
+            bestMetric={job.bestMetric}
+            baselineMetric={job.baselineMetric}
+            width={focusChartWidth}
+            height={focusChartHeight}
+          />
+        </div>
+      {:else if focusView === 'activity'}
+        <div class="focus-stage focus-stage--panel" style={`height:${focusPanelHeight}px`}>
+          <ActivityStream experiments={$jobStore.experiments} bestMetric={job.bestMetric} expanded />
+        </div>
+      {:else if focusView === 'treemap'}
+        <div class="focus-stage focus-stage--fill" style={`height:${focusPanelHeight}px`}>
+          <ExperimentTreemap experiments={job.experiments} bestMetric={job.bestMetric} />
+        </div>
+      {:else if focusView === 'context'}
+        <div class="focus-stage focus-stage--panel focus-stage--detail" style={`height:${focusPanelHeight}px`}>
+          <ContextPanel
+            bestMetric={job.bestMetric}
+            {phase}
+            topic={job.topic}
+            {progress}
+            sessionId={job.experiments.length > 0 ? job.experiments[0].nodeId.slice(-6) : ''}
+            branches={$branchSummary}
+            experiments={$jobStore.experiments}
+            totalExperiments={totalExp}
+            expanded
+            on:launch={handleLaunch}
+            on:newresearch={handleNewResearch}
+            on:deploy={handleDeploy}
+            on:retrain={handleRetrain}
+            on:improve={handleImprove}
+          />
+        </div>
+      {:else if focusView === 'scatter'}
+        <div class="focus-stage focus-stage--chart">
+          <ParamScatterChart data={$scatterData} width={focusChartWidth} height={focusChartHeight} />
+        </div>
+      {:else if focusView === 'effect'}
+        <div class="focus-stage focus-stage--fill" style={`height:${focusPanelHeight}px`}>
+          <ModificationHeatmap data={$heatmapData} width={focusChartWidth} height={focusPanelHeight} />
+        </div>
+      {:else if focusView === 'lineage'}
+        <div class="focus-stage focus-stage--scroll">
+          <ExperimentTree data={$experimentTree} bestMetric={job.bestMetric} width={focusChartWidth} />
+        </div>
+      {:else if focusView === 'mesh'}
+        <div class="focus-stage focus-stage--scroll">
+          <DistributedView experiments={job.experiments} bestMetric={job.bestMetric} width={focusChartWidth} />
+        </div>
+      {/if}
+    {/key}
   </ResearchFocusModal>
 {/if}
 
