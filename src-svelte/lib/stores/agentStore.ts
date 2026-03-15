@@ -82,6 +82,7 @@ function createAgentStore() {
   const messages = writable<AgentMessage[]>([]);
   const panelOpen = writable(true);
   const inputFocused = writable(false);
+  let hasGreeted = false;
 
   function addMessage(msg: Omit<AgentMessage, 'id' | 'timestamp'>) {
     const full: AgentMessage = { ...msg, id: uid(), timestamp: Date.now() };
@@ -99,6 +100,8 @@ function createAgentStore() {
 
   /** Send initial greeting based on wallet state */
   function greet() {
+    if (hasGreeted) return;
+    hasGreeted = true;
     const w = get(wallet);
     const job = get(jobState);
 
