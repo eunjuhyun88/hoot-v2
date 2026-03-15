@@ -176,12 +176,12 @@
   function handlePause() { jobStore.togglePause(); }
   function openFocus(view: FocusView) { focusView = view; }
   function closeFocus() { focusView = null; }
-  // ─── Completion overlay ───
-  let showCompleteOverlay = false;
+  // ─── Completion banner (inline, not overlay) ───
+  let showCompleteBanner = false;
 
   // Auto-detect completion
-  $: if (phase === 'complete' && completed >= totalExp && totalExp > 0 && !showCompleteOverlay) {
-    showCompleteOverlay = true;
+  $: if (phase === 'complete' && completed >= totalExp && totalExp > 0 && !showCompleteBanner) {
+    showCompleteBanner = true;
     studioStore.completeResearch();
   }
 
@@ -192,7 +192,7 @@
     router.navigate('studio');
   }
   function handleRetrain(e: CustomEvent<{ code: string; parentId: number | null }>) {
-    showCompleteOverlay = false;
+    showCompleteBanner = false;
     jobStore.reset();
     if ($isConnected) {
       const topic = job.topic || 'Custom retrain';
@@ -205,7 +205,7 @@
     jobStore.startJob(job.topic || 'Custom retrain');
   }
   function handleImprove(e: CustomEvent<{ instruction: string }>) {
-    showCompleteOverlay = false;
+    showCompleteBanner = false;
     const prevTopic = job.topic || 'Research';
     jobStore.reset();
     const topic = `${prevTopic} (improved: ${e.detail.instruction})`;
@@ -219,24 +219,23 @@
     jobStore.startJob(topic);
   }
 
-  function dismissCompleteOverlay() { showCompleteOverlay = false; }
-  function deployFromOverlay() {
+  function dismissCompleteBanner() { showCompleteBanner = false; }
+  function deployFromBanner() {
     studioStore.setTopic(job.topic || '');
     studioStore.completeResearch();
     studioStore.goToPublish();
     router.navigate('studio');
   }
-  function retrainFromOverlay() {
-    showCompleteOverlay = false;
+  function retrainFromBanner() {
+    showCompleteBanner = false;
     const topic = job.topic || 'Research';
     jobStore.reset();
     jobStore.startJob(topic);
   }
-  function improveFromOverlay() {
-    showCompleteOverlay = false;
-    const prevTopic = job.topic || 'Research';
+  function newResearchFromBanner() {
+    showCompleteBanner = false;
     jobStore.reset();
-    jobStore.startJob(`${prevTopic} (improved)`);
+    router.navigate('studio');
   }
 
   // Auto-connect on mount when in connected mode (no auto-start — user must click)
@@ -607,44 +606,19 @@
     </div>
   </div>
 
-  <!-- ═══ RESEARCH COMPLETE OVERLAY ═══ -->
-  {#if showCompleteOverlay}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="complete-overlay" transition:fade={{ duration: 200 }} on:click={dismissCompleteOverlay}>
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="complete-card" on:click|stopPropagation in:fly={{ y: 20, duration: 300, delay: 100 }}>
-        <button class="co-close" on:click={dismissCompleteOverlay} aria-label="Close">×</button>
-        <div class="co-badge">COMPLETE</div>
-        <h2 class="co-title">연구 완료</h2>
-        <p class="co-topic">{job.topic}</p>
-        <div class="co-stats">
-          <div class="co-stat">
-            <span class="co-stat-val">{$completedCount}</span>
-            <span class="co-stat-label">실험</span>
-          </div>
-          <div class="co-stat">
-            <span class="co-stat-val">{$keepCount}</span>
-            <span class="co-stat-label">유지</span>
-          </div>
-          <div class="co-stat">
-            <span class="co-stat-val">{job.bestMetric < Infinity ? job.bestMetric.toFixed(3) : '—'}</span>
-            <span class="co-stat-label">Best</span>
-          </div>
-        </div>
-        <div class="co-actions">
-          <button class="co-btn co-btn--deploy" on:click={deployFromOverlay}>
-            <strong>Deploy</strong>
-            <small>모델 배포</small>
-          </button>
-          <button class="co-btn co-btn--retrain" on:click={retrainFromOverlay}>
-            <strong>Retrain</strong>
-            <small>재학습</small>
-          </button>
-          <button class="co-btn co-btn--improve" on:click={improveFromOverlay}>
-            <strong>Improve</strong>
-            <small>개선 연구</small>
-          </button>
-        </div>
+  <!-- ═══ RESEARCH COMPLETE BANNER (inline, terminal-style) ═══ -->
+  {#if showCompleteBanner}
+    <div class="complete-banner" in:fly={{ y: -8, duration: 200 }}>
+      <div class="cb-left">
+        <span class="cb-dot"></span>
+        <span class="cb-label">DONE</span>
+        <span class="cb-summary">{$completedCount} exp · {$keepCount} kept · best {job.bestMetric < Infinity ? job.bestMetric.toFixed(3) : '—'}</span>
+      </div>
+      <div class="cb-actions">
+        <button class="cb-btn" on:click={deployFromBanner}>deploy</button>
+        <button class="cb-btn" on:click={retrainFromBanner}>retrain</button>
+        <button class="cb-btn" on:click={newResearchFromBanner}>new</button>
+        <button class="cb-dismiss" on:click={dismissCompleteBanner}>×</button>
       </div>
     </div>
   {/if}
@@ -1293,68 +1267,51 @@
     .mtab-hidden { display: none !important; }
   }
 
-  /* ═══════ COMPLETE OVERLAY ═══════ */
-  .complete-overlay {
-    position: absolute; inset: 0; z-index: 100;
-    background: rgba(0,0,0,0.45);
-    display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
-  }
-  .complete-card {
+  /* ═══════ COMPLETE BANNER (inline, terminal-style) ═══════ */
+  .complete-banner {
+    position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    z-index: 80;
+    display: flex; align-items: center; gap: 12px;
+    padding: 6px 10px 6px 12px;
     background: var(--surface, #fff);
-    border-radius: 16px; padding: 32px 28px;
-    max-width: 380px; width: 90%;
-    text-align: center; position: relative;
-    box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    border: 1px solid rgba(39, 134, 74, 0.3);
+    border-radius: var(--radius-pill, 100px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    max-width: calc(100% - 24px);
   }
-  .co-close {
-    position: absolute; top: 12px; right: 14px;
+  .cb-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .cb-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green, #27864a); flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(39, 134, 74, 0.5);
+  }
+  .cb-label {
+    font-size: 0.54rem; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--green, #27864a); flex-shrink: 0;
+  }
+  .cb-summary {
+    font-size: 0.6rem; color: var(--text-secondary, #6b6560);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cb-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .cb-btn {
+    appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
+    background: transparent; color: var(--text-secondary, #6b6560);
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.54rem; font-weight: 600;
+    padding: 3px 10px; border-radius: var(--radius-pill, 100px);
+    cursor: pointer; transition: all 150ms; white-space: nowrap;
+  }
+  .cb-btn:hover {
+    border-color: var(--accent, #D97757);
+    color: var(--accent, #D97757);
+  }
+  .cb-dismiss {
     appearance: none; border: none; background: none;
-    font-size: 1.2rem; color: var(--text-muted, #9a9590);
-    cursor: pointer; line-height: 1;
+    font-size: 0.9rem; color: var(--text-muted, #9a9590);
+    cursor: pointer; padding: 0 2px; line-height: 1;
+    opacity: 0.5; transition: opacity 150ms;
   }
-  .co-badge {
-    display: inline-block;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.52rem; font-weight: 700; letter-spacing: 0.1em;
-    color: #27ae60; background: rgba(39, 174, 96, 0.1);
-    padding: 3px 10px; border-radius: 6px; margin-bottom: 10px;
-  }
-  .co-title {
-    font-family: var(--font-display, 'Playfair Display', serif);
-    font-size: 1.3rem; font-weight: 700;
-    color: var(--text-primary, #2D2D2D); margin: 0 0 4px;
-  }
-  .co-topic {
-    font-size: 0.74rem; color: var(--text-muted, #9a9590); margin: 0 0 16px;
-  }
-  .co-stats {
-    display: flex; justify-content: center; gap: 24px; margin-bottom: 20px;
-  }
-  .co-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .co-stat-val {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 1.1rem; font-weight: 700; color: var(--text-primary, #2D2D2D);
-  }
-  .co-stat-label {
-    font-size: 0.56rem; color: var(--text-muted, #9a9590);
-    text-transform: uppercase; letter-spacing: 0.06em;
-  }
-  .co-actions { display: flex; gap: 8px; }
-  .co-btn {
-    flex: 1; appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
-    background: var(--surface, #fff); border-radius: 10px;
-    padding: 10px 8px; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    transition: all 180ms;
-    font-family: var(--font-body, 'Inter', sans-serif);
-  }
-  .co-btn:hover { border-color: var(--accent, #D97757); transform: translateY(-1px); }
-  .co-btn strong { font-size: 0.74rem; color: var(--text-primary, #2D2D2D); }
-  .co-btn small { font-size: 0.54rem; color: var(--text-muted, #9a9590); }
-  .co-btn--deploy {
-    border-color: rgba(217, 119, 87, 0.3);
-    background: rgba(217, 119, 87, 0.04);
-  }
-  .co-btn--deploy:hover { border-color: var(--accent, #D97757); background: rgba(217, 119, 87, 0.08); }
+  .cb-dismiss:hover { opacity: 1; }
 </style>
