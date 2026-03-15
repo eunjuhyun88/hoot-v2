@@ -6,6 +6,7 @@
     experimentTree, scatterData, heatmapData,
     branchSummary, improvementDelta, bestBranch, isPaused,
     avgDuration, totalGpuTime, bestFrontier, sparkPoints,
+    eventLog, trainingExperiment,
   } from '../stores/jobStore.ts';
   import { selectedExperimentId } from '../stores/selectionStore.ts';
   import { CATEGORY_COLORS, type ModCategory } from '../data/modifications.ts';
@@ -26,6 +27,7 @@
   import ParamScatterChart from '../components/ParamScatterChart.svelte';
   import ModificationHeatmap from '../components/ModificationHeatmap.svelte';
   import PixelOwl from '../components/PixelOwl.svelte';
+  import ResearchTerminal from '../components/ResearchTerminal.svelte';
 
   // Reactive state
   $: job = $jobStore;
@@ -412,6 +414,18 @@
     />
   </div>
 
+  <!-- ═══ TERMINAL ═══ -->
+  {#if phase !== 'idle'}
+    <div class="tile terminal-tile" style="grid-area: terminal">
+      <ResearchTerminal
+        eventLog={$eventLog}
+        trainingExp={$trainingExperiment}
+      />
+    </div>
+  {:else}
+    <div style="grid-area: terminal"></div>
+  {/if}
+
   <!-- ═══ LINEAGE TREE ═══ -->
   <div class="tile titled-tile mtab-charts" class:mtab-hidden={mobileTab !== 'charts'} style="grid-area: lineage">
     <div class="tile-header">
@@ -574,7 +588,7 @@
       "prompt    prompt    prompt    prompt    prompt"
       "hero      converge  converge  converge  stats"
       "branches  stream    scatter   effect    context"
-      "branches  treemap   lineage   mesh      context"
+      "branches  treemap   lineage   mesh      terminal"
       "footer    footer    footer    footer    footer";
     gap: 4px;
     overflow: hidden;
@@ -598,6 +612,12 @@
     box-shadow: none;
   }
   .context-tile {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  .terminal-tile {
     background: transparent;
     border: none;
     box-shadow: none;
