@@ -178,6 +178,65 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
 - full command-plane cutover is not done yet, but the main research UI no longer has to rely purely on in-browser simulation when a runtime pack exists
 - preserving the old `jobStore` API let Dashboard/NavBar/RunningDashboard keep working while shifting the source of truth underneath
 
+---
+
+## 2026-03-15 (cont): Main branch refactor audit after merge/cherry-pick review
+
+### Context
+사용자 요청: 현재 `main`에 실제로 무엇이 들어와 있는지 다시 보고, 남은 프론트/백엔드 분리 및 성능 리팩토링 범위를 코드 기준으로 정리
+
+### Completed
+- 로컬 worktree/branch 상태 재점검:
+  - 현재 로컬은 `main`과 `codex/ux-autoresearch-2`만 남아 있고 둘 다 같은 HEAD
+  - 이전에 언급되던 `a11y-warnings`, `ux-network-2`는 현재 로컬 기준 활성 후보 아님
+- cherry-pick 후보 재검토:
+  - `main`에 아직 필요한 별도 cherry-pick 후보는 없음을 확인
+  - useful runtime/network work는 이미 `main`에 흡수되어 있음
+- 남은 핵심 리팩토링 범위 확인:
+  - `src-svelte/lib/stores/dashboardStore.ts`는 여전히 fixture playback + 두 개의 interval 루프 사용
+  - `src-svelte/lib/services/dashboardService.ts`는 여전히 정적 fixture summary/event 반환
+  - `src-svelte/lib/stores/jobStore.ts`는 runtime SSE/poll fallback이 있지만 local simulation 시작 경로와 timer ownership을 그대로 유지
+  - `apps/runtime-api/src/server.ts`의 dashboard endpoints는 아직 seed response만 반환
+
+### Verification
+- `git status` clean on `main`
+- `npm run build` ✓
+  - existing Svelte warnings only:
+    - `ResearchZoomLabPage.svelte` static element interaction warning
+    - `ModelDetailPage.svelte` dropdown mouseleave warning
+    - `CompletePanel.svelte` unused export warning
+
+### Key Findings
+- runtime/network cutover를 다시 branch에서 가져오는 단계는 끝남
+- 진짜 남은 일은 `Dashboard`를 runtime mesh/dashboard API로 바꾸고, 그 다음 `jobStore`의 local simulation ownership을 없애는 것
+- `1000+ users` 대응 관점에서도 가장 먼저 잘라야 할 것은 `dashboardStore`의 fixture loop와 `jobStore`의 hybrid runtime/local 구조임
+
+---
+
+## 2026-03-15 (cont): Repo-wide refactor and performance hotspot scan
+
+### Context
+사용자 요청: 전체 리팩토링/성능개선 포인트를 코드베이스 전반에서 다시 찾기
+
+### Completed
+- 큰 파일/복잡도 상위 경로 재확인:
+  - `ResearchZoomLabPage.svelte`, `AutoresearchPage.svelte`, `OntologyPage.svelte`, `NetworkView.svelte`, `jobStore.ts`, `meshSim.ts`
+- 타이머/RAF/SSE ownership 재검토:
+  - `dashboardStore.ts`가 여전히 2개 interval + fixture playback 소유
+  - `jobStore.ts`가 runtime SSE + polling fallback + local simulation timer ownership을 동시에 가짐
+  - `mesh-broker.ts` / `runtime-api`는 서버 측 polling + SSE fanout 경계로 적절하게 이동 중
+- 비싼 반복 계산 재검토:
+  - `dashboardStore.ts`, `dashboardService.ts`, `meshAdapter.ts`, `NetworkView.svelte`, `ExperimentTreemap.svelte`, `meshSim.ts`에 아직 `.filter/.find/.map` 기반 반복 경로 다수 존재
+
+### Verification
+- current `main` clean 상태 유지 확인
+- prior `npm run build` baseline 유지
+
+### Key Findings
+- `Dashboard`가 현재 가장 큰 구조 debt이며, 동시에 성능 병목임
+- `jobStore`는 두 번째 병목이며, API-first 구조를 끝내려면 local simulation 기본 경로를 줄여야 함
+- 순수 UX polish보다 먼저 data ownership / timer ownership / selector ownership을 backend 쪽으로 밀어야 실제 체감 성능과 동시 사용자 대응이 개선됨
+
 ### Pending
 - route command actions (`pause`, `boost`, etc.) through runtime-api once controller/supervisor command ownership is unified
 - move Dashboard fixture jobs to runtime-api mesh summaries instead of mixed local fixture + store state
@@ -658,6 +717,85 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
 
 ### Pending
 - Git commit + push (user hasn't requested yet)
+
+---
+
+## 2026-03-15 (cont): Runtime API launch cutover and dashboard real-data hookup
+
+### Context
+사용자 요청: "실제 동작되게끔 다 해야해. 백엔드 api붙이면 바로되게"
+- 기존 hotspot review 이후, Dashboard / Research launch / runtime persistence를 실제 backend-attached flow로 연결해야 했음
+- 목표는 connected mode에서 local simulation으로 새지 않고 runtime-api만으로 바로 동작하는 상태
+
+### Completed
+- **Frontend launch paths now create runtime jobs**:
+  - `Dashboard`, `AutoresearchPage`, `OntologyPage` connected mode가 `POST /api/runtime/jobs`를 사용하도록 전환
+  - research 라우팅이 `jobId`를 포함해 `#/research?...&jobId=...`로 이동
+  - `jobStore`가 runtime job placeholder 상태와 job-level command fallback을 처리
+
+- **Dashboard cut over to runtime-backed summary/events**:
+  - `dashboardStore`에서 fixture playback loop / local timers 제거
+  - connected mode는 `/api/dashboard/summary`, `/api/dashboard/events`, `/api/runtime/mesh` + mesh SSE를 소비
+  - dashboard widgets / cards가 runtime job id 기반으로 research 상세로 이동
+
+- **runtime-api dashboard endpoints now derive from runtime state**:
+  - `apps/runtime-api/src/dashboard.ts` 추가
+  - `/api/dashboard/summary`, `/api/dashboard/events`가 persisted jobs + runtime mesh 기반으로 응답
+  - `cpuUsage`, `hitRate`는 UI와 맞도록 0-100 퍼센트 단위로 정리
+
+- **Runtime persistence is backward-compatible with existing local SQLite**:
+  - `runtime_events`, `runtime_jobs`, `runtime_mesh_snapshots`의 old/new column schema를 자동 판별
+  - JSON blob row와 flattened row를 모두 hydrate/upsert 가능
+  - 기존 로컬 DB를 지우지 않고도 `npm run dev:runtime-api` 부팅 가능
+
+- **Runtime visualization/job state bugs fixed during real browser verification**:
+  - `runtimeVisualizerAdapter`가 system RAM을 VRAM처럼 표시하던 경로 수정
+  - `jobStore` / `jobDerived` 순환 초기화로 발생하던 first-paint `jobStore is not defined` 런타임 에러 제거
+  - 내부 writable 상태를 `jobState.ts`로 분리해 public API는 유지하고 초기화 순서만 안정화
+
+### Verification
+- `npm run build` 통과
+- `RUNTIME_API_PORT=8791 npm run dev:runtime-api` 정상 기동
+- 브라우저 실동 검증:
+  - `http://127.0.0.1:4173/?apiBase=http://localhost:8791#/`
+  - connection badge를 `Live`로 전환
+  - Dashboard topic chip `Ethereum price prediction` 클릭 시 runtime job 생성 확인
+  - 라우트가 `#/research?topic=Ethereum+price+prediction&jobId=...` 로 이동
+  - `GET /api/runtime/jobs`에서 생성된 queued job 확인
+  - Dashboard 복귀 후 Active Research / Research Jobs widget에 신규 queued job 노출 확인
+
+### Current File State
+- New:
+  - `apps/runtime-api/src/dashboard.ts`
+  - `src-svelte/lib/stores/jobState.ts`
+- Modified:
+  - `apps/runtime-api/src/persistence.ts`
+  - `apps/runtime-api/src/server.ts`
+  - `apps/runtime-api/src/seeds/dashboard.ts`
+  - `packages/contracts/src/dashboard.ts`
+  - `packages/domain/src/runtime-state.ts`
+  - `src-svelte/lib/api/client.ts`
+  - `src-svelte/lib/api/meshAdapter.ts`
+  - `src-svelte/lib/api/runtimeVisualizerAdapter.ts`
+  - `src-svelte/lib/components/DashboardGrid.svelte`
+  - `src-svelte/lib/components/widgets/FindingsWidget.svelte`
+  - `src-svelte/lib/components/widgets/JobsListWidget.svelte`
+  - `src-svelte/lib/data/dashboardFixture.ts`
+  - `src-svelte/lib/pages/AutoresearchPage.svelte`
+  - `src-svelte/lib/pages/OntologyPage.svelte`
+  - `src-svelte/lib/services/dashboardService.ts`
+  - `src-svelte/lib/stores/dashboardStore.ts`
+  - `src-svelte/lib/stores/jobDerived.ts`
+  - `src-svelte/lib/stores/jobStore.ts`
+  - `src-svelte/lib/stores/jobTypes.ts`
+
+### Pending
+- runtime worker/controller가 실제 experiments/results를 밀어주면 dashboard `findings`를 job 단위로 더 정확히 배분
+- `NetworkView.svelte`의 fixture/live/runtime 3-mode page ownership 축소
+- 이후 순서:
+  1. `jobStore` runtime-first 추가 축소
+  2. Network/Mesh hot path 최적화
+  3. 대형 페이지 분해
 
 ---
 

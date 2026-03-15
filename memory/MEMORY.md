@@ -172,6 +172,32 @@
   - `apps/runtime-api/src/mesh-broker.ts` centralizes runtime-root inspection, cached snapshots, and `GET /api/runtime/mesh/events` SSE fanout
   - `src-svelte/lib/api/client.ts` + `src-svelte/lib/stores/jobStore.ts` now prefer mesh SSE and fall back to polling only on stream failure
   - browser runtime polling is no longer the only live-update path for Research
+- **Current refactor truth after branch/worktree audit**:
+  - `main` already contains the useful runtime/network cutover work; there is no remaining cherry-pick candidate in local worktrees
+  - `Dashboard` is still fixture-driven (`src-svelte/lib/stores/dashboardStore.ts` + `src-svelte/lib/services/dashboardService.ts`)
+  - `jobStore` is runtime-aware but still hybrid because local simulation remains in `src-svelte/lib/services/simulationService.ts`
+  - the next real performance/backend milestone is `dashboardStore` runtime cutover first, then shrinking `jobStore` into a runtime-first consumer
+- **Current performance hotspot audit (2026-03-15)**:
+  - biggest frontend churn still comes from `dashboardStore` fixture playback + two interval loops + heavy derived view assembly
+  - `jobStore` remains the biggest mixed-ownership store because runtime SSE/poll logic and local simulation timers still coexist
+  - large file debt remains concentrated in `ResearchZoomLabPage.svelte`, `AutoresearchPage.svelte`, `NetworkView.svelte`, `OntologyPage.svelte`, `jobStore.ts`, and `meshSim.ts`
+  - next worthwhile refactor order remains:
+    1. `dashboardStore` + dashboard runtime API cutover
+    2. `jobStore` runtime-first reduction
+    3. large-page decomposition and expensive repeated `.filter/.find/.map` cleanup in network/research visuals
+- **Runtime launch and dashboard cutover landed on 2026-03-15**:
+  - connected-mode `Dashboard`, `AutoresearchPage`, and `OntologyPage` now create runtime jobs through `POST /api/runtime/jobs`
+  - research routing now carries `jobId`, and `jobStore` can mirror a job-only runtime state before mesh results exist
+  - `dashboardStore` no longer runs fixture playback loops in connected mode; it consumes `/api/dashboard/summary`, `/api/dashboard/events`, `/api/runtime/mesh`, and mesh SSE instead
+  - `apps/runtime-api/src/dashboard.ts` now builds dashboard summary/events from persisted runtime jobs + runtime mesh rather than static seed-only payloads
+  - runtime-api persistence is backward-compatible with older local SQLite schemas (`event_type/payload`, flattened `runtime_jobs`, `payload` mesh snapshots)
+  - real browser verification confirmed `Live` mode topic launch creates a queued runtime job and navigates to `#/research?...&jobId=...`
+- **Runtime store initialization bug fixed during live verification**:
+  - `src-svelte/lib/stores/jobState.ts` now owns the base writable job state
+  - `jobDerived.ts` no longer imports `jobStore.ts`, removing the `Cannot access 'jobStore' before initialization` / `jobStore is not defined` first-paint failure path
+- **Current performance hotspot audit (updated after cutover)**:
+  - `dashboardStore` is no longer the biggest unresolved fixture loop hotspot in connected mode
+  - the next meaningful runtime/frontend reduction target is now `jobStore` hybrid ownership, followed by `NetworkView`/`MeshCanvas` hot paths and large-page decomposition
 - **Repo-specific continuous refactor loop scaffold now exists**:
   - `config/repo-refactor-scopes.json` defines scoped worker lanes for runtime, network, dashboard, and research-store refactors
   - `scripts/prepare_repo_refactor_runtime.ts` generates a repo-refactor runtime pack with per-scope `program.md`
