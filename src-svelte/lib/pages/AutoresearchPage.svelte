@@ -3,11 +3,12 @@
   import { router } from '../stores/router.ts';
   import {
     jobStore, keepCount, crashCount, completedCount, activeNodeCount,
-    experimentTree,
+    experimentTree, scatterData, heatmapData,
     branchSummary, improvementDelta, bestBranch, isPaused,
+    avgDuration, totalGpuTime, bestFrontier, sparkPoints,
   } from '../stores/jobStore.ts';
   import { selectedExperimentId } from '../stores/selectionStore.ts';
-  import { CATEGORY_COLORS, CATEGORY_LABELS, resolveExperimentCategory, type ModCategory } from '../data/modifications.ts';
+  import { CATEGORY_COLORS, type ModCategory } from '../data/modifications.ts';
   import { readRuntimeConfig } from '../api/client.ts';
 
   // Components
@@ -104,71 +105,9 @@
     return `${secs}s`;
   })();
 
-  // Footer: distributed processing stats
-  $: avgDuration = (() => {
-    const durations = job.experiments.filter(e => e.status !== 'training' && e.duration > 0).map(e => e.duration);
-    if (durations.length === 0) return 0;
-    return Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
-  })();
-
-  $: totalGpuTime = (() => {
-    const secs = job.experiments.reduce((sum, e) => sum + (e.duration * e.tier), 0);
-    if (secs >= 3600) return `${(secs / 3600).toFixed(1)}h`;
-    if (secs >= 60) return `${Math.round(secs / 60)}m`;
-    return `${secs}s`;
-  })();
-
-  // Best-so-far frontier for sparkline
-  $: bestFrontier = (() => {
-    const exps = [...job.experiments].filter(e => e.status === 'keep').reverse();
-    const frontier: number[] = [];
-    let best = Infinity;
-    for (const e of exps) {
-      if (e.metric < best) { best = e.metric; frontier.push(best); }
-    }
-    return frontier;
-  })();
-
-  $: sparkPoints = (() => {
-    if (bestFrontier.length < 2) return '';
-    const min = Math.min(...bestFrontier);
-    const max = Math.max(...bestFrontier);
-    const range = max - min || 0.001;
-    return bestFrontier.map((v, i) => {
-      const x = (i / (bestFrontier.length - 1)) * 120;
-      const y = 18 - ((v - min) / range) * 16;
-      return `${x},${y}`;
-    }).join(' ');
-  })();
-
-  // ── Scatter data (for ParamScatterChart) ──
-  $: scatterData = job.experiments
-    .filter(e => e.status !== 'training')
-    .map(e => ({
-      id: e.id,
-      category: resolveExperimentCategory(e.modification),
-      metric: e.metric,
-      status: e.status,
-      branchId: e.branchId,
-    }));
-
-  // ── Effect / Heatmap data (for ModificationHeatmap) ──
-  $: effectData = (() => {
-    const map: Record<string, { total: number; keeps: number; avgMetric: number; metrics: number[] }> = {};
-    for (const e of job.experiments) {
-      if (e.status === 'training') continue;
-      const cat = resolveExperimentCategory(e.modification);
-      if (!map[cat]) map[cat] = { total: 0, keeps: 0, avgMetric: 0, metrics: [] };
-      map[cat].total++;
-      if (e.status === 'keep') map[cat].keeps++;
-      if (e.metric > 0) map[cat].metrics.push(e.metric);
-    }
-    for (const cat of Object.keys(map)) {
-      const m = map[cat].metrics;
-      map[cat].avgMetric = m.length > 0 ? m.reduce((a, b) => a + b, 0) / m.length : 0;
-    }
-    return map;
-  })();
+  // Footer + sparkline + chart data: now from store-derived values
+  // avgDuration, totalGpuTime, bestFrontier, sparkPoints, scatterData, heatmapData
+  // all imported from jobStore.ts
 
   // Handlers
   function handleLaunch(e: CustomEvent<string>) {
@@ -247,9 +186,9 @@
         {#if bestBr}
           <div class="hero-branch" style="color: {bestBr.color}">{bestBr.label}</div>
         {/if}
-        {#if bestFrontier.length > 1}
+        {#if $bestFrontier.length > 1}
           <svg class="hero-spark" viewBox="0 0 120 20" preserveAspectRatio="none">
-            <polyline points={sparkPoints} fill="none" stroke="#D97757" stroke-width="1.5" stroke-linejoin="round" />
+            <polyline points={$sparkPoints} fill="none" stroke="#D97757" stroke-width="1.5" stroke-linejoin="round" />
           </svg>
         {/if}
       {:else}
@@ -375,13 +314,13 @@
   <div class="tile titled-tile mtab-charts" class:mtab-hidden={mobileTab !== 'charts'} style="grid-area: scatter">
     <div class="tile-header">
       <span class="tile-title">Scatter</span>
-      <span class="tile-hint">{scatterData.length} pts</span>
+      <span class="tile-hint">{$scatterData.length} pts</span>
       <button class="tile-focus-btn" type="button" aria-label="Expand scatter" title="Expand scatter" on:click={() => openFocus('scatter')}>
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" /></svg>
       </button>
     </div>
-    {#if scatterData.length > 0}
-      <ParamScatterChart data={scatterData} />
+    {#if $scatterData.length > 0}
+      <ParamScatterChart data={$scatterData} />
     {:else}
       <div class="empty-inner"><span class="empty-hint">Waiting for data…</span></div>
     {/if}
@@ -396,8 +335,8 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 3H3v4M13 3h4v4M17 13v4h-4M3 13v4h4" /></svg>
       </button>
     </div>
-    {#if Object.keys(effectData).length > 0}
-      <ModificationHeatmap data={effectData} />
+    {#if Object.keys($heatmapData).length > 0}
+      <ModificationHeatmap data={$heatmapData} />
     {:else}
       <div class="empty-inner"><span class="empty-hint">Waiting for data…</span></div>
     {/if}
@@ -502,12 +441,12 @@
       </div>
       <div class="fd-sep"></div>
       <div class="fd-item">
-        <span class="fd-val">{avgDuration}s</span>
+        <span class="fd-val">{$avgDuration}s</span>
         <span class="fd-lbl">Avg Duration</span>
       </div>
       <div class="fd-sep"></div>
       <div class="fd-item">
-        <span class="fd-val">{totalGpuTime}</span>
+        <span class="fd-val">{$totalGpuTime}</span>
         <span class="fd-lbl">GPU Time</span>
       </div>
     </div>
@@ -558,11 +497,11 @@
       </div>
     {:else if focusView === 'scatter'}
       <div class="focus-stage focus-stage--chart">
-        <ParamScatterChart data={scatterData} width={focusChartWidth} height={focusChartHeight} />
+        <ParamScatterChart data={$scatterData} width={focusChartWidth} height={focusChartHeight} />
       </div>
     {:else if focusView === 'effect'}
       <div class="focus-stage focus-stage--fill" style={`height:${focusPanelHeight}px`}>
-        <ModificationHeatmap data={effectData} width={focusChartWidth} height={focusPanelHeight} />
+        <ModificationHeatmap data={$heatmapData} width={focusChartWidth} height={focusPanelHeight} />
       </div>
     {:else if focusView === 'lineage'}
       <div class="focus-stage focus-stage--scroll">

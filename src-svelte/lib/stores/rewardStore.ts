@@ -75,7 +75,7 @@ function createRewardStore() {
         id: `rwd-${Date.now()}`,
         timestamp: new Date().toISOString(),
         ...entry,
-      }, ...list]);
+      }, ...list].slice(0, 200));
     },
   };
 }
@@ -85,21 +85,26 @@ export const rewardStore = createRewardStore();
 // ── Derived stores ──
 
 export const rewardSummary = derived(rewardStore, ($rewards) => {
-  const positiveEntries = $rewards.filter(r => r.amount > 0);
-  const poolB = positiveEntries.filter(r => r.pool === 'B').reduce((s, r) => s + r.amount, 0);
-  const poolA = positiveEntries.filter(r => r.pool === 'A').reduce((s, r) => s + r.amount, 0);
-  const challenge = positiveEntries.filter(r => r.source === 'challenge_reward').reduce((s, r) => s + r.amount, 0);
-  const total = poolB + poolA;
-
   const now = Date.now();
   const day = 86400000;
-  const todayEntries = positiveEntries.filter(r => now - new Date(r.timestamp).getTime() < day);
-  const weekEntries = positiveEntries.filter(r => now - new Date(r.timestamp).getTime() < 7 * day);
+  const positiveEntries = $rewards.filter(r => r.amount > 0);
+
+  // Single-pass aggregation
+  let poolB = 0, poolA = 0, challenge = 0, todaySum = 0, weekSum = 0;
+  for (const r of positiveEntries) {
+    if (r.pool === 'B') poolB += r.amount;
+    if (r.pool === 'A') poolA += r.amount;
+    if (r.source === 'challenge_reward') challenge += r.amount;
+    const age = now - new Date(r.timestamp).getTime();
+    if (age < day) todaySum += r.amount;
+    if (age < 7 * day) weekSum += r.amount;
+  }
+  const total = poolB + poolA;
 
   return {
     total: +total.toFixed(2),
-    today: +todayEntries.reduce((s, r) => s + r.amount, 0).toFixed(2),
-    sevenDay: +weekEntries.reduce((s, r) => s + r.amount, 0).toFixed(2),
+    today: +todaySum.toFixed(2),
+    sevenDay: +weekSum.toFixed(2),
     poolB: +poolB.toFixed(2),
     poolA: +poolA.toFixed(2),
     challenge: +challenge.toFixed(2),

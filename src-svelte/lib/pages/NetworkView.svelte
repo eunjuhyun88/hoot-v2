@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { get } from "svelte/store";
+  import { debounce } from "../utils/perf.ts";
 
   import {
     buildJobNodeCountMap,
@@ -60,11 +61,17 @@
   }
 
   // ── Live Jobs: derive from model.jobs (telemetry/fixture data) ──
+  // Use worker Map for O(jobs + workers) instead of O(jobs × workers)
+  $: workerMap = new Map(model.workers.map(w => [w.id, w]));
   $: liveJobs = model.jobs.map(j => {
     const nodeCount = j.nodeIds.length;
     const workerCount = j.workerIds.length;
     const estBudget = Math.round(nodeCount * 180 + workerCount * 45);
-    const doneWorkers = model.workers.filter(w => j.workerIds.includes(w.id) && (w.state === 'keep' || w.state === 'discard')).length;
+    let doneWorkers = 0;
+    for (const wid of j.workerIds) {
+      const w = workerMap.get(wid);
+      if (w && (w.state === 'keep' || w.state === 'discard')) doneWorkers++;
+    }
     const progress = workerCount > 0 ? Math.round((doneWorkers / workerCount) * 100) : 0;
     const rewardEst = +(3.0 + nodeCount * 0.8).toFixed(1);
     return { ...j, nodeCount, workerCount, estBudget, progress, doneWorkers, rewardEst };
@@ -113,11 +120,23 @@
   const mauTarget = MAU_TARGET;
   let bondTrustDestroyed = false;
 
-  // ── Pool B reward summary for node operators ──
-  $: poolBRewards = $rewardStore.filter(r => r.pool === 'B' && r.amount > 0);
-  $: poolBTotal = +poolBRewards.reduce((s, r) => s + r.amount, 0).toFixed(2);
-  $: poolBToday = +poolBRewards.filter(r => Date.now() - new Date(r.timestamp).getTime() < 86400000).reduce((s, r) => s + r.amount, 0).toFixed(2);
-  $: poolB7d = +poolBRewards.filter(r => Date.now() - new Date(r.timestamp).getTime() < 7 * 86400000).reduce((s, r) => s + r.amount, 0).toFixed(2);
+  // ── Pool B reward summary for node operators (single-pass, cached Date.now) ──
+  $: poolBStats = (() => {
+    const now = Date.now();
+    const day = 86400000;
+    let total = 0, today = 0, week = 0;
+    for (const r of $rewardStore) {
+      if (r.pool !== 'B' || r.amount <= 0) continue;
+      total += r.amount;
+      const age = now - new Date(r.timestamp).getTime();
+      if (age < day) today += r.amount;
+      if (age < 7 * day) week += r.amount;
+    }
+    return { total: +total.toFixed(2), today: +today.toFixed(2), week: +week.toFixed(2) };
+  })();
+  $: poolBTotal = poolBStats.total;
+  $: poolBToday = poolBStats.today;
+  $: poolB7d = poolBStats.week;
 
   function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -140,9 +159,19 @@
   $: claimedDonors = renderNodes.filter(n => n.jobId).length;
   $: evaluatingWorkers = model.workers.filter(w => w.state === "evaluating").length;
   $: activeFlowCount = model.jobs.reduce((s, j) => s + getJobFlowCount(j), 0);
-  $: keepCount = model.tape.filter(e => e.result === "keep").length;
-  $: discardCount = model.tape.filter(e => e.result === "discard").length;
-  $: crashCount = model.tape.filter(e => e.result === "crash").length;
+  // Single-pass tape counts instead of 3 separate filters
+  $: tapeCounts = (() => {
+    let keep = 0, discard = 0, crash = 0;
+    for (const e of model.tape) {
+      if (e.result === 'keep') keep++;
+      else if (e.result === 'discard') discard++;
+      else if (e.result === 'crash') crash++;
+    }
+    return { keep, discard, crash };
+  })();
+  $: keepCount = tapeCounts.keep;
+  $: discardCount = tapeCounts.discard;
+  $: crashCount = tapeCounts.crash;
   $: jobNodeCountMap = buildJobNodeCountMap(renderNodes);
   $: activeSwarmPreview = buildJobSwarmGroups(model.jobs, jobNodeCountMap).slice(0, 4);
   $: runtimeLabel = telemetryMode === "live" ? telemetryStatus : playback.length > 0 ? `frame ${frameIndex + 1}/${playback.length}` : "replay idle";
@@ -217,7 +246,7 @@
       );
     }
 
-    const handleResize = () => { viewportWidth = window.innerWidth; };
+    const handleResize = debounce(() => { viewportWidth = window.innerWidth; }, 300);
     window.addEventListener("resize", handleResize);
 
     let dwellCount = 0;
@@ -232,14 +261,14 @@
       frameIndex += 1;
     }, 2800);
 
-    meshClockInterval = window.setInterval(() => { meshSimulationTime += 0.25; }, 250);
+    meshClockInterval = window.setInterval(() => { meshSimulationTime += 0.5; }, 500);
     meshPopulationInterval = window.setInterval(() => {
       const floor = model.nodes.length;
       const cur = Math.max(meshPopulationDisplayed, floor);
       if (cur === meshPopulationTarget) return;
-      const step = Math.max(2, Math.ceil(Math.abs(meshPopulationTarget - cur) * 0.015));
+      const step = Math.max(4, Math.ceil(Math.abs(meshPopulationTarget - cur) * 0.03));
       meshPopulationDisplayed = cur < meshPopulationTarget ? Math.min(meshPopulationTarget, cur + step) : Math.max(meshPopulationTarget, cur - step);
-    }, 140);
+    }, 300);
 
     if (telemetryUrl) {
       const conn = connectTelemetryStream({

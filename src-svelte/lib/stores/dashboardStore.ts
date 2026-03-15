@@ -1,4 +1,5 @@
 import { derived, get, writable } from 'svelte/store';
+import { debounce } from '../utils/perf.ts';
 import { router } from './router.ts';
 import {
   jobStore,
@@ -283,9 +284,9 @@ function createDashboardStore() {
       syncWidgetLayout(currentWalletMode);
     });
 
-    resizeHandler = () => {
+    resizeHandler = debounce(() => {
       widgetStore.adjustForViewport(window.innerWidth);
-    };
+    }, 300);
     window.addEventListener('resize', resizeHandler, { passive: true });
 
     fixtureTimer = setInterval(() => {
@@ -307,7 +308,7 @@ function createDashboardStore() {
 
     tickTimer = setInterval(() => {
       runtime.update((state) => {
-        const meshSimulationTime = state.meshSimulationTime + 0.5;
+        const meshSimulationTime = state.meshSimulationTime + 1.0;
         const model = getFixtureModel(state.frameIndex);
         const meshPopulationTarget = getMeshPopulationTarget(model, meshSimulationTime);
         const floor = model.nodes.length;
@@ -315,7 +316,7 @@ function createDashboardStore() {
         let meshPopulationDisplayed = current;
 
         if (current !== meshPopulationTarget) {
-          const step = Math.max(3, Math.ceil(Math.abs(meshPopulationTarget - current) * 0.03));
+          const step = Math.max(6, Math.ceil(Math.abs(meshPopulationTarget - current) * 0.06));
           meshPopulationDisplayed = current < meshPopulationTarget
             ? Math.min(meshPopulationTarget, current + step)
             : Math.max(meshPopulationTarget, current - step);
@@ -327,7 +328,7 @@ function createDashboardStore() {
           meshPopulationDisplayed,
         };
       });
-    }, 500);
+    }, 1000);
   }
 
   function destroy() {
