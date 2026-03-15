@@ -93,7 +93,10 @@
   $: focusPanelHeight = Math.max(460, Math.min(860, innerHeight - 220));
 
   // Mobile tab switching (only applies ≤600px)
-  let mobileTab: 'charts' | 'activity' | 'network' = 'activity';
+  type MobileTab = 'activity' | 'charts' | 'network';
+  const MOBILE_TABS: MobileTab[] = ['activity', 'charts', 'network'];
+  let mobileTab: MobileTab = 'activity';
+  $: mobileTabIndex = MOBILE_TABS.indexOf(mobileTab);
 
   // Owl mood for hero
   $: heroOwlMood = (() => {
@@ -255,11 +258,20 @@
     />
   </div>
 
-  <!-- ═══ MOBILE TAB CONTROL ═══ -->
+  <!-- ═══ MOBILE TAB CONTROL (iOS segment control) ═══ -->
   <div class="mobile-tabs" role="tablist" aria-label="Mobile content sections">
-    <button class="mtab-btn" class:mtab-active={mobileTab === 'activity'} role="tab" aria-selected={mobileTab === 'activity'} on:click={() => mobileTab = 'activity'}>Activity</button>
-    <button class="mtab-btn" class:mtab-active={mobileTab === 'charts'} role="tab" aria-selected={mobileTab === 'charts'} on:click={() => mobileTab = 'charts'}>Charts</button>
-    <button class="mtab-btn" class:mtab-active={mobileTab === 'network'} role="tab" aria-selected={mobileTab === 'network'} on:click={() => mobileTab = 'network'}>Mesh</button>
+    <div class="mtab-track">
+      <div class="mtab-indicator" style="transform: translateX({mobileTabIndex * 100}%)"></div>
+      {#each MOBILE_TABS as tab}
+        <button
+          class="mtab-btn"
+          class:mtab-active={mobileTab === tab}
+          role="tab"
+          aria-selected={mobileTab === tab}
+          on:click={() => mobileTab = tab}
+        >{tab === 'activity' ? 'Activity' : tab === 'charts' ? 'Charts' : 'Mesh'}</button>
+      {/each}
+    </div>
   </div>
 
   <!-- ═══ BRANCHES ═══ -->
@@ -833,25 +845,45 @@
     transition: width 300ms ease;
   }
 
-  /* ═══ MOBILE TABS ═══ */
+  /* ═══ MOBILE TABS (iOS segment control) ═══ */
   .mobile-tabs {
     display: none;
     grid-area: mtabs;
   }
-  .mtab-btn {
-    font: 500 10px/1 'Inter', -apple-system, sans-serif;
-    padding: 6px 12px;
+  .mtab-track {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+    padding: 3px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.04);
     border: 1px solid var(--border-subtle, #EDEAE5);
-    border-radius: 8px;
-    background: var(--surface, #fff);
+  }
+  .mtab-indicator {
+    position: absolute;
+    top: 3px; bottom: 3px; left: 3px;
+    width: calc((100% - 6px) / 3);
+    background: #fff;
+    border-radius: 9px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 1px rgba(0,0,0,0.04);
+    transition: transform 280ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    z-index: 0;
+  }
+  .mtab-btn {
+    position: relative; z-index: 1;
+    font: 600 11px/1 'Inter', -apple-system, sans-serif;
+    padding: 7px 0;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
     color: #999;
     cursor: pointer;
-    transition: all 150ms;
+    transition: color 200ms;
+    text-align: center;
   }
   .mtab-btn.mtab-active {
-    background: #D97757;
-    color: #fff;
-    border-color: #D97757;
+    color: var(--accent, #D97757);
   }
 
   /* ═══ RESPONSIVE ═══ */
