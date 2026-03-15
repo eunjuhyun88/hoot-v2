@@ -28,7 +28,11 @@
   import { jobStore } from '../stores/jobStore.ts';
   import { wallet } from '../stores/walletStore.ts';
   import ContractCallModal from '../components/ContractCallModal.svelte';
+  import BondPanel from '../components/BondPanel.svelte';
+  import TrustGaugePanel from '../components/TrustGaugePanel.svelte';
   import type { ContractCall } from '../data/protocolData.ts';
+  import { SIMULATED_BALANCE, MAU_TARGET, TRUST_SCORE_TARGET } from '../data/protocolData.ts';
+  import { animateCounter } from '../utils/animate.ts';
 
   // ── Wallet ──
   $: walletConnected = $wallet.connected;
@@ -99,7 +103,14 @@
   let joinDeltaTimeout: number | null = null;
   let mounted = false;
 
-  let activeTab: "gpu" | "jobs" | "swarms" | "feed" = "gpu";
+  let activeTab: "gpu" | "jobs" | "bond-trust" | "swarms" | "feed" = "gpu";
+
+  // ── Bond & Trust animated counters ──
+  const simulatedBalance = SIMULATED_BALANCE;
+  let trustScore = 0;
+  let mau = 0;
+  const mauTarget = MAU_TARGET;
+  let bondTrustDestroyed = false;
 
   function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 
@@ -232,7 +243,16 @@
       liveCleanup = () => conn.unsubscribe();
     }
 
+    // Bond & Trust animated counters
+    const isDestroyed = () => bondTrustDestroyed;
+    const delayBondTrust = setTimeout(() => {
+      animateCounter(0, TRUST_SCORE_TARGET, 2000, v => trustScore = v, isDestroyed);
+      animateCounter(0, MAU_TARGET * 0.618, 1500, v => mau = v, isDestroyed);
+    }, 400);
+
     return () => {
+      bondTrustDestroyed = true;
+      clearTimeout(delayBondTrust);
       window.removeEventListener("resize", handleResize);
       if (fixtureInterval !== null) clearInterval(fixtureInterval);
       if (meshClockInterval !== null) clearInterval(meshClockInterval);
@@ -271,6 +291,9 @@
         </button>
         <button class="ptab" class:active={activeTab === 'jobs'} on:click={() => activeTab = 'jobs'}>
           Jobs <span class="tbadge" class:tbadge-green={liveJobs.length > 0}>{liveJobs.length}</span>
+        </button>
+        <button class="ptab" class:active={activeTab === 'bond-trust'} on:click={() => activeTab = 'bond-trust'}>
+          Bond
         </button>
         <button class="ptab" class:active={activeTab === 'swarms'} on:click={() => activeTab = 'swarms'}>
           Swarms <span class="tbadge">{model.jobs.length}</span>
@@ -321,6 +344,13 @@
             {autoresearchTopic}
             myNodeId={myNode?.id ?? null}
           />
+        {:else if activeTab === 'bond-trust'}
+          <div class="psection bond-trust-section">
+            <BondPanel {simulatedBalance} on:openModal={e => openContractModal(e.detail)} />
+            <div style="margin-top: 20px;">
+              <TrustGaugePanel {trustScore} {mau} {mauTarget} />
+            </div>
+          </div>
         {:else if activeTab === 'swarms'}
           <div class="psection">
             <h4 class="slabel">Active Swarms</h4>
