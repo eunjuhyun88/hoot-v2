@@ -214,9 +214,10 @@
     text-shadow: 0 0 4px rgba(212,160,23,0.3);
   }
   .st-sub {
-    font: 400 9px/1.3 'Inter', -apple-system, sans-serif;
-    color: #aaa; padding: 0 8px 2px 20px;
+    font: 400 9px/1.2 'Inter', -apple-system, sans-serif;
+    color: #aaa; padding: 0 8px 3px 20px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex-shrink: 0; min-height: 12px;
   }
 
   .stream.expanded .stream-head {
