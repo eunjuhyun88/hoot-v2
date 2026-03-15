@@ -14,6 +14,16 @@
   $: msgList = $agentStore_messages;
   const agentStore_messages = agentStore.messages;
 
+  // Show quick actions when chat is fresh (only greeting message)
+  $: showQuickActions = msgList.length <= 1;
+
+  const quickActions = [
+    { icon: '🔬', title: 'BTC 가격 예측', desc: 'AI가 비트코인 가격을 분석합니다', input: 'BTC 가격 예측 모델 만들어줘' },
+    { icon: '📊', title: '스팸 분류기', desc: '텍스트 스팸 필터링 모델', input: '스팸 분류기 만들어줘' },
+    { icon: '🧬', title: '감성 분석', desc: '리뷰/댓글 감성 판별 AI', input: '감성 분석 모델 만들어줘' },
+    { icon: '📦', title: '내 모델 보기', desc: '보유한 모델과 수익 확인', input: '모델 보여줘' },
+  ];
+
   onMount(() => {
     dashboardStore.init();
     agentStore.greet();
@@ -97,6 +107,21 @@
         </div>
       {/each}
     </div>
+
+    <!-- Quick Actions (visible when chat is fresh) -->
+    {#if showQuickActions}
+      <div class="quick-actions">
+        {#each quickActions as qa}
+          <button class="qa-card" on:click={() => { agentStore.send(qa.input); }}>
+            <span class="qa-icon">{qa.icon}</span>
+            <div class="qa-text">
+              <span class="qa-title">{qa.title}</span>
+              <span class="qa-desc">{qa.desc}</span>
+            </div>
+          </button>
+        {/each}
+      </div>
+    {/if}
 
     <!-- Input -->
     <form class="chat-input-area" on:submit|preventDefault={handleSubmit}>
@@ -290,6 +315,61 @@
     color: #fff;
   }
 
+  /* ═══════ QUICK ACTIONS ═══════ */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    flex-shrink: 0;
+    padding-bottom: 12px;
+  }
+
+  .qa-card {
+    appearance: none;
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    background: var(--surface, #fff);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    text-align: left;
+  }
+  .qa-card:hover {
+    border-color: var(--accent, #D97757);
+    box-shadow: 0 2px 12px rgba(217, 119, 87, 0.1);
+    transform: translateY(-1px);
+  }
+  .qa-card:active { transform: translateY(0) scale(0.98); }
+
+  .qa-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .qa-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .qa-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary, #2D2D2D);
+  }
+
+  .qa-desc {
+    font-size: 0.68rem;
+    color: var(--text-muted, #9a9590);
+    line-height: 1.3;
+  }
+
   /* ═══════ INPUT AREA ═══════ */
   .chat-input-area {
     display: flex;
@@ -347,5 +427,6 @@
     .msg-text { font-size: 0.82rem; }
     .chat-input { font-size: 0.82rem; padding: 10px 14px; }
     .chat-input-area { padding: 8px 0 72px; }
+    .quick-actions { grid-template-columns: 1fr; }
   }
 </style>
