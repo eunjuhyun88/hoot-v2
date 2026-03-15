@@ -9,7 +9,12 @@
     "lib": ["ES2022", "DOM"],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@mesh/contracts": ["./packages/contracts/src/index.ts"],
+      "@mesh/domain": ["./packages/domain/src/index.ts"],
+      "@mesh/autoresearch-adapter": ["./packages/autoresearch-adapter/src/index.ts"]
+    }
   },
-  "include": ["src", "eval"]
+  "include": ["src", "src-svelte", "apps", "packages", "eval"]
 }
