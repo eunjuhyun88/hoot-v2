@@ -7,12 +7,28 @@
   import { router } from "../stores/router.ts";
   import { readRuntimeConfig } from "../api/client.ts";
   import { isConnected } from "../stores/connectionStore.ts";
+  import { wallet } from "../stores/walletStore.ts";
+  import { toasts } from "../stores/toastStore.ts";
   import { ONTOLOGY_PRESETS } from "../data/ontologyData.ts";
+  import type { ContractCall } from "../data/protocolData.ts";
   import PixelIcon from "../components/PixelIcon.svelte";
   import StudioPublish from "../components/StudioPublish.svelte";
+  import ContractCallModal from "../components/ContractCallModal.svelte";
+  import CreditInsufficientModal from "../components/CreditInsufficientModal.svelte";
 
   let topicInput = '';
   let aiRecVisible = false;
+
+  // Contract call modal state
+  let modalOpen = false;
+  let modalStep: 'review' | 'pending' | 'confirmed' = 'review';
+  let modalCall: ContractCall | null = null;
+  let pendingTopic = '';
+
+  // Credit insufficient modal
+  let creditModalOpen = false;
+  let creditRequired = 12.5;
+  let creditAvailable = 85.0;
 
   onMount(() => {
     dashboardStore.init();
@@ -59,9 +75,54 @@
   function handleQuickStart() {
     const topic = topicInput.trim();
     if (!topic) return;
-    studioStore.setTopic(topic);
-    studioStore.startRunning();
-    launchJob(topic);
+
+    // Check credit (simulated)
+    if (creditAvailable < creditRequired) {
+      creditModalOpen = true;
+      return;
+    }
+
+    // Build contract call for confirmation
+    pendingTopic = topic;
+    modalCall = {
+      title: 'Research Job 생성',
+      contract: '0x7a3f…ResearchRegistry',
+      fn: 'createResearchJob',
+      params: [
+        { name: 'topic', type: 'string', value: topic },
+        { name: 'resourceMode', type: 'uint8', value: stState.resourceMode },
+        { name: 'maxExperiments', type: 'uint32', value: '60' },
+      ],
+      fee: `${creditRequired} HOOT`,
+      gas: '~0.0008 ETH',
+      note: 'AI가 자동으로 실험을 구성하고 최적의 모델을 탐색합니다. 실험 수와 비용은 예상치입니다.',
+      accentColor: 'var(--accent)',
+    };
+    modalStep = 'review';
+    modalOpen = true;
+  }
+
+  function handleModalConfirm() {
+    modalStep = 'pending';
+    // Simulate tx confirmation
+    setTimeout(() => {
+      modalStep = 'confirmed';
+      const txHash = `0x${Math.random().toString(16).slice(2, 10)}…${Math.random().toString(16).slice(2, 6)}`;
+      toasts.tx('Research Job 생성됨', txHash, `${pendingTopic} 연구가 시작됩니다`);
+      // Actually launch after a brief confirmed display
+      setTimeout(() => {
+        modalOpen = false;
+        studioStore.setTopic(pendingTopic);
+        studioStore.startRunning();
+        launchJob(pendingTopic);
+      }, 1200);
+    }, 2000);
+  }
+
+  function handleModalClose() {
+    if (modalStep === 'pending') return; // Don't close during tx
+    modalOpen = false;
+    modalStep = 'review';
   }
 
   function handleAdvancedSetup() {
@@ -393,6 +454,34 @@
 
   </div>
 </div>
+
+<!-- Research Start Confirmation Modal -->
+<ContractCallModal
+  {modalCall}
+  {modalOpen}
+  {modalStep}
+  walletConnected={$wallet.connected}
+  walletAddress={$wallet.address}
+  on:close={handleModalClose}
+  on:confirm={handleModalConfirm}
+  on:connectWallet={() => {
+    modalOpen = false;
+    toasts.warning('지갑 연결 필요', '연구를 시작하려면 먼저 지갑을 연결하세요');
+  }}
+/>
+
+<!-- Credit Insufficient Modal -->
+<CreditInsufficientModal
+  open={creditModalOpen}
+  required={creditRequired}
+  available={creditAvailable}
+  on:close={() => creditModalOpen = false}
+  on:buyCredits={() => {
+    creditModalOpen = false;
+    nav('protocol');
+    toasts.info('크레딧 충전', 'Protocol 페이지에서 크레딧을 충전할 수 있습니다');
+  }}
+/>
 
 <style>
   .studio-page {
