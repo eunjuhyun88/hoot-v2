@@ -52,17 +52,24 @@
     visible = true;
     const isDestroyed = () => destroyed;
 
-    const delayMetrics = setTimeout(() => {
-      animateCounter(0, 12_400_000, 1800, v => tvl = v, isDestroyed);
-      animateCounter(0, 847_000, 1600, v => burned = v, isDestroyed);
-      animateCounter(0, 3_200_000, 1700, v => treasury = v, isDestroyed);
-      animateCounter(0, 2341, 1400, v => activeBonds = v, isDestroyed);
-      animateCounter(0, 892, 1500, v => mau = v, isDestroyed);
-    }, 300);
+    // Stagger counter starts to reduce initial RAF contention (5 simultaneous → waterfall)
+    const delays = [300, 420, 540, 660, 780];
+    const timers = delays.map((delay, i) => setTimeout(() => {
+      if (destroyed) return;
+      const targets: [number, number, (v: number) => void][] = [
+        [12_400_000, 1800, v => tvl = v],
+        [847_000, 1600, v => burned = v],
+        [3_200_000, 1700, v => treasury = v],
+        [2341, 1400, v => activeBonds = v],
+        [892, 1500, v => mau = v],
+      ];
+      const [target, dur, setter] = targets[i];
+      animateCounter(0, target, dur, setter, isDestroyed);
+    }, delay));
 
     return () => {
       destroyed = true;
-      clearTimeout(delayMetrics);
+      timers.forEach(t => clearTimeout(t));
       clearTimeout(confirmTimer);
     };
   });
