@@ -650,30 +650,40 @@
   }
 
   @media (max-width: 600px) {
-    .dash-content { padding: 8px; }
-    .dash-grid { gap: 12px; }
+    .dash-content { padding: 6px; }
+    .dash-grid { gap: 10px; }
     .left-col, .right-col { gap: 12px; }
-    .panel { padding: 16px; border-radius: var(--radius-md, 10px); }
+    .panel { padding: 14px; border-radius: var(--radius-md, 10px); }
     h2 { font-size: 1.05rem; }
-    .metric-item { padding: 0 10px; }
+    .metric-item { padding: 0 8px; }
     .metric-value { font-size: 0.95rem; }
     .metrics-strip {
-      margin: 0 8px;
+      margin: 0 6px;
       border-radius: var(--radius-md, 10px);
-      padding: 0 8px;
+      padding: 0 6px;
     }
-    .page-header { padding: 16px 12px 12px; }
-    .page-title { font-size: 1.3rem; }
+    .page-header { padding: 12px 10px 10px; }
+    .page-title { font-size: 1.18rem; }
     .page-title .title-icon { width: 20px; height: 20px; }
-    .page-subtitle { font-size: 0.78rem; }
-    .page-header-meta { flex-wrap: wrap; }
+    .page-subtitle {
+      font-size: 0.74rem;
+      line-height: 1.4;
+    }
+    .page-header-meta {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .header-tag {
+      font-size: 0.52rem;
+      padding: 4px 8px;
+    }
 
     /* Mobile tabs visible */
     .mobile-tabs {
       display: flex;
       gap: 4px;
       padding: 4px;
-      margin: 8px 8px 0;
+      margin: 6px 6px 0;
       background: var(--border-subtle, #EDEAE5);
       border-radius: 10px;
       position: sticky;
@@ -698,6 +708,10 @@
     .feed-list { max-height: 60vh; }
     .feed-item { padding: 10px 8px; }
     .feed-text { font-size: 0.7rem; }
+    .mtab-btn {
+      padding: 7px 10px;
+      font-size: 0.72rem;
+    }
   }
 
   @media (max-width: 380px) {

@@ -685,6 +685,40 @@ runtime-api가 실제 runtime summary를 읽게 된 뒤, 다음 단계로 `Autor
 
 ---
 
+## 2026-03-15 (cont): Mobile navigation and detail-page density follow-up
+
+### Context
+사용자 요청: "계속"
+- 첫 모바일 sweep 이후 남은 페이지들도 세로 동선을 더 다듬기
+- `Magnet Research` 명칭과 기존 기능은 그대로 유지
+
+### Completed
+- **NavBar mobile menu tightened**:
+  - mobile drawer now uses the full screen width on narrow devices
+  - menu item / footer / wallet action spacing reduced for quicker scan
+  - route labels stay unchanged, including `Magnet Research`
+
+- **Page-level mobile spacing tightened**:
+  - `ModelsPage.svelte`: header / toolbar / card spacing reduced
+  - `EconomicsPage.svelte`: header tags, sticky metric strip, and mobile tabs compressed
+  - `PipelinePage.svelte`: terminal header and stage spacing reduced
+  - `ResearchZoomLabPage.svelte`: hero copy and canvas cards tightened to reveal more of the lab sooner
+  - `OntologyPage.svelte`: presets, stats, and launch bar spacing reduced
+
+### Verification
+- `npm run build` ✓
+  - existing Svelte a11y warnings remain in `OntologyPage`, `ConvergenceChart`, and `ExperimentTreemap`
+
+### Notes
+- This follow-up used the prior mobile screenshot baseline plus direct CSS audit.
+- Playwright recapture was not rerun in this lane because the sandboxed worktree did not have a reusable local Playwright install.
+
+### Pending
+- `ctx:save` / `ctx:compact`
+- commit / merge after validation
+
+---
+
 ## 2026-03-15 (cont): Research collaboration lane reset
 
 ### Context

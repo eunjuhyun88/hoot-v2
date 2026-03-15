@@ -725,10 +725,35 @@
 
   @media (max-width: 600px) {
     .models { padding: var(--space-3, 12px); }
-    .page-title { font-size: 1.3rem; }
-    .page-sub { font-size: 0.78rem; }
+    .page-header {
+      gap: var(--space-2, 10px);
+      margin-bottom: var(--space-4, 16px);
+    }
+    .header-left {
+      gap: var(--space-3, 12px);
+    }
+    .header-icon {
+      width: 36px;
+      height: 36px;
+    }
+    .page-title { font-size: 1.22rem; }
+    .page-sub {
+      font-size: 0.74rem;
+      line-height: 1.45;
+    }
     .header-cta { width: 100%; justify-content: center; margin-top: 4px; }
-    .model-card { padding: var(--space-4, 16px); }
+    .toolbar {
+      gap: var(--space-2, 10px);
+      margin-bottom: var(--space-4, 16px);
+    }
+    .search-bar {
+      padding: 9px 12px;
+    }
+    .search-count {
+      font-size: 0.68rem;
+      padding: 2px 7px;
+    }
+    .model-card { padding: 14px; }
     .card-name { font-size: 0.88rem; }
     .metric-value { font-size: 1rem; }
     .card-metric { padding: 8px 12px; }

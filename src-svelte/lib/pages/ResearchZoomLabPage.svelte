@@ -1086,8 +1086,25 @@
   }
 
   @media (max-width: 720px) {
-    .zoom-lab {
-      padding: 16px;
+    .zoom-lab { padding: 12px; }
+
+    .lab-hero,
+    .lab-shell {
+      gap: 12px;
+    }
+
+    .lab-copy {
+      padding: 16px 18px;
+    }
+
+    .lab-copy h1 {
+      font-size: clamp(1.8rem, 10vw, 2.7rem);
+      margin: 8px 0 6px;
+    }
+
+    .lab-copy p {
+      font-size: 0.92rem;
+      line-height: 1.5;
     }
 
     .lab-copy,
@@ -1095,6 +1112,13 @@
     .lab-canvas-card,
     .rail-card {
       border-radius: 20px;
+    }
+
+    .lab-hero-card { padding: 16px; }
+
+    .lab-canvas-card,
+    .rail-card {
+      padding: 14px;
     }
 
     .lab-summary-row,
@@ -1106,7 +1130,7 @@
 
     .lab-surface-wrap,
     .lab-surface {
-      min-height: 440px;
+      min-height: 360px;
     }
 
     .timeframe-strip {

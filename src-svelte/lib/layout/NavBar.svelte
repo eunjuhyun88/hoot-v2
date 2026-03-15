@@ -823,6 +823,35 @@
     }
     .hline { height: 1.5px; }
     .navbar-right { gap: 6px; }
-    .mobile-menu { border-radius: 0; }
+    .mobile-menu {
+      top: 44px;
+      width: 100%;
+      max-height: calc(100vh - 44px);
+      border-radius: 0;
+      border-left: none;
+      padding: 8px 8px calc(12px + env(safe-area-inset-bottom, 0px));
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.96);
+    }
+    .mobile-nav-item {
+      gap: 10px;
+      padding: 12px 12px;
+      border-radius: 12px;
+    }
+    .mobile-nav-label {
+      font-size: 0.88rem;
+    }
+    .mobile-menu-footer {
+      margin-top: 6px;
+      padding: 10px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+    .mobile-wallet-info {
+      padding: 4px 0 10px;
+      font-size: 0.66rem;
+    }
+    .mobile-sign-in {
+      padding: 10px 12px;
+      font-size: 0.82rem;
+    }
   }
 </style>

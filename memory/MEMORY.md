@@ -118,6 +118,7 @@
   - `Magnet Research` mobile first fold now exposes `ContextPanel` / topic input instead of hiding it behind tab gating
   - `AppDock` and `SiteFooter` are compacted for narrow screens
   - `Dashboard` hero and `Network` mesh viewport are tightened on mobile to improve first-screen scanability
+  - follow-up mobile polish tightens the full-screen `NavBar` drawer and reduces first-fold padding on Models / Protocol / Pipeline / Research Lab / Ontology
 - **Canonical multi-agent branching guide added**:
   - `docs/AGENT_BRANCHING.md`
   - root routers (`README.md`, `AGENTS.md`, `CLAUDE.md`) now require it for parallel agent work or handoffs

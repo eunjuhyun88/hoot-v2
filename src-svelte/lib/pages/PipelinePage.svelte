@@ -512,13 +512,18 @@
 
   /* ── Responsive ── */
   @media (max-width: 600px) {
-    .pipeline-page { padding: 12px; }
-    .term-content { padding: 20px 16px 16px; }
-    .header { flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+    .pipeline-page { padding: 10px; }
+    .term-content { padding: 16px 12px 12px; }
+    .header { flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+    .header-owl { transform: scale(0.88); }
     .header-title { justify-content: center; }
     .header-finding { justify-content: center; }
-    .protocol-name { font-size: 1rem; }
+    .protocol-name { font-size: 0.94rem; }
+    .header-meta { font-size: 0.68rem; }
+    .header-finding { font-size: 0.68rem; }
+    .stage-row { gap: 10px; min-height: 42px; }
     .stage-detail { display: none; }
-    .stage-label { font-size: 0.78rem; }
+    .stage-label { font-size: 0.75rem; }
+    .log-section { margin-top: 12px; }
   }
 </style>

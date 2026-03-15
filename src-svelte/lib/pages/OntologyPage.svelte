@@ -1033,11 +1033,29 @@
 
   /* ═══ Responsive ═══ */
   @media (max-width: 768px) {
+    .header-bar { padding: 8px 12px; }
+    .back-btn { padding: 5px; }
     .header-title h1 { font-size: 0.95rem; }
-    .scroll-inner { padding: 16px; }
-    .preset-row { flex-wrap: wrap; }
+    .scroll-inner { padding: 14px; }
+    .preset-row {
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+    }
+    .preset-chips { gap: 5px; }
+    .preset-chip {
+      padding: 5px 10px;
+      font-size: 0.68rem;
+    }
+    .section { margin-bottom: 24px; }
+    .section-body { gap: 12px; }
     .form-row { grid-template-columns: 1fr; }
-    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .stat-card { padding: 12px 10px; }
     .launch-stats { gap: 8px; }
     .launch-stat { flex-direction: column; gap: 1px; }
     .launch-divider { display: none; }
