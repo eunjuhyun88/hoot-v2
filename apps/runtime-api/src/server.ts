@@ -4,12 +4,11 @@ import { fileURLToPath } from "node:url";
 
 import type {
   CreateRuntimeJobInput,
-  RuntimeMeshSummary,
   RuntimeEvent,
   RuntimeJobCommand,
+  RuntimeMeshSummary,
 } from "../../../packages/contracts/src/index.ts";
 import {
-  inspectAutoresearchRuntimeRoot,
   readAutoresearchStackStatus,
 } from "../../../packages/autoresearch-adapter/src/index.ts";
 import {
@@ -17,16 +16,24 @@ import {
   applyRuntimeEvent,
   createRuntimeJob,
   createRuntimeSnapshot,
-  createRuntimeState,
   listRuntimeJobs,
   selectRuntimeEvents,
   selectRuntimeJob,
 } from "../../../packages/domain/src/index.ts";
+import { createRuntimeMeshBroker } from "./mesh-broker.ts";
+import { createRuntimePersistence } from "./persistence.ts";
 
 const port = Number(process.env.RUNTIME_API_PORT ?? "8790");
 const defaultRuntimeRoot = process.env.AUTORESEARCH_RUNTIME_ROOT ?? "runtime/autoresearch-loop-live";
-let state = createRuntimeState();
 const projectRoot = fileURLToPath(new URL("../../..", import.meta.url));
+const persistence = createRuntimePersistence(projectRoot, process.env.RUNTIME_API_DB_PATH);
+const meshBroker = createRuntimeMeshBroker({
+  projectRoot,
+  defaultRuntimeRoot,
+  persistence,
+  pollMs: Number(process.env.RUNTIME_API_MESH_POLL_MS ?? "2500"),
+});
+let state = persistence.loadState();
 
 const jobClients = new Map<string, Map<string, import("node:http").ServerResponse>>();
 
@@ -47,6 +54,8 @@ const server = createServer(async (request, response) => {
       service: "runtime-api",
       generatedAt: new Date().toISOString(),
       jobs: listRuntimeJobs(state).length,
+      dbPath: persistence.dbPath,
+      trackedRuntimeRoots: meshBroker.listRuntimeRoots().length,
     });
   }
 
@@ -82,6 +91,10 @@ const server = createServer(async (request, response) => {
     return json(response, 200, await readMeshSummary(url));
   }
 
+  if (method === "GET" && url.pathname === "/api/runtime/mesh/events") {
+    return streamMeshEvents(url, response);
+  }
+
   if (method === "POST" && url.pathname === "/api/runtime/control") {
     const command = parseCommand(await readJson(request));
     if (!command) {
@@ -98,7 +111,7 @@ const server = createServer(async (request, response) => {
 
     try {
       const controllerResponse = await postControllerCommand(mesh.controller.port, command);
-      const refreshedMesh = await readMeshSummary(url);
+      const refreshedMesh = await meshBroker.getSnapshot(resolveRuntimeRoot(url), { force: true });
       return json(response, 202, {
         ok: true,
         command,
@@ -186,6 +199,7 @@ server.listen(port, () => {
 });
 
 function emit(event: RuntimeEvent) {
+  persistence.appendEvent(event);
   state = applyRuntimeEvent(state, event);
   if (event.type === "runtime.snapshot") {
     return;
@@ -230,6 +244,31 @@ function streamJobEvents(jobId: string, response: import("node:http").ServerResp
     if (current && current.size === 0) {
       jobClients.delete(jobId);
     }
+  });
+}
+
+async function streamMeshEvents(url: URL, response: import("node:http").ServerResponse) {
+  const runtimeRoot = resolveRuntimeRoot(url);
+  writeCors(response);
+  response.writeHead(200, {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-cache, no-transform",
+    connection: "keep-alive",
+  });
+
+  const initial = await meshBroker.getSnapshot(runtimeRoot);
+  response.write(sseFrame("snapshot", initial));
+
+  const unsubscribe = meshBroker.subscribe(runtimeRoot, (event) => {
+    response.write(sseFrame(event.type, event));
+  });
+  const keepAlive = setInterval(() => {
+    response.write(": keep-alive\n\n");
+  }, 15_000);
+
+  response.on("close", () => {
+    clearInterval(keepAlive);
+    unsubscribe();
   });
 }
 
@@ -290,8 +329,7 @@ async function readJson(request: import("node:http").IncomingMessage): Promise<u
 }
 
 async function readMeshSummary(url: URL): Promise<RuntimeMeshSummary> {
-  const runtimeRoot = url.searchParams.get("runtimeRoot")?.trim() || defaultRuntimeRoot;
-  return inspectAutoresearchRuntimeRoot(projectRoot, runtimeRoot);
+  return meshBroker.getSnapshot(resolveRuntimeRoot(url));
 }
 
 async function postControllerCommand(port: number, command: RuntimeJobCommand): Promise<unknown> {
@@ -309,4 +347,8 @@ async function postControllerCommand(port: number, command: RuntimeJobCommand): 
     throw new Error(typeof payload?.error === "string" ? payload.error : `controller command failed (${response.status})`);
   }
   return payload;
+}
+
+function resolveRuntimeRoot(url: URL): string {
+  return meshBroker.resolveRuntimeRoot(url.searchParams.get("runtimeRoot"));
 }

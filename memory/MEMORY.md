@@ -159,6 +159,25 @@
   - `.claude/worktrees/kind-leavitt` fast-forwarded from `546a59f` to `d0d1338`
   - worktree is now clean, but still intentionally blocked by `agent:guard` because branch is `claude/kind-leavitt`
   - backup copy of prior local `.claude/launch.json` saved at `.agent-context/quarantine/kind-leavitt-launch.json`
+- **Runtime API now owns persisted local state and mesh fanout**:
+  - `apps/runtime-api/src/persistence.ts` stores jobs/events/latest mesh snapshots in SQLite under `.agent-context/runtime-api/runtime-state.sqlite`
+  - `apps/runtime-api/src/mesh-broker.ts` centralizes runtime-root inspection, cached snapshots, and `GET /api/runtime/mesh/events` SSE fanout
+  - `src-svelte/lib/api/client.ts` + `src-svelte/lib/stores/jobStore.ts` now prefer mesh SSE and fall back to polling only on stream failure
+  - browser runtime polling is no longer the only live-update path for Research
+- **Repo-specific continuous refactor loop scaffold now exists**:
+  - `config/repo-refactor-scopes.json` defines scoped worker lanes for runtime, network, dashboard, and research-store refactors
+  - `scripts/prepare_repo_refactor_runtime.ts` generates a repo-refactor runtime pack with per-scope `program.md`
+  - `scripts/eval_refactor_runtime.ts` evaluates build + scope compliance for keep/discard decisions
+  - `scripts/autoresearch_repo_refactor_supervisor.ts` launches Codex workers against this repo instead of the pinned `train.py`-only ML loop
+- **Network surface can now consume runtime mesh directly**:
+  - `src-svelte/lib/api/runtimeVisualizerAdapter.ts` maps `RuntimeMeshSummary` into `VisualizerModel`
+  - `NetworkView.svelte` now supports `runtime` mode in parallel with `fixture` and `live`
+  - `NetworkHUD.svelte` exposes a dedicated Runtime toggle
+- **Current root-tree audit caveat (2026-03-15)**:
+  - the active root worktree is currently dirty on protected `main`, so `agent:guard` intentionally blocks continued agent work there
+  - staged refactor changes are mixed across runtime, frontend, docs, and supervisor scaffolding instead of one scoped lane
+  - `apps/runtime-api/src/server.ts` now expects `mesh-broker.ts` and `persistence.ts`, but those files are currently missing in the root tree, so `npm run dev:runtime-api` is not runnable from the present checkout
+  - `scripts/autoresearch_repo_refactor_supervisor.ts` still instructs workers to stay on the current branch, which conflicts with the canonical branch/worktree isolation rules and must be fixed before autonomous repo refactors are safe
 
 ## Topic Files
 - [session-log.md](session-log.md) — what was done, pending tasks

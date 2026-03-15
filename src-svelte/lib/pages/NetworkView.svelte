@@ -18,6 +18,8 @@
     parseNdjson,
   } from "../utils/fixturePlayer.ts";
   import { connectTelemetryStream, resolveTelemetryUrl } from "../utils/liveTelemetry.ts";
+  import { fetchRuntimeMesh, readRuntimeConfig, subscribeRuntimeMesh } from "../api/client.ts";
+  import { mapRuntimeMeshToVisualizer } from "../api/runtimeVisualizerAdapter.ts";
   import type { TelemetryEvent, VisualizerModel, Worker, Job } from "../utils/types.ts";
   import ExperimentTape from "../components/ExperimentTape.svelte";
   import MeshCanvas from "../components/MeshCanvas.svelte";
@@ -82,7 +84,7 @@
   $: autoresearchActive = $jobStore.phase === 'running' || $jobStore.phase === 'setup';
   $: autoresearchTopic = $jobStore.topic;
 
-  type TelemetryMode = "fixture" | "live";
+  type TelemetryMode = "fixture" | "live" | "runtime";
   type TelemetryStatus = "offline" | "connecting" | "streaming" | "error";
   type ViewerLocation = { lat: number; lng: number; label: string; };
 
@@ -93,6 +95,7 @@
   let frameIndex = playback.length > 0 ? 0 : -1;
   let telemetryMode: TelemetryMode = "fixture";
   let liveModel: VisualizerModel | null = null;
+  let runtimeModel: VisualizerModel | null = null;
   let lastTelemetryEvent: TelemetryEvent | null = null;
   let telemetryStatus: TelemetryStatus = "offline";
   let viewportWidth = 1440;
@@ -102,9 +105,13 @@
   let recentNodeJoinDelta = 0;
   let previousNodeCount = 0;
   let telemetryUrl: string | null = null;
+  let runtimeAvailable = false;
+  let runtimeApiBase: string | null = null;
+  let runtimeRoot: string | null = null;
   let viewerLocation: ViewerLocation | null = null;
 
   let liveCleanup: (() => void) | null = null;
+  let runtimeCleanup: (() => void) | null = null;
   let fixtureInterval: number | null = null;
   let meshClockInterval: number | null = null;
   let meshPopulationInterval: number | null = null;
@@ -141,7 +148,11 @@
   function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 
   $: fixtureModel = playback[Math.max(frameIndex, 0)] ?? emptyModel;
-  $: model = telemetryMode === "live" ? liveModel ?? fixtureModel : fixtureModel;
+  $: model = telemetryMode === "live"
+    ? liveModel ?? fixtureModel
+    : telemetryMode === "runtime"
+      ? runtimeModel ?? fixtureModel
+      : fixtureModel;
   $: meshPopulationCeiling = model.nodes.length === 0 ? 0 : clamp(Math.max(3200, model.nodes.length * 660), 2200, 5600);
   $: meshPopulationTarget = (() => {
     if (model.nodes.length === 0) return 0;
@@ -174,7 +185,13 @@
   $: crashCount = tapeCounts.crash;
   $: jobNodeCountMap = buildJobNodeCountMap(renderNodes);
   $: activeSwarmPreview = buildJobSwarmGroups(model.jobs, jobNodeCountMap).slice(0, 4);
-  $: runtimeLabel = telemetryMode === "live" ? telemetryStatus : playback.length > 0 ? `frame ${frameIndex + 1}/${playback.length}` : "replay idle";
+  $: runtimeLabel = telemetryMode === "live"
+    ? telemetryStatus
+    : telemetryMode === "runtime"
+      ? `runtime ${telemetryStatus}`
+      : playback.length > 0
+        ? `frame ${frameIndex + 1}/${playback.length}`
+        : "replay idle";
 
   // "My GPU" — use first active worker's node, or first node
   $: myNode = model.nodes.find(n => n.state === 'training' || n.state === 'assigned') ?? model.nodes[0] ?? null;
@@ -232,6 +249,9 @@
     }
 
     viewportWidth = window.innerWidth;
+    const runtimeConfig = readRuntimeConfig();
+    runtimeApiBase = runtimeConfig.apiBase;
+    runtimeRoot = runtimeConfig.runtimeRoot;
     telemetryUrl = resolveTelemetryUrl(window.location.search);
     telemetryMode = telemetryUrl ? "live" : "fixture";
     telemetryStatus = telemetryUrl ? "connecting" : "offline";
@@ -277,6 +297,8 @@
         onError() { telemetryStatus = "error"; },
       });
       liveCleanup = () => conn.unsubscribe();
+    } else {
+      void connectRuntimeMesh();
     }
 
     // Bond & Trust animated counters
@@ -295,8 +317,54 @@
       if (meshPopulationInterval !== null) clearInterval(meshPopulationInterval);
       if (joinDeltaTimeout !== null) clearTimeout(joinDeltaTimeout);
       liveCleanup?.();
+      runtimeCleanup?.();
     };
   });
+
+  async function connectRuntimeMesh() {
+    telemetryStatus = "connecting";
+
+    try {
+      const mesh = await fetchRuntimeMesh({ apiBase: runtimeApiBase, runtimeRoot });
+      const hasRuntimeData = mesh.workspaces.length > 0 || mesh.totals.results > 0 || mesh.controller?.reachable;
+      if (!hasRuntimeData) {
+        telemetryStatus = "offline";
+        runtimeAvailable = false;
+        return false;
+      }
+
+      runtimeModel = mapRuntimeMeshToVisualizer(mesh);
+      runtimeAvailable = true;
+      telemetryMode = "runtime";
+      telemetryStatus = "streaming";
+
+      runtimeCleanup?.();
+      runtimeCleanup = subscribeRuntimeMesh({
+        apiBase: runtimeApiBase,
+        runtimeRoot,
+        onSnapshot(nextMesh) {
+          runtimeModel = mapRuntimeMeshToVisualizer(nextMesh);
+          runtimeAvailable = true;
+          if (telemetryMode === "runtime") {
+            telemetryStatus = "streaming";
+          }
+        },
+        onError() {
+          runtimeAvailable = false;
+          if (telemetryMode === "runtime") {
+            telemetryStatus = "error";
+            telemetryMode = "fixture";
+          }
+        },
+      });
+
+      return true;
+    } catch {
+      telemetryStatus = "offline";
+      runtimeAvailable = false;
+      return false;
+    }
+  }
 </script>
 
 <div class="network" class:mounted data-theme="light">
@@ -310,7 +378,18 @@
     myNodeState={myNode?.state ?? null}
     {telemetryMode}
     {telemetryUrl}
-    on:modeChange={e => telemetryMode = e.detail}
+    {runtimeAvailable}
+    on:modeChange={async e => {
+      if (e.detail === 'runtime') {
+        if (!runtimeAvailable) {
+          await connectRuntimeMesh();
+        } else {
+          telemetryMode = 'runtime';
+        }
+        return;
+      }
+      telemetryMode = e.detail;
+    }}
     on:viewGlobe={() => router.navigate('globe')}
   />
 

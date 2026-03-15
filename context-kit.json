@@ -98,7 +98,9 @@
 	    "requireClaimOnFeatureBranches": true,
 	    "requirePathsOnFeatureBranches": true,
 	    "featureBranchPrefixes": [
-	      "codex/"
+	      "codex/",
+	      "claude/",
+	      "feat/"
 	    ],
 	    "defaultLeaseMinutes": 240,
 	    "lockStaleMinutes": 15,

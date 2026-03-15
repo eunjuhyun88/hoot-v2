@@ -1,6 +1,7 @@
 import type {
   RuntimeMeshSummary,
   RuntimeJobCommand,
+  RuntimeMeshEvent,
 } from '../../../packages/contracts/src/index.ts';
 
 /* ─── URL Normalization ─── */
@@ -59,6 +60,40 @@ export async function fetchRuntimeMesh(options: {
     throw new Error(`runtime mesh request failed (${response.status})`);
   }
   return response.json() as Promise<RuntimeMeshSummary>;
+}
+
+export function subscribeRuntimeMesh(options: {
+  apiBase?: string | null;
+  runtimeRoot?: string | null;
+  onSnapshot: (mesh: RuntimeMeshSummary) => void;
+  onError?: (error: Error) => void;
+}): () => void {
+  const apiBase = normalizeRuntimeApiBase(options.apiBase);
+  const url = new URL('/api/runtime/mesh/events', `${apiBase}/`);
+  if (options.runtimeRoot?.trim()) {
+    url.searchParams.set('runtimeRoot', options.runtimeRoot.trim());
+  }
+
+  const source = new EventSource(url.toString());
+
+  const handleEvent = (event: MessageEvent<string>) => {
+    try {
+      const payload = JSON.parse(event.data) as RuntimeMeshSummary | RuntimeMeshEvent;
+      options.onSnapshot('mesh' in payload ? payload.mesh : payload);
+    } catch (error) {
+      options.onError?.(error instanceof Error ? error : new Error(String(error)));
+    }
+  };
+
+  source.addEventListener('snapshot', handleEvent as EventListener);
+  source.addEventListener('mesh.updated', handleEvent as EventListener);
+  source.onerror = () => {
+    options.onError?.(new Error('runtime mesh stream disconnected'));
+  };
+
+  return () => {
+    source.close();
+  };
 }
 
 export async function sendRuntimeCommand(options: {

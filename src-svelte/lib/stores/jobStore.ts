@@ -9,14 +9,15 @@ import {
 import { HUMAN_READABLE } from '../data/modifications.ts';
 
 // API layer imports
-import { normalizeRuntimeApiBase, fetchRuntimeMesh, sendRuntimeCommand } from '../api/client.ts';
+import { normalizeRuntimeApiBase, fetchRuntimeMesh, sendRuntimeCommand, subscribeRuntimeMesh } from '../api/client.ts';
 import { mapRuntimeMeshToJob, applyRuntimeControllerToJob } from '../api/meshAdapter.ts';
 import { selectModification, generateExperiment, createTrainingExperiment } from '../api/simulationAdapter.ts';
 
 import type { RuntimeJobCommand } from '../../../packages/contracts/src/index.ts';
 import { capArray } from '../utils/perf.ts';
 
-/* ─── Performance Constants ─── */
+/* ─── Constants ─── */
+
 const MAX_EXPERIMENTS = 500;
 const RUNTIME_POLL_BASE_MS = 2500;
 const RUNTIME_POLL_MAX_MS = 10000;
@@ -118,6 +119,7 @@ function createJobStore() {
 
   const timers = new Set<ReturnType<typeof setTimeout | typeof setInterval>>();
   let runtimeSession = 0;
+  let closeRuntimeStream: (() => void) | null = null;
 
   function addTimer(t: ReturnType<typeof setTimeout | typeof setInterval>) {
     timers.add(t);
@@ -126,6 +128,10 @@ function createJobStore() {
   function clearAllTimers() {
     timers.forEach(t => { clearTimeout(t as any); clearInterval(t as any); });
     timers.clear();
+    if (closeRuntimeStream) {
+      closeRuntimeStream();
+      closeRuntimeStream = null;
+    }
   }
 
   /** Start a new autoresearch job (local simulation) */
@@ -171,16 +177,23 @@ function createJobStore() {
       runtimeApiBase: apiBase, runtimeRoot, runtimeStatus: 'connecting', runtimeError: null,
     });
 
+    const applyMesh = (mesh: Awaited<ReturnType<typeof fetchRuntimeMesh>>): boolean => {
+      if (sessionId !== runtimeSession) return false;
+
+      const hasRuntimeData = mesh.workspaces.length > 0 || mesh.totals.results > 0 || mesh.controller?.reachable;
+      if (!hasRuntimeData) {
+        set(createEmptyJob());
+        return false;
+      }
+
+      set(mapRuntimeMeshToJob(mesh, apiBase, runtimeRoot));
+      return true;
+    };
+
     const pull = async (): Promise<boolean> => {
       try {
         const mesh = await fetchRuntimeMesh({ apiBase, runtimeRoot });
-        if (sessionId !== runtimeSession) return false;
-
-        const hasRuntimeData = mesh.workspaces.length > 0 || mesh.totals.results > 0 || mesh.controller?.reachable;
-        if (!hasRuntimeData) { set(createEmptyJob()); return false; }
-
-        set(mapRuntimeMeshToJob(mesh, apiBase, runtimeRoot));
-        return true;
+        return applyMesh(mesh);
       } catch (error) {
         if (sessionId !== runtimeSession) return false;
         const message = error instanceof Error ? error.message : String(error);
@@ -196,28 +209,68 @@ function createJobStore() {
     const connected = await pull();
     if (!connected) return false;
 
-    // Exponential backoff polling: speeds up when data changes, slows down when idle
     let pollInterval = RUNTIME_POLL_BASE_MS;
     let lastHash = '';
-    const schedulePoll = () => {
-      const timer = setTimeout(async () => {
-        timers.delete(timer);
-        if (sessionId !== runtimeSession) return;
-        const prevHash = lastHash;
-        await pull();
-        const after = get(store);
-        const nextHash = `${after.experiments.length}-${after.bestMetric}-${after.phase}`;
-        if (nextHash === prevHash && nextHash === lastHash) {
-          pollInterval = Math.min(pollInterval * 1.5, RUNTIME_POLL_MAX_MS);
-        } else {
-          pollInterval = RUNTIME_POLL_BASE_MS;
-        }
-        lastHash = nextHash;
-        if (sessionId === runtimeSession) schedulePoll();
-      }, pollInterval);
-      addTimer(timer);
+    let fallbackPollingStarted = false;
+
+    const startPolling = () => {
+      if (fallbackPollingStarted || sessionId !== runtimeSession) {
+        return;
+      }
+      fallbackPollingStarted = true;
+
+      const schedulePoll = () => {
+        const timer = setTimeout(async () => {
+          timers.delete(timer);
+          if (sessionId !== runtimeSession) return;
+          const prevState = get(store);
+          const prevHash = `${prevState.experiments.length}:${prevState.bestMetric}`;
+          await pull();
+          const nextState = get(store);
+          const nextHash = `${nextState.experiments.length}:${nextState.bestMetric}`;
+          if (nextHash === prevHash && nextHash === lastHash) {
+            pollInterval = Math.min(pollInterval * 1.5, RUNTIME_POLL_MAX_MS);
+          } else {
+            pollInterval = RUNTIME_POLL_BASE_MS;
+          }
+          lastHash = nextHash;
+          if (sessionId === runtimeSession) schedulePoll();
+        }, pollInterval);
+        addTimer(timer);
+      };
+
+      schedulePoll();
     };
-    schedulePoll();
+
+    if (typeof window !== 'undefined' && typeof EventSource !== 'undefined') {
+      closeRuntimeStream = subscribeRuntimeMesh({
+        apiBase,
+        runtimeRoot,
+        onSnapshot: (mesh) => {
+          if (!applyMesh(mesh)) {
+            return;
+          }
+          pollInterval = RUNTIME_POLL_BASE_MS;
+          lastHash = `${mesh.totals.results}:${mesh.totals.bestMetric ?? 'na'}:${mesh.controller?.lastCommandAt ?? ''}`;
+        },
+        onError: () => {
+          if (sessionId !== runtimeSession || fallbackPollingStarted) {
+            return;
+          }
+          if (closeRuntimeStream) {
+            closeRuntimeStream();
+            closeRuntimeStream = null;
+          }
+          update((state) => state.sourceMode === 'runtime'
+            ? { ...state, runtimeStatus: 'connecting', runtimeError: null }
+            : state);
+          startPolling();
+        },
+      });
+    } else {
+      startPolling();
+    }
+
     return true;
   }
 
@@ -279,16 +332,16 @@ function createJobStore() {
     trainingId = firstExp.id;
     update(s => ({ ...s, experiments: [firstExp] }));
 
-    // Combined tick: progress + verification (merged from 200ms + 400ms → single 400ms, doubled step sizes)
+    // Combined progress + verification tick (merged for fewer timers, 400ms)
     const combinedTick = setInterval(() => {
       update(s => {
-        const now = Date.now();
         let changed = false;
+        const now = Date.now();
         const exps = s.experiments.map(e => {
-          // Progress: training experiments (doubled step to compensate for slower tick)
+          // Progress: advance training experiments (doubled step to compensate 200→400ms)
           if (e.id === trainingId && e.status === 'training') {
-            const newProgress = Math.min(100, e.progress + 24 + Math.random() * 30);
             changed = true;
+            const newProgress = Math.min(100, e.progress + 24 + Math.random() * 30);
             if (newProgress >= 100) {
               const metric = 1.4 + Math.random() * 0.3;
               trainingId = null;
@@ -303,7 +356,7 @@ function createJobStore() {
             }
             return { ...e, progress: newProgress };
           }
-          // Verification: commit-reveal pipeline
+          // Verification: advance commit-reveal pipeline
           if (e.status !== 'training') {
             const age = now - e.timestamp;
             if (e.verification === 'pending' && age > 800) {
@@ -323,11 +376,12 @@ function createJobStore() {
           return e;
         });
         if (!changed) return s;
-        const keeps = exps.filter(e => e.status === 'keep');
+        const capped = capArray(exps, MAX_EXPERIMENTS);
+        const keeps = capped.filter(e => e.status === 'keep');
         const best = keeps.length > 0 ? Math.min(...keeps.map(k => k.metric)) : s.bestMetric;
         const newBaseline = s.baselineMetric === Infinity && keeps.length > 0
           ? keeps[keeps.length - 1].metric : s.baselineMetric;
-        return { ...s, experiments: capArray(exps, MAX_EXPERIMENTS), bestMetric: best === Infinity ? s.bestMetric : best, baselineMetric: newBaseline };
+        return { ...s, experiments: capped, bestMetric: best === Infinity ? s.bestMetric : best, baselineMetric: newBaseline };
       });
     }, 400);
     addTimer(combinedTick);
@@ -715,9 +769,9 @@ export const bestBranch = derived(jobStore, $j => {
 
 export const isPaused = derived(jobStore, $j => $j.paused);
 
-/* ─── Page-level derived stores (moved from AutoresearchPage inline reactives) ─── */
+/* ─── Page-level derived stores (moved from AutoresearchPage to avoid per-component O(n) scans) ─── */
 
-/** Average experiment duration (single-pass) */
+/** Average duration of completed experiments */
 export const avgDuration = derived(jobStore, $j => {
   let sum = 0, count = 0;
   for (const e of $j.experiments) {
@@ -726,26 +780,27 @@ export const avgDuration = derived(jobStore, $j => {
   return count > 0 ? Math.round(sum / count) : 0;
 });
 
-/** Total GPU time formatted (single-pass reduce) */
+/** Total GPU time formatted */
 export const totalGpuTime = derived(jobStore, $j => {
-  const secs = $j.experiments.reduce((sum, e) => sum + (e.duration * e.tier), 0);
+  let secs = 0;
+  for (const e of $j.experiments) { secs += e.duration * e.tier; }
   if (secs >= 3600) return `${(secs / 3600).toFixed(1)}h`;
   if (secs >= 60) return `${Math.round(secs / 60)}m`;
   return `${secs}s`;
 });
 
-/** Best-so-far monotonic frontier for sparkline */
+/** Best-so-far frontier (monotonically decreasing keep metrics) */
 export const bestFrontier = derived(jobStore, $j => {
-  const keeps = $j.experiments.filter(e => e.status === 'keep');
   const frontier: number[] = [];
   let best = Infinity;
-  for (let i = keeps.length - 1; i >= 0; i--) {
-    if (keeps[i].metric < best) { best = keeps[i].metric; frontier.push(best); }
+  for (let i = $j.experiments.length - 1; i >= 0; i--) {
+    const e = $j.experiments[i];
+    if (e.status === 'keep' && e.metric < best) { best = e.metric; frontier.push(best); }
   }
   return frontier;
 });
 
-/** SVG polyline points string for sparkline */
+/** SVG sparkline points string from bestFrontier */
 export const sparkPoints = derived(bestFrontier, $f => {
   if ($f.length < 2) return '';
   const min = Math.min(...$f);

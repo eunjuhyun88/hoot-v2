@@ -73,6 +73,11 @@ export type RuntimeWorkspaceSummary = {
   experimentId: string;
   region: string;
   gpuLabel: string;
+  lat: number;
+  lng: number;
+  cpu: number;
+  gpu: number;
+  memGb: number;
   workspaceDir: string;
   status: RuntimeWorkspaceStatus;
   branch: string | null;
@@ -146,6 +151,13 @@ export type RuntimeMeshSummary = {
   supervisor: RuntimeSupervisorSummary | null;
   workspaces: RuntimeWorkspaceSummary[];
   totals: RuntimeMeshTotals;
+};
+
+export type RuntimeMeshEvent = {
+  type: "mesh.updated";
+  ts: string;
+  runtimeRoot: string;
+  mesh: RuntimeMeshSummary;
 };
 
 export type RuntimeEvent =

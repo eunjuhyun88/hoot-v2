@@ -20,6 +20,31 @@ export function createRuntimeState(): RuntimeState {
   };
 }
 
+export function hydrateRuntimeState(jobs: RuntimeJob[], events: RuntimeEvent[]): RuntimeState {
+  const state = createRuntimeState();
+  state.jobOrder = [...jobs]
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    .map((job) => job.id);
+
+  for (const job of jobs) {
+    state.jobs[job.id] = job;
+  }
+
+  for (const event of events) {
+    const jobId = event.type === "job.command.accepted"
+      ? event.jobId
+      : event.type === "runtime.snapshot"
+        ? null
+        : event.job.id;
+    if (!jobId) {
+      continue;
+    }
+    state.eventsByJob[jobId] = [...(state.eventsByJob[jobId] ?? []), event];
+  }
+
+  return state;
+}
+
 export function createRuntimeJob(input: CreateRuntimeJobInput): RuntimeJob {
   return {
     id: input.id,

@@ -47,6 +47,46 @@ The goal is:
 - Do not create periodic merge commits just to "save progress."
 - Mirror local merge expectations in `docs/CI_PIPELINE.md` and `.github/workflows/ci.yml`.
 
+### One-Command Merge (`safe:merge`)
+
+Use `npm run safe:merge` from a feature branch to execute the full validated merge cycle:
+
+```
+feature branch → fetch origin/main → rebase → build → checkout main → ff-merge → push → cleanup
+```
+
+This command:
+1. Auto-commits any uncommitted changes on the feature branch.
+2. Fetches `origin/main` and rebases the feature branch onto it.
+3. Runs `npm run build` after rebase to catch integration issues.
+4. Checks out `main`, pulls latest, and fast-forward merges the feature branch.
+5. Pushes `main` to origin immediately.
+6. Deletes the local and remote feature branch.
+7. Prunes worktree metadata.
+
+If the rebase has conflicts, the script stops and the agent must resolve them before re-running.
+
+### Stale Branch Cleanup (`safe:cleanup`)
+
+Use `npm run safe:cleanup` to inspect merged branches and stale worktrees (dry-run).
+Use `npm run safe:cleanup -- --force` to delete them.
+
+## Dirty Main Recovery
+
+When `main` has accumulated uncommitted or mixed-scope changes (staged files from multiple surfaces, untracked scaffolding, etc.):
+
+1. **Do not commit the mixed state directly to main.**
+2. Identify changed files by scope: `git diff --cached --name-only`.
+3. Split by surface ownership (runtime, network, research, docs).
+4. For each scope:
+   - Create a new worktree: `npm run safe:worktree -- <scope-slug>`
+   - Move only that scope's files via `git checkout main -- <paths>` in the new worktree.
+   - Validate: `npm run build`.
+   - Merge via `npm run safe:merge`.
+5. After all scopes are merged, reset main to clean: `git checkout main && git reset --hard origin/main`.
+
+The key principle: **never commit a mixed-scope dirty tree to main**. Split first, merge each scope independently.
+
 ## What Should Be Periodic
 
 Do these periodically during long-running agent work:
@@ -88,6 +128,8 @@ The kit sets these repo-local defaults:
 - apply git defaults: `npm run safe:git-config`
 - sync branch: `npm run safe:sync`
 - sync and validate: `npm run safe:sync:gate`
+- **merge feature to main**: `npm run safe:merge` (from feature branch)
+- **cleanup stale branches**: `npm run safe:cleanup` (dry-run) / `npm run safe:cleanup -- --force`
 
 ## Interpretation
 

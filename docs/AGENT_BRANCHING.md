@@ -13,11 +13,22 @@ This document is the canonical operating guide for concurrent agents in this rep
 
 If any of those are false, parallel work is not safe.
 
+## Allowed Branch Prefixes
+
+Agent work may use any of these prefixes:
+
+- `codex/<slug>` — primary agent execution branches
+- `claude/<slug>` — Claude Code auto-generated worktree branches
+- `feat/<slug>` — product integration branches
+
+All three are recognized by `agent:guard`, coordination claims, and pre-push hooks.
+Any other prefix is blocked.
+
 ## Required Pattern
 
 Use this shape for every non-trivial task:
 
-- branch: `codex/<agent>-<work-id>-<slug>`
+- branch: `codex/<agent>-<work-id>-<slug>` (or `claude/<slug>`, `feat/<slug>`)
 - worktree: dedicated path created with `npm run safe:worktree -- <slug> [base-branch]`
 - work ID: `W-YYYYMMDD-<slug>`
 - claim: one active `coord:claim` covering only the owned paths
@@ -90,7 +101,13 @@ npm run coord:release -- --work-id "W-20260315-runtime-control" --status handoff
 - Merge or cherry-pick only validated commits.
 - Do not leave completed work parked on a local-only agent branch.
 - After a scoped task is done, merge it into the approved integration branch immediately and push the result immediately.
-- Run these before push or merge:
+- **Use `npm run safe:merge`** from the feature branch to run the full cycle automatically:
+
+```
+fetch origin/main → rebase → build → ff-merge to main → push → cleanup
+```
+
+- If manual merge is needed, run these before push or merge:
 
 ```bash
 npm run docs:check
@@ -98,6 +115,27 @@ npm run ctx:check -- --strict
 npm run coord:check
 npm run build
 ```
+
+## Dirty Main Recovery
+
+When `main` has accumulated mixed-scope uncommitted changes:
+
+1. **Do not commit the mixed state directly to main.**
+2. List staged files: `git diff --cached --name-only`.
+3. Group files by surface: runtime (`apps/`, `packages/`, `scripts/`), network (`NetworkView`, `NetworkHUD`), research (`jobStore`, `AutoresearchPage`), docs (`memory/`, `README.md`).
+4. For each scope:
+   - `npm run safe:worktree -- <scope-slug>`
+   - Move that scope's files to the new branch.
+   - Validate: `npm run build`.
+   - `npm run safe:merge`.
+5. After all scopes are merged: `git checkout main && git reset --hard origin/main`.
+
+Key principle: **split by scope first, then merge each independently**.
+
+## Cleanup
+
+Periodically run `npm run safe:cleanup` to find and remove merged branches and stale worktrees.
+Use `npm run safe:cleanup -- --force` to execute the cleanup.
 
 ## What To Reject
 
@@ -107,5 +145,7 @@ Reject the workflow if any of these appear:
 - "two agents can both edit the same store and sort it out later"
 - "continue from another agent's uncommitted workspace"
 - "skip the claim because this is small"
+- "commit everything to main and sort it out later"
+- "merge without fetching origin first"
 
 Those patterns create merge debt and broken context lineage.

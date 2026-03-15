@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "updatedAt": "2026-03-15T00:00:00.000Z",
+  "description": "Scoped lanes for continuous repo-level autoresearch refactors.",
+  "scopes": [
+    {
+      "id": "runtime-core",
+      "title": "Runtime Core",
+      "objective": "Move more ownership into runtime-api and reduce per-client recompute.",
+      "editablePaths": [
+        "apps/runtime-api",
+        "packages/contracts",
+        "packages/domain",
+        "scripts"
+      ],
+      "gates": [
+        "npm run build",
+        "node --experimental-strip-types scripts/eval_refactor_runtime.ts --scope-id=runtime-core --json"
+      ]
+    },
+    {
+      "id": "network-cutover",
+      "title": "Network Runtime Cutover",
+      "objective": "Replace page-local telemetry loops with runtime-api mesh snapshots and SSE.",
+      "editablePaths": [
+        "src-svelte/lib/pages/NetworkView.svelte",
+        "src-svelte/lib/components/NetworkHUD.svelte",
+        "src-svelte/lib/api",
+        "src-svelte/lib/utils"
+      ],
+      "gates": [
+        "npm run build",
+        "node --experimental-strip-types scripts/eval_refactor_runtime.ts --scope-id=network-cutover --json"
+      ]
+    },
+    {
+      "id": "dashboard-cutover",
+      "title": "Dashboard Runtime Cutover",
+      "objective": "Replace dashboard fixture playback with shared runtime-backed selectors and streams.",
+      "editablePaths": [
+        "src-svelte/lib/stores/dashboardStore.ts",
+        "src-svelte/lib/services",
+        "src-svelte/lib/api",
+        "src-svelte/lib/utils"
+      ],
+      "gates": [
+        "npm run build",
+        "node --experimental-strip-types scripts/eval_refactor_runtime.ts --scope-id=dashboard-cutover --json"
+      ]
+    },
+    {
+      "id": "research-store",
+      "title": "Research Store Cleanup",
+      "objective": "Shrink jobStore local simulation responsibility and prefer persisted runtime ownership.",
+      "editablePaths": [
+        "src-svelte/lib/stores/jobStore.ts",
+        "src-svelte/lib/api",
+        "src-svelte/lib/pages/AutoresearchPage.svelte"
+      ],
+      "gates": [
+        "npm run build",
+        "node --experimental-strip-types scripts/eval_refactor_runtime.ts --scope-id=research-store --json"
+      ]
+    }
+  ]
+}

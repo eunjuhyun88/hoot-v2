@@ -9,11 +9,12 @@
   export let activeFlowCount = 0;
   export let runtimeLabel = "";
   export let myNodeState: string | null = null;
-  export let telemetryMode: "fixture" | "live" = "fixture";
+  export let telemetryMode: "fixture" | "live" | "runtime" = "fixture";
   export let telemetryUrl: string | null = null;
+  export let runtimeAvailable = false;
 
   const dispatch = createEventDispatcher<{
-    modeChange: "fixture" | "live";
+    modeChange: "fixture" | "live" | "runtime";
     viewGlobe: void;
   }>();
 </script>
@@ -52,6 +53,7 @@
     <div class="banner-right">
       <ModeButton label="Fixture" active={telemetryMode === "fixture"} on:click={() => dispatch('modeChange', 'fixture')} />
       <ModeButton label="Live" active={telemetryMode === "live"} disabled={!telemetryUrl} on:click={() => telemetryUrl && dispatch('modeChange', 'live')} />
+      <ModeButton label="Runtime" active={telemetryMode === "runtime"} disabled={!runtimeAvailable} on:click={() => runtimeAvailable && dispatch('modeChange', 'runtime')} />
       <button class="globe-link" on:click={() => dispatch('viewGlobe')} title="3D Globe View">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>

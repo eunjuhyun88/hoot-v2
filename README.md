@@ -219,6 +219,28 @@ Useful flags:
 - `--target-val-bpb=0.990500`
 - `--max-runtime-minutes=480`
 
+## Repo Refactor Autoresearch
+
+Prepare a repo-scoped runtime pack for continuous refactor workers:
+
+```bash
+npm run autoresearch:prepare-refactor -- --runtime-root=runtime/repo-refactor-loop
+```
+
+Evaluate a scoped refactor experiment:
+
+```bash
+npm run eval:refactor -- --scope-id=network-cutover --json
+```
+
+Launch the repo-specific refactor supervisor:
+
+```bash
+npm run autoresearch:supervisor:repo -- --runtime-root=runtime/repo-refactor-loop-live --workers=4
+```
+
+This path is for product-repo refactors, not the pinned `train.py` ML loop. It keeps workers inside declared path scopes and expects `npm run build` plus the refactor evaluator to stay green.
+
 Notes:
 
 - `simulate` is the safe path on this machine if CUDA/data prep are not available.
