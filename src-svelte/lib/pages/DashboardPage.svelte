@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fade } from "svelte/transition";
+  import { fade, slide } from "svelte/transition";
   import MeshCanvas from "../components/MeshCanvas.svelte";
   import { dashboardStore } from "../stores/dashboardStore.ts";
   import { agentStore } from "../stores/agentStore.ts";
   import { wallet } from "../stores/walletStore.ts";
   import { router } from "../stores/router.ts";
+  import { toasts } from "../stores/toastStore.ts";
 
   onMount(() => {
     dashboardStore.init();
@@ -15,8 +16,31 @@
 
   $: ds = $dashboardStore;
 
+  // Track which pillar card has its quick-actions expanded
+  let expandedCard: 'studio' | 'network' | 'protocol' | null = null;
+
+  function toggleCard(card: typeof expandedCard) {
+    expandedCard = expandedCard === card ? null : card;
+  }
+
   function nav(view: string) {
+    expandedCard = null;
     router.navigate(view as any);
+  }
+
+  // Quick action: start research with a topic
+  let quickTopic = '';
+  function quickResearch() {
+    const topic = quickTopic.trim();
+    if (!topic) return;
+    router.navigate('studio' as any, { topic });
+    quickTopic = '';
+    expandedCard = null;
+  }
+
+  function quickRegisterNode() {
+    toasts.info('노드 등록', 'Network 페이지에서 GPU 노드를 등록할 수 있습니다');
+    nav('network');
   }
 </script>
 
@@ -41,48 +65,91 @@
     <!-- 3 Pillars -->
     <div class="pillar-grid">
       <!-- Magnet Studio -->
-      <button class="pillar-card pillar--studio" on:click={() => nav('studio')}>
-        <div class="pc-icon">🔬</div>
-        <div class="pc-body">
-          <h2 class="pc-title">Magnet Studio</h2>
-          <p class="pc-desc">AI 자율 연구 실행 · 모델 학습 · 배포</p>
-          <div class="pc-stats">
-            <span class="pc-stat">{ds.researchSummary.runningJobs} jobs</span>
-            <span class="pc-stat">{ds.modelsSummary.count} models</span>
+      <div class="pillar-wrap">
+        <button class="pillar-card pillar--studio" on:click={() => toggleCard('studio')}>
+          <div class="pc-icon">🔬</div>
+          <div class="pc-body">
+            <h2 class="pc-title">Magnet Studio</h2>
+            <p class="pc-desc">AI 자율 연구 실행 · 모델 학습 · 배포</p>
+            <div class="pc-stats">
+              <span class="pc-stat">{ds.researchSummary.runningJobs} jobs</span>
+              <span class="pc-stat">{ds.modelsSummary.count} models</span>
+            </div>
           </div>
-        </div>
-        <span class="pc-arrow">→</span>
-      </button>
+          <span class="pc-arrow" class:pc-arrow--open={expandedCard === 'studio'}>→</span>
+        </button>
+        {#if expandedCard === 'studio'}
+          <div class="qa-panel" transition:slide={{ duration: 200 }}>
+            <form class="qa-form" on:submit|preventDefault={quickResearch}>
+              <input class="qa-input" bind:value={quickTopic} placeholder="연구 주제 입력..." autocomplete="off" />
+              {#if quickTopic.trim()}
+                <button class="qa-go" type="submit">시작 →</button>
+              {/if}
+            </form>
+            <div class="qa-links">
+              <button class="qa-link" on:click={() => nav('studio')}>Studio 열기</button>
+              <button class="qa-link" on:click={() => nav('models')}>모델 목록</button>
+              {#if ds.researchSummary.runningJobs > 0}
+                <button class="qa-link qa-link--accent" on:click={() => nav('research')}>진행 중 보기</button>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
 
       <!-- GPU Network -->
-      <button class="pillar-card pillar--network" on:click={() => nav('network')}>
-        <div class="pc-icon">🌐</div>
-        <div class="pc-body">
-          <h2 class="pc-title">GPU Network</h2>
-          <p class="pc-desc">유휴 GPU 등록 · 연산 기여 · 보상 획득</p>
-          <div class="pc-stats">
-            <span class="pc-stat pc-stat--green">{ds.networkSummary.nodes} nodes</span>
-            <span class="pc-stat pc-stat--green">{ds.networkSummary.gpuCount} GPUs</span>
+      <div class="pillar-wrap">
+        <button class="pillar-card pillar--network" on:click={() => toggleCard('network')}>
+          <div class="pc-icon">🌐</div>
+          <div class="pc-body">
+            <h2 class="pc-title">GPU Network</h2>
+            <p class="pc-desc">유휴 GPU 등록 · 연산 기여 · 보상 획득</p>
+            <div class="pc-stats">
+              <span class="pc-stat pc-stat--green">{ds.networkSummary.nodes} nodes</span>
+              <span class="pc-stat pc-stat--green">{ds.networkSummary.gpuCount} GPUs</span>
+            </div>
           </div>
-        </div>
-        <span class="pc-arrow">→</span>
-      </button>
+          <span class="pc-arrow" class:pc-arrow--open={expandedCard === 'network'}>→</span>
+        </button>
+        {#if expandedCard === 'network'}
+          <div class="qa-panel" transition:slide={{ duration: 200 }}>
+            <div class="qa-links">
+              <button class="qa-link" on:click={() => nav('network')}>네트워크 맵</button>
+              <button class="qa-link" on:click={quickRegisterNode}>노드 등록</button>
+              <button class="qa-link" on:click={() => nav('network')}>보상 확인</button>
+            </div>
+          </div>
+        {/if}
+      </div>
 
       <!-- Protocol -->
-      <button class="pillar-card pillar--protocol" on:click={() => nav('protocol')}>
-        <div class="pc-icon">🏛</div>
-        <div class="pc-body">
-          <h2 class="pc-title">Protocol</h2>
-          <p class="pc-desc">HOOT 본딩 · 스테이킹 · 거버넌스 참여</p>
-          <div class="pc-stats">
-            <span class="pc-stat">{ds.protocolSummary.tvl} TVL</span>
-            {#if $wallet.connected}
-              <span class="pc-stat">{ds.portfolioSummary.bondCount} bonds</span>
-            {/if}
+      <div class="pillar-wrap">
+        <button class="pillar-card pillar--protocol" on:click={() => toggleCard('protocol')}>
+          <div class="pc-icon">🏛</div>
+          <div class="pc-body">
+            <h2 class="pc-title">Protocol</h2>
+            <p class="pc-desc">HOOT 본딩 · 스테이킹 · 거버넌스 참여</p>
+            <div class="pc-stats">
+              <span class="pc-stat">{ds.protocolSummary.tvl} TVL</span>
+              {#if $wallet.connected}
+                <span class="pc-stat">{ds.portfolioSummary.bondCount} bonds</span>
+              {/if}
+            </div>
           </div>
-        </div>
-        <span class="pc-arrow">→</span>
-      </button>
+          <span class="pc-arrow" class:pc-arrow--open={expandedCard === 'protocol'}>→</span>
+        </button>
+        {#if expandedCard === 'protocol'}
+          <div class="qa-panel" transition:slide={{ duration: 200 }}>
+            <div class="qa-links">
+              <button class="qa-link" on:click={() => nav('protocol')}>본딩/스테이킹</button>
+              <button class="qa-link" on:click={() => nav('protocol')}>HOOT 번</button>
+              {#if !$wallet.connected}
+                <button class="qa-link qa-link--accent" on:click={() => nav('protocol')}>지갑 연결 후 참여</button>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
     </div>
 
     <!-- Activity Feed -->
@@ -255,10 +322,56 @@
     flex-shrink: 0;
     transition: transform 200ms;
   }
-  .pillar-card:hover .pc-arrow {
+  .pc-arrow--open { transform: rotate(90deg); color: var(--accent, #D97757); }
+  .pillar-card:hover .pc-arrow:not(.pc-arrow--open) {
     transform: translateX(3px);
     color: var(--text-primary, #2D2D2D);
   }
+
+  .pillar-wrap { display: flex; flex-direction: column; }
+
+  /* ═══════ QUICK ACTION PANEL ═══════ */
+  .qa-panel {
+    background: var(--surface, #fff);
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    padding: 12px 18px 14px;
+    margin-top: -1px;
+  }
+  .qa-form {
+    display: flex; align-items: center;
+    background: var(--page-bg, #FAF9F7);
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    border-radius: 10px; padding: 2px 2px 2px 12px;
+    margin-bottom: 8px; transition: border-color 200ms;
+  }
+  .qa-form:focus-within { border-color: var(--accent, #D97757); }
+  .qa-input {
+    flex: 1; appearance: none; border: none; background: transparent;
+    color: var(--text-primary, #2D2D2D); font-size: 0.76rem; padding: 7px 0;
+    outline: none; font-family: var(--font-body, 'Inter', sans-serif); min-width: 0;
+  }
+  .qa-input::placeholder { color: var(--text-muted, #9a9590); font-size: 0.72rem; }
+  .qa-go {
+    appearance: none; border: none;
+    background: var(--accent, #D97757); color: #fff;
+    font-size: 0.68rem; font-weight: 600;
+    padding: 6px 12px; border-radius: 8px;
+    cursor: pointer; white-space: nowrap; transition: background 150ms;
+    font-family: var(--font-body, 'Inter', sans-serif);
+  }
+  .qa-go:hover { background: var(--accent-hover, #C4644A); }
+  .qa-links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .qa-link {
+    appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
+    background: transparent; color: var(--text-muted, #9a9590);
+    font-size: 0.6rem; font-weight: 500; padding: 4px 12px;
+    border-radius: 100px; cursor: pointer; transition: all 150ms;
+    font-family: var(--font-body, 'Inter', sans-serif);
+  }
+  .qa-link:hover { border-color: var(--accent, #D97757); color: var(--accent, #D97757); }
+  .qa-link--accent { color: var(--accent, #D97757); border-color: rgba(217, 119, 87, 0.3); }
 
   /* ═══════ ACTIVITY ═══════ */
   .activity-section { display: flex; flex-direction: column; gap: 8px; }
