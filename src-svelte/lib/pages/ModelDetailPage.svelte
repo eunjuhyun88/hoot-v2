@@ -28,7 +28,7 @@
   }
 </script>
 
-<div class="detail" data-theme="light">
+<div class="detail">
   <!-- Breadcrumb -->
   <nav class="breadcrumb">
     <button class="bc-link" on:click={() => router.navigate('dashboard')}>Dashboard</button>

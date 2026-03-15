@@ -121,7 +121,7 @@
   }
 </script>
 
-<div class="econ" data-theme="light" class:visible>
+<div class="econ" class:visible>
 
   <!-- 0. PAGE HEADER -->
   <div class="page-header">

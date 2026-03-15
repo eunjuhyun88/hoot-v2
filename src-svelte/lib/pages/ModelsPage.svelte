@@ -173,7 +173,7 @@
   });
 </script>
 
-<div class="models" data-theme="light">
+<div class="models">
   <!-- Page Header -->
   <div class="page-header">
     <div class="header-left">
