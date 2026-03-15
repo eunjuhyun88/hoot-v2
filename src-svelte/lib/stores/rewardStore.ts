@@ -1,28 +1,9 @@
 import { writable, derived } from 'svelte/store';
 
-// ── Types aligned with State Machine spec ──
+// ── Types from shared contracts (re-exported for backward compat) ──
+export type { RewardPool, RewardSource, RewardEntry, RewardSummary } from '../../../packages/contracts/src/index.ts';
 
-export type RewardPool = 'A' | 'B';
-export type RewardSource =
-  | 'pool_b_compute'    // GPU node job completion (Pool B: 95% GPU / 5% Treasury)
-  | 'pool_a_creator'    // Model usage revenue - creator share (Pool A: 60%)
-  | 'pool_a_notary'     // Notary validation share (Pool A: 15%)
-  | 'pool_a_treasury'   // Treasury share (Pool A: 15%)
-  | 'pool_a_burn'       // Burn share (Pool A: 10%)
-  | 'challenge_reward'  // Valid challenge reward (+50 HOOT)
-  | 'ppap_fee';         // PPAP batch fee (3.0 HOOT: Treasury 70% / Burn 30%)
-
-export interface RewardEntry {
-  id: string;
-  timestamp: string;
-  source: RewardSource;
-  amount: number;
-  pool: RewardPool;
-  jobId?: string;
-  modelId?: string;
-  nodeId?: string;
-  description: string;
-}
+import type { RewardEntry } from '../../../packages/contracts/src/index.ts';
 
 // ── Simulated reward history ──
 

@@ -1,56 +1,17 @@
 import { writable, derived } from 'svelte/store';
 
-// ── Types aligned with State Machine spec ──
+// ── Types from shared contracts ──
+export type {
+  ModelState,
+  VTRGrade,
+  VTRRecord,
+  ModelMetrics,
+  ModelUsage,
+  PoolADistribution,
+  ModelRecord,
+} from '../../../packages/contracts/src/index.ts';
 
-export type ModelState =
-  | 'DRAFT'
-  | 'MINTED'
-  | 'PRIVATE_ACTIVE'
-  | 'NETWORK_ACTIVE'
-  | 'DEPRECATED';
-
-export type VTRGrade = 'DETERMINISTIC' | 'SELF_ATTESTED';
-
-export interface VTRRecord {
-  grade: VTRGrade;
-  trainingSeed?: number;
-  baseModelId: string;
-  ckptHash: string;
-  ppapRootRef: string;
-}
-
-export interface ModelMetrics {
-  best: number;
-  experiments: number;
-  kept: number;
-}
-
-export interface ModelUsage {
-  totalCalls: number;
-  totalRevenue: number;
-  dailyCalls: number[];  // last 7 days
-}
-
-export interface PoolADistribution {
-  creator: number;   // 60%
-  notary: number;    // 15%
-  treasury: number;  // 15%
-  burn: number;      // 10%
-}
-
-export interface ModelRecord {
-  id: string;
-  slug: string;
-  name: string;
-  state: ModelState;
-  originJobId: string;
-  vtr: VTRRecord;
-  metrics: ModelMetrics;
-  usage: ModelUsage;
-  poolA: PoolADistribution;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { ModelRecord, ModelState } from '../../../packages/contracts/src/index.ts';
 
 // ── Simulated model data ──
 

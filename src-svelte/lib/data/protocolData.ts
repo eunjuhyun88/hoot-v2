@@ -1,5 +1,24 @@
 /** Static data for Protocol (Economics) page — extracted from EconomicsPage.svelte */
 
+// ── Types from shared contracts (re-exported for backward compat) ──
+export type {
+  PpapStage,
+  JourneyActor,
+  FlowNode,
+  ProtocolEvent,
+  ContractCall,
+  BondTier,
+  ActiveBond,
+  BurnConversion,
+} from '../../../packages/contracts/src/index.ts';
+
+import type {
+  PpapStage,
+  JourneyActor,
+  FlowNode,
+  ProtocolEvent,
+} from '../../../packages/contracts/src/index.ts';
+
 export const BOND_TIERS = [
   { name: 'Lite', tier: 1, bondNum: 500, bond: '500', gpu: '1 GPU', jobs: '5 concurrent', accent: 'var(--blue)' },
   { name: 'Standard', tier: 2, bondNum: 2000, bond: '2,000', gpu: '4 GPUs', jobs: '20 concurrent', accent: 'var(--accent)' },
@@ -17,28 +36,12 @@ export const BURN_CONVERSIONS = [
   { amount: '10,000', credit: '$600.00', tier: 'Ultra', time: '3d ago' },
 ];
 
-export interface PpapStage {
-  id: string;
-  label: string;
-  sub: string;
-  icon: string;
-  color: string;
-}
-
 export const PPAP_STAGES: PpapStage[] = [
   { id: 'submit', label: 'Submit', sub: 'Contributor uploads data', icon: '📤', color: 'var(--blue)' },
   { id: 'batch', label: 'Batch', sub: 'Aggregated into batch', icon: '📦', color: 'var(--accent)' },
   { id: 'challenge', label: 'Challenge', sub: '24h verification window', icon: '⏱', color: 'var(--gold)' },
   { id: 'confirmed', label: 'Confirmed', sub: 'PPAP immutable on-chain', icon: '✓', color: 'var(--green)' },
 ];
-
-export interface JourneyActor {
-  role: string;
-  desc: string;
-  icon: string;
-  color: string;
-  actions: string[];
-}
 
 export const JOURNEY_ACTORS: JourneyActor[] = [
   {
@@ -78,19 +81,12 @@ export const JOURNEY_ACTORS: JourneyActor[] = [
   },
 ];
 
-export const FLOW_NODES = [
+export const FLOW_NODES: FlowNode[] = [
   { id: 'poolA', label: 'Pool A', amount: '42%', angle: -45, color: 'var(--accent)', breakdown: 'Creator 60% / Notary 15% / Treasury 15% / Burn 10%' },
   { id: 'poolB', label: 'Pool B', amount: '38%', angle: 45, color: 'var(--green)', breakdown: 'GPU Compute 95% / Treasury 5%' },
   { id: 'burn', label: 'Burn', amount: '12%', angle: 135, color: 'var(--red)', breakdown: 'Permanently removed from supply' },
   { id: 'treasury', label: 'Treasury', amount: '8%', angle: 225, color: 'var(--gold)', breakdown: 'Protocol reserve & insurance' },
 ];
-
-export interface ProtocolEvent {
-  text: string;
-  color: string;
-  time: string;
-  fn: string;
-}
 
 export const EVENT_FEED: ProtocolEvent[] = [
   { text: 'Node seoul-4090 bonded 2,000 HOOT → Tier 2', color: 'var(--blue)', time: '2m ago', fn: 'registerNode' },
@@ -113,18 +109,6 @@ export const CONTRACT_MAP: Record<string, string> = {
   resolveChallenge: '0x9D3f...4A1c  ChallengeArbitration.sol',
   unbondNode: '0x4F0a...7E3d  HootStaking.sol',
 };
-
-export interface ContractCall {
-  title: string;
-  contract: string;
-  fn: string;
-  params: { name: string; type: string; value: string }[];
-  fee: string;
-  gas: string;
-  note: string;
-  accentColor: string;
-  requiresApproval?: boolean;
-}
 
 export const SIMULATED_BALANCE = 12_450;
 export const MAU_TARGET = 1443;
