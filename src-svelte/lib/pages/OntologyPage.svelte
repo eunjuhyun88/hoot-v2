@@ -2,6 +2,7 @@
   import { get } from "svelte/store";
   import { router } from "../stores/router.ts";
   import { jobStore } from "../stores/jobStore.ts";
+  import { studioStore } from "../stores/studioStore.ts";
   import { readRuntimeConfig } from "../api/client.ts";
   import { isConnected } from "../stores/connectionStore.ts";
   import {
@@ -135,6 +136,10 @@
     const branchCount = enabledBranches.length;
     const avgIters = Math.round(totalExperiments / branchCount);
     const topic = ontology.name.trim();
+
+    // Sync studio phase
+    studioStore.setTopic(topic);
+    studioStore.startRunning();
 
     if (get(isConnected)) {
       const rc = readRuntimeConfig();
