@@ -7,6 +7,7 @@
   import SiteFooter from "./lib/layout/SiteFooter.svelte";
   import SplashScreen from "./lib/components/SplashScreen.svelte";
   import PageSkeleton from "./lib/components/PageSkeleton.svelte";
+  import AgentBar from "./lib/components/AgentBar.svelte";
   import "./lib/tokens.css";
 
   let showSplash = true;
@@ -70,6 +71,7 @@
       {/if}
     </main>
   </div>
+  <AgentBar />
 </div>
 
 <style>
