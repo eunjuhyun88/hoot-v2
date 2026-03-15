@@ -10,14 +10,20 @@
   type PixelIconType = "sparkle" | "grid" | "chart" | "globe" | "protocol" | "ontology";
 
   const navItems: { view: AppView; label: string; icon: PixelIconType }[] = [
-    { view: "dashboard", label: "Magnet Studio", icon: "sparkle" },
-    { view: "models", label: "Models", icon: "grid" },
+    { view: "studio", label: "Magnet Studio", icon: "sparkle" },
     { view: "network", label: "Network", icon: "globe" },
     { view: "protocol", label: "Protocol", icon: "protocol" },
   ];
 
   $: currentView = $router;
   $: visibleNavItems = navItems.filter(item => $unlockedPages.includes(item.view));
+
+  // Studio sub-pages: highlight "Magnet Studio" nav item when on research/models/model-detail too
+  const STUDIO_CHILDREN: AppView[] = ['studio', 'research', 'research-lab', 'models', 'model-detail'];
+  function isNavActive(navView: AppView, current: AppView): boolean {
+    if (navView === 'studio') return STUDIO_CHILDREN.includes(current);
+    return navView === current;
+  }
   $: isAIActive = $jobStore.phase === 'running' || $jobStore.phase === 'setup';
   $: owlMood = (() => {
     const p = $jobStore.phase;
@@ -80,7 +86,7 @@
       {#each visibleNavItems as item}
         <button
           class="nav-item"
-          class:active={currentView === item.view}
+          class:active={isNavActive(item.view, currentView)}
           on:click={() => navTo(item.view)}
         >
           <span class="nav-icon">
@@ -168,7 +174,7 @@
     {#each visibleNavItems as item, i}
       <button
         class="mobile-nav-item"
-        class:active={currentView === item.view}
+        class:active={isNavActive(item.view, currentView)}
         style="animation-delay: {i * 50}ms"
         on:click={() => navTo(item.view)}
       >
@@ -179,7 +185,7 @@
         {#if item.view === 'network'}
           <span class="nav-live-dot"></span>
         {/if}
-        {#if currentView === item.view}
+        {#if isNavActive(item.view, currentView)}
           <span class="mobile-active-dot"></span>
         {/if}
       </button>
