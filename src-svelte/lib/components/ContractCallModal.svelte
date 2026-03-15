@@ -8,11 +8,26 @@
   export let walletConnected: boolean;
   export let walletAddress: string;
 
+  type PaymentMethod = 'HOOT' | 'USDC';
+  let paymentMethod: PaymentMethod = 'HOOT';
+
+  const USDC_SURCHARGE = 0.25; // 25%
+
+  $: baseFee = modalCall ? parseFloat(modalCall.fee.replace(/[^0-9.]/g, '')) || 0 : 0;
+  $: usdcFee = baseFee * (1 + USDC_SURCHARGE);
+  $: displayFee = paymentMethod === 'HOOT'
+    ? modalCall?.fee ?? '0'
+    : `${usdcFee.toFixed(2)} USDC`;
+
   const dispatch = createEventDispatcher<{
     close: void;
-    confirm: void;
+    confirm: { paymentMethod: PaymentMethod };
     connectWallet: void;
   }>();
+
+  function handleConfirm() {
+    dispatch('confirm', { paymentMethod });
+  }
 </script>
 
 {#if modalOpen && modalCall}
@@ -65,8 +80,34 @@
         </div>
 
         <div class="modal-details">
-          <div class="modal-detail"><span>Fee</span><span class="mono">{modalCall.fee}</span></div>
+          <div class="modal-detail"><span>Fee</span><span class="mono">{displayFee}</span></div>
           <div class="modal-detail"><span>Est. Gas</span><span class="mono">{modalCall.gas}</span></div>
+        </div>
+
+        <!-- x402 Payment Method -->
+        <div class="payment-selector">
+          <span class="payment-label">결제 수단</span>
+          <div class="payment-options">
+            <button
+              class="payment-opt"
+              class:payment-opt--active={paymentMethod === 'HOOT'}
+              on:click={() => paymentMethod = 'HOOT'}
+            >
+              <span class="payment-icon">🦉</span>
+              <span class="payment-name">HOOT</span>
+              <span class="payment-fee">{modalCall.fee}</span>
+            </button>
+            <button
+              class="payment-opt"
+              class:payment-opt--active={paymentMethod === 'USDC'}
+              on:click={() => paymentMethod = 'USDC'}
+            >
+              <span class="payment-icon">💵</span>
+              <span class="payment-name">USDC</span>
+              <span class="payment-fee">{usdcFee.toFixed(2)}</span>
+              <span class="payment-surcharge">+25%</span>
+            </button>
+          </div>
         </div>
 
         <p class="modal-note">{modalCall.note}</p>
@@ -74,7 +115,7 @@
         <button
           class="action-btn primary modal-confirm"
           disabled={!walletConnected}
-          on:click={() => dispatch('confirm')}
+          on:click={handleConfirm}
         >
           {walletConnected ? 'Confirm Transaction' : 'Connect Wallet First'}
         </button>
@@ -334,6 +375,78 @@
   .modal-confirm { margin-top: 0; }
 
   .mono { font-family: var(--font-mono); }
+
+  /* ── x402 Payment Selector ── */
+  .payment-selector {
+    margin-bottom: 12px;
+  }
+
+  .payment-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .payment-options {
+    display: flex;
+    gap: 8px;
+  }
+
+  .payment-opt {
+    flex: 1;
+    appearance: none;
+    border: 1.5px solid var(--border, #E5E0DA);
+    background: var(--page-bg, #FAF9F7);
+    border-radius: var(--radius-md, 10px);
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 200ms;
+    position: relative;
+  }
+
+  .payment-opt:hover {
+    border-color: var(--accent, #D97757);
+  }
+
+  .payment-opt--active {
+    border-color: var(--accent, #D97757);
+    background: rgba(217, 119, 87, 0.06);
+    box-shadow: 0 0 0 1px var(--accent, #D97757);
+  }
+
+  .payment-icon { font-size: 1.2rem; }
+
+  .payment-name {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .payment-fee {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .payment-surcharge {
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    font-weight: 700;
+    color: var(--red, #c0392b);
+    background: rgba(192, 57, 43, 0.08);
+    padding: 1px 6px;
+    border-radius: var(--radius-pill, 100px);
+  }
 
   /* Pending state */
   .modal-pending {
