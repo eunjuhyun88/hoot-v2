@@ -147,6 +147,14 @@
   - after the merge-readiness cleanup, new uncommitted web-surface changes appeared again in the root worktree
   - affected paths include `ActivityStream.svelte`, `ContextPanel.svelte`, `ExperimentTreemap.svelte`, `AutoresearchPage.svelte`, and `ResearchFocusModal.svelte`
   - further cleanup on this lane should treat those as new active WIP, not as already-reviewed merge-ready state
+- **Research collaboration lanes reset on 2026-03-15**:
+  - stale broad claim `W-20260315-dashboard-widget-lane` was released
+  - parallel research work now uses three isolated worktrees:
+    - `codex/research-context-panel` → `ContextPanel.svelte` only
+    - `codex/research-semantic-zoom` → `ExperimentTreemap.svelte` + `ResearchZoomLabPage.svelte`
+    - `codex/research-page-cutover` → `AutoresearchPage.svelte` + `App.svelte` + `router.ts`
+  - cutover lane explicitly depends on the ContextPanel and semantic-zoom lanes
+  - current rule for research work is now strict single-writer ownership per file family; no concurrent edits inside `ContextPanel.svelte` or `AutoresearchPage.svelte`
 - **Stale Claude worktree was synced to latest enforcement commit**:
   - `.claude/worktrees/kind-leavitt` fast-forwarded from `546a59f` to `d0d1338`
   - worktree is now clean, but still intentionally blocked by `agent:guard` because branch is `claude/kind-leavitt`
