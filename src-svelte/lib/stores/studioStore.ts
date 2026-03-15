@@ -1,10 +1,22 @@
+/**
+ * studioStore.ts — Studio phase state machine.
+ *
+ * IDLE → STEP1 → STEP2 → [SETUP] → RUNNING → COMPLETE → PUBLISH → PUBLISHED
+ *
+ * step1: topic input
+ * step2: AI recommendation + resource mode
+ * setup: advanced ontology configuration (optional)
+ */
+
 import { writable, derived, get } from 'svelte/store';
 import { jobStore } from './jobStore.ts';
-import { router } from './router.ts';
 
-// ─── Phase State Machine ─────────────────────────
-// IDLE → CREATE → SETUP → RUNNING → COMPLETE → PUBLISH → PUBLISHED
-export type StudioPhase = 'idle' | 'create' | 'setup' | 'running' | 'complete' | 'publish' | 'published';
+// ── Types ──
+
+export type StudioPhase =
+  | 'idle' | 'step1' | 'step2' | 'setup'
+  | 'running' | 'complete' | 'publish' | 'published';
+
 export type ResourceMode = 'demo' | 'local' | 'network' | 'hybrid';
 
 export interface StudioState {
@@ -17,6 +29,8 @@ export interface StudioState {
   publishedModelId: string | null;
 }
 
+// ── Initial State ──
+
 const INITIAL: StudioState = {
   phase: 'idle',
   createTopic: '',
@@ -27,26 +41,17 @@ const INITIAL: StudioState = {
   publishedModelId: null,
 };
 
+// ── Store ──
+
 function createStudioStore() {
   const { subscribe, update, set } = writable<StudioState>(INITIAL);
-
-  function setPhase(phase: StudioPhase) {
-    update(s => ({ ...s, phase, lastActivePhase: s.phase }));
-  }
 
   return {
     subscribe,
 
-    // ─── Phase transitions ───
-    setPhase,
-
-    startCreate(topic?: string) {
-      update(s => ({
-        ...s,
-        phase: 'create',
-        createTopic: topic ?? s.createTopic,
-        lastActivePhase: s.phase,
-      }));
+    /** Set phase directly */
+    setPhase(phase: StudioPhase) {
+      update(s => ({ ...s, phase, lastActivePhase: s.phase }));
     },
 
     setTopic(topic: string) {
@@ -61,23 +66,66 @@ function createStudioStore() {
       update(s => ({ ...s, resourceMode: mode }));
     },
 
-    goToSetup() {
-      update(s => ({ ...s, phase: 'setup', lastActivePhase: s.phase }));
-      router.navigate('ontology');
+    setForkSource(source: string | null) {
+      update(s => ({ ...s, forkSource: source }));
     },
 
+    // ── Phase Transitions ──
+
+    /** IDLE → STEP1 (topic input) */
+    startCreate(topic?: string) {
+      update(s => ({
+        ...s,
+        phase: 'step1',
+        createTopic: topic ?? '',
+        createPreset: null,
+        forkSource: null,
+        lastActivePhase: s.phase,
+      }));
+    },
+
+    /** STEP1 → STEP2 (AI recommendation) */
+    goToStep2(topic?: string) {
+      update(s => ({
+        ...s,
+        phase: 'step2',
+        createTopic: topic ?? s.createTopic,
+        lastActivePhase: s.phase,
+      }));
+    },
+
+    /** STEP2 → SETUP (advanced ontology config) */
+    goToSetup() {
+      update(s => ({ ...s, phase: 'setup', lastActivePhase: s.phase }));
+    },
+
+    /** STEP2/SETUP → RUNNING */
     startRunning() {
       update(s => ({ ...s, phase: 'running', lastActivePhase: s.phase }));
     },
 
+    /** Launch from dock/agent — bypasses STEP1/STEP2 */
+    launchFromDock(topic: string, presetId?: string) {
+      update(s => ({
+        ...s,
+        phase: 'running',
+        createTopic: topic,
+        createPreset: presetId ?? null,
+        lastActivePhase: 'idle',
+      }));
+    },
+
+    /** RUNNING → COMPLETE */
     completeResearch() {
       update(s => ({ ...s, phase: 'complete', lastActivePhase: s.phase }));
     },
 
+    /** COMPLETE → PUBLISH */
     goToPublish() {
       update(s => ({ ...s, phase: 'publish', lastActivePhase: s.phase }));
     },
 
+    /** PUBLISH → PUBLISHED */
     confirmPublished(modelId: string) {
       update(s => ({
         ...s,
@@ -87,13 +135,15 @@ function createStudioStore() {
       }));
     },
 
+    /** Go back one step */
     goBack() {
       update(s => {
         const back: Record<StudioPhase, StudioPhase> = {
           idle: 'idle',
-          create: 'idle',
-          setup: 'create',
-          running: 'idle',
+          step1: 'idle',
+          step2: 'step1',
+          setup: 'step2',
+          running: 'running', // can't go back — must stop first
           complete: 'idle',
           publish: 'complete',
           published: 'idle',
@@ -102,11 +152,12 @@ function createStudioStore() {
       });
     },
 
+    /** Reset to IDLE */
     reset() {
       set({ ...INITIAL });
     },
 
-    /** Sync phase from jobStore state (e.g. when navigating to research page) */
+    /** Sync phase from jobStore on page entry */
     syncFromJobStore() {
       const job = get(jobStore);
       update(s => {
@@ -124,9 +175,10 @@ function createStudioStore() {
 
 export const studioStore = createStudioStore();
 
-// ─── Derived ─────────────────────────────────────
+// ── Derived ──
 export const studioPhase = derived(studioStore, s => s.phase);
 export const studioTopic = derived(studioStore, s => s.createTopic);
+export const studioResourceMode = derived(studioStore, s => s.resourceMode);
 export const isResearchActive = derived(studioStore, s =>
   s.phase === 'running' || s.phase === 'setup'
 );
