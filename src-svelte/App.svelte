@@ -35,6 +35,10 @@
   $: isDashboard = $router === 'dashboard';
   $: pagePromise = !isDashboard ? pageLoaders[$router]?.() : null;
 
+  // Pages that have their own full-screen UI — hide AgentBar
+  const FULL_SCREEN_PAGES: AppView[] = ['research', 'research-lab', 'network'];
+  $: showAgentBar = !FULL_SCREEN_PAGES.includes($router);
+
 </script>
 
 <svelte:head>
@@ -72,7 +76,9 @@
       {/if}
     </main>
   </div>
-  <AgentBar />
+  {#if showAgentBar}
+    <AgentBar />
+  {/if}
 </div>
 
 <style>
