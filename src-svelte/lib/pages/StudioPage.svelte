@@ -9,6 +9,7 @@
   import { isConnected } from "../stores/connectionStore.ts";
   import { ONTOLOGY_PRESETS } from "../data/ontologyData.ts";
   import PixelIcon from "../components/PixelIcon.svelte";
+  import StudioPublish from "../components/StudioPublish.svelte";
 
   let topicInput = '';
   let aiRecVisible = false;
@@ -391,7 +392,14 @@
         <button class="sh-back" on:click={() => studioStore.setPhase('complete')}>← 결과로 돌아가기</button>
         <h1 class="sh-title">모델 배포</h1>
         <p class="sh-sub">연구 결과를 HOOT 네트워크에 배포합니다</p>
-        <!-- Publish wizard is rendered as a sub-component -->
+        <StudioPublish
+          topic={stState.createTopic}
+          on:back={() => studioStore.setPhase('complete')}
+          on:published={(e) => {
+            studioStore.confirmPublished(e.detail.modelId);
+            router.navigate('model-detail', { modelId: e.detail.modelId });
+          }}
+        />
       </div>
 
     {:else}
