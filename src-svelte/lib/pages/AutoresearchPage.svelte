@@ -676,9 +676,13 @@
     display: flex; align-items: center; gap: 6px;
     padding: 8px 10px; cursor: pointer;
     border-radius: 10px;
-    transition: background 150ms;
+    transition: background 150ms, transform 150ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transform-origin: left center;
   }
-  .branch-row:hover { background: rgba(0,0,0,0.02); }
+  .branch-row:hover {
+    background: rgba(217, 119, 87, 0.04);
+    transform: scale(1.01);
+  }
   .branch-row.active-training { animation: branchPulse 2s ease-in-out infinite; }
   @keyframes branchPulse {
     0%, 100% { background: transparent; }
