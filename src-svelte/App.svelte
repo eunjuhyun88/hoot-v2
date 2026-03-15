@@ -35,8 +35,8 @@
   $: isDashboard = $router === 'dashboard';
   $: pagePromise = !isDashboard ? pageLoaders[$router]?.() : null;
 
-  $: panelOpen = $agentStore_panelOpen;
-  const agentStore_panelOpen = agentStore.panelOpen;
+  // Agent panel occupies layout space only on Studio (dashboard) tab
+  $: panelOpen = isDashboard;
 </script>
 
 <svelte:head>
@@ -73,7 +73,7 @@
         <SiteFooter />
       {/if}
     </main>
-    <AgentTerminal />
+    <AgentTerminal isStudio={isDashboard} />
   </div>
 </div>
 
