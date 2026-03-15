@@ -7,6 +7,7 @@
   import { wallet } from "../stores/walletStore.ts";
   import { router } from "../stores/router.ts";
   import { toasts } from "../stores/toastStore.ts";
+  import { jobStore, completedCount } from "../stores/jobStore.ts";
 
   onMount(() => {
     dashboardStore.init();
@@ -15,6 +16,22 @@
   });
 
   $: ds = $dashboardStore;
+
+  // Derive research state for dynamic card content
+  type ResearchState = 'none' | 'running' | 'complete' | 'deployed';
+  $: researchState = ((): ResearchState => {
+    const phase = $jobStore.phase;
+    if (phase === 'running' || phase === 'setup') return 'running';
+    if (phase === 'complete' || phase === 'publish') return 'complete';
+    if (phase === 'published') return 'deployed';
+    if (ds.researchSummary.runningJobs > 0) return 'running';
+    if (ds.modelsSummary.count > 0 && ds.researchSummary.completedJobs > 0) return 'deployed';
+    return 'none';
+  })();
+
+  $: researchProgress = $jobStore.totalExperiments > 0
+    ? Math.round(($completedCount / $jobStore.totalExperiments) * 100)
+    : 0;
 
   // Track which pillar card has its quick-actions expanded
   let expandedCard: 'studio' | 'network' | 'protocol' | null = null;
@@ -70,29 +87,76 @@
           <div class="pc-icon">🔬</div>
           <div class="pc-body">
             <h2 class="pc-title">Magnet Studio</h2>
-            <p class="pc-desc">AI 자율 연구 실행 · 모델 학습 · 배포</p>
-            <div class="pc-stats">
-              <span class="pc-stat">{ds.researchSummary.runningJobs} jobs</span>
-              <span class="pc-stat">{ds.modelsSummary.count} models</span>
-            </div>
+            {#if researchState === 'running'}
+              <p class="pc-desc">연구 진행 중 · {$jobStore.topic || 'AI Research'}</p>
+              <div class="pc-stats">
+                <span class="pc-stat pc-stat--pulse">{researchProgress}% 완료</span>
+                <span class="pc-stat">{$completedCount}/{$jobStore.totalExperiments} exp</span>
+              </div>
+            {:else if researchState === 'complete'}
+              <p class="pc-desc">연구 완료 · 배포 대기 중</p>
+              <div class="pc-stats">
+                <span class="pc-stat pc-stat--green">완료됨</span>
+                <span class="pc-stat">{ds.modelsSummary.count} models</span>
+              </div>
+            {:else if researchState === 'deployed'}
+              <p class="pc-desc">모델 배포됨 · 서비스 중</p>
+              <div class="pc-stats">
+                <span class="pc-stat pc-stat--green">{ds.modelsSummary.count} models</span>
+                <span class="pc-stat">{ds.researchSummary.completedJobs} jobs</span>
+              </div>
+            {:else}
+              <p class="pc-desc">AI 자율 연구 실행 · 모델 학습 · 배포</p>
+              <div class="pc-stats">
+                <span class="pc-stat">{ds.researchSummary.runningJobs} jobs</span>
+                <span class="pc-stat">{ds.modelsSummary.count} models</span>
+              </div>
+            {/if}
           </div>
           <span class="pc-arrow" class:pc-arrow--open={expandedCard === 'studio'}>→</span>
         </button>
         {#if expandedCard === 'studio'}
           <div class="qa-panel" transition:slide={{ duration: 200 }}>
-            <form class="qa-form" on:submit|preventDefault={quickResearch}>
-              <input class="qa-input" bind:value={quickTopic} placeholder="연구 주제 입력..." autocomplete="off" />
-              {#if quickTopic.trim()}
-                <button class="qa-go" type="submit">시작 →</button>
-              {/if}
-            </form>
-            <div class="qa-links">
-              <button class="qa-link" on:click={() => nav('studio')}>Studio 열기</button>
-              <button class="qa-link" on:click={() => nav('models')}>모델 목록</button>
-              {#if ds.researchSummary.runningJobs > 0}
-                <button class="qa-link qa-link--accent" on:click={() => nav('research')}>진행 중 보기</button>
-              {/if}
-            </div>
+            {#if researchState === 'running'}
+              <!-- Running: show progress + go to research -->
+              <div class="qa-progress">
+                <div class="qa-progress-bar">
+                  <div class="qa-progress-fill" style="width: {researchProgress}%"></div>
+                </div>
+                <span class="qa-progress-label">{$jobStore.topic}</span>
+              </div>
+              <div class="qa-links">
+                <button class="qa-link qa-link--accent" on:click={() => nav('research')}>연구 현황 보기</button>
+                <button class="qa-link" on:click={() => nav('studio')}>Studio 열기</button>
+              </div>
+            {:else if researchState === 'complete'}
+              <!-- Complete: deploy prompt -->
+              <div class="qa-status-msg">연구가 완료되었습니다. 모델을 배포하세요.</div>
+              <div class="qa-links">
+                <button class="qa-link qa-link--accent" on:click={() => nav('models')}>모델 배포</button>
+                <button class="qa-link" on:click={() => nav('research')}>결과 확인</button>
+                <button class="qa-link" on:click={() => nav('studio')}>새 연구</button>
+              </div>
+            {:else if researchState === 'deployed'}
+              <!-- Deployed: model stats -->
+              <div class="qa-links">
+                <button class="qa-link" on:click={() => nav('models')}>모델 관리</button>
+                <button class="qa-link" on:click={() => nav('studio')}>새 연구 시작</button>
+                <button class="qa-link" on:click={() => nav('research')}>연구 기록</button>
+              </div>
+            {:else}
+              <!-- None: topic input -->
+              <form class="qa-form" on:submit|preventDefault={quickResearch}>
+                <input class="qa-input" bind:value={quickTopic} placeholder="연구 주제 입력..." autocomplete="off" />
+                {#if quickTopic.trim()}
+                  <button class="qa-go" type="submit">시작 →</button>
+                {/if}
+              </form>
+              <div class="qa-links">
+                <button class="qa-link" on:click={() => nav('studio')}>Studio 열기</button>
+                <button class="qa-link" on:click={() => nav('models')}>모델 목록</button>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -372,6 +436,35 @@
   }
   .qa-link:hover { border-color: var(--accent, #D97757); color: var(--accent, #D97757); }
   .qa-link--accent { color: var(--accent, #D97757); border-color: rgba(217, 119, 87, 0.3); }
+
+  .qa-progress {
+    margin-bottom: 8px;
+  }
+  .qa-progress-bar {
+    height: 3px; background: var(--border-subtle, #EDEAE5);
+    border-radius: 2px; overflow: hidden; margin-bottom: 6px;
+  }
+  .qa-progress-fill {
+    height: 100%; background: var(--accent, #D97757);
+    border-radius: 2px; transition: width 300ms;
+    box-shadow: 0 0 4px rgba(217, 119, 87, 0.4);
+  }
+  .qa-progress-label {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.6rem; color: var(--text-muted, #9a9590);
+    display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .qa-status-msg {
+    font-size: 0.7rem; color: var(--text-secondary, #6b6560);
+    padding: 6px 0; line-height: 1.4; margin-bottom: 4px;
+  }
+
+  .pc-stat--pulse { animation: stat-pulse 2s ease-in-out infinite; }
+  @keyframes stat-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
 
   /* ═══════ ACTIVITY ═══════ */
   .activity-section { display: flex; flex-direction: column; gap: 8px; }
