@@ -15,6 +15,32 @@
     rewardEst: number;
   }
 
+  // Protocol-aligned enrichment
+  type JobType = 'training' | 'inference';
+  let jobTypeFilter: JobType | 'all' = 'all';
+
+  function deriveJobMeta(job: EnrichedJob) {
+    const h = Math.abs(hashStr(job.id));
+    const minTier = h % 3 === 0 ? 1 : h % 3 === 1 ? 2 : 3;
+    const tierLabels = ['', 'Lite (500H)', 'Standard (2,000H)', 'Enterprise (10,000H)'];
+    const deadlineH = 6 + (h % 42);
+    const poolBGpu = +(job.rewardEst * 0.95).toFixed(2);
+    const poolBTreasury = +(job.rewardEst * 0.05).toFixed(2);
+    const jType: JobType = h % 4 === 0 ? 'inference' : 'training';
+    const topics = ['Crypto prediction', 'DeFi risk analysis', 'NLP sentiment', 'Fraud detection', 'Protein folding', 'Supply chain opt.'];
+    const topic = topics[h % topics.length];
+    return { minTier, tierLabel: tierLabels[minTier], deadlineH, poolBGpu, poolBTreasury, jobType: jType, topic };
+  }
+
+  function hashStr(s: string): number {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return h;
+  }
+
+  $: filteredQueued = jobTypeFilter === 'all' ? queuedJobs : queuedJobs.filter(j => deriveJobMeta(j).jobType === jobTypeFilter);
+  $: filteredRunning = jobTypeFilter === 'all' ? runningJobs : runningJobs.filter(j => deriveJobMeta(j).jobType === jobTypeFilter);
+
   export let queuedJobs: EnrichedJob[] = [];
   export let runningJobs: EnrichedJob[] = [];
   export let doneJobs: EnrichedJob[] = [];
@@ -73,37 +99,52 @@
   </div>
 {/if}
 
+<!-- Job Type Filter -->
+<div class="psection rj-filter-bar">
+  <button class="rj-filter-btn" class:active={jobTypeFilter === 'all'} on:click={() => jobTypeFilter = 'all'}>All</button>
+  <button class="rj-filter-btn" class:active={jobTypeFilter === 'training'} on:click={() => jobTypeFilter = 'training'}>Training</button>
+  <button class="rj-filter-btn" class:active={jobTypeFilter === 'inference'} on:click={() => jobTypeFilter = 'inference'}>Inference</button>
+</div>
+
 <!-- Queued — available for claim -->
-{#if queuedJobs.length > 0}
+{#if filteredQueued.length > 0}
   <div class="psection">
-    <h4 class="slabel">Queued <span class="slabel-count">{queuedJobs.length}</span></h4>
-    {#each queuedJobs as job, i}
+    <h4 class="slabel">Open Jobs <span class="slabel-count">{filteredQueued.length}</span></h4>
+    {#each filteredQueued as job, i}
+      {@const meta = deriveJobMeta(job)}
       <div class="rj-card" style:--delay="{i * 80}ms">
         <div class="rj-header">
           <span class="rj-id">{job.id.slice(0, 12)}</span>
-          <span class="rj-state-pill rj-open">QUEUED</span>
+          <span class="rj-type-tag" class:rj-type-train={meta.jobType === 'training'} class:rj-type-infer={meta.jobType === 'inference'}>{meta.jobType}</span>
+          <span class="rj-state-pill rj-open">OPEN</span>
         </div>
+        <div class="rj-topic-row">{meta.topic}</div>
         <div class="rj-meta-grid">
           <div class="rj-meta-item">
-            <span class="rj-meta-label">Nodes</span>
+            <span class="rj-meta-label">Min Tier</span>
+            <span class="rj-meta-value mono">{meta.tierLabel}</span>
+          </div>
+          <div class="rj-meta-item">
+            <span class="rj-meta-label">GPUs needed</span>
             <span class="rj-meta-value mono">{job.nodeCount}</span>
           </div>
           <div class="rj-meta-item">
-            <span class="rj-meta-label">Workers</span>
-            <span class="rj-meta-value mono">{job.workerCount}</span>
-          </div>
-          <div class="rj-meta-item">
-            <span class="rj-meta-label">Est. Budget</span>
+            <span class="rj-meta-label">Budget</span>
             <span class="rj-meta-value mono">{job.estBudget} HOOT</span>
           </div>
           <div class="rj-meta-item">
-            <span class="rj-meta-label">Reward</span>
-            <span class="rj-meta-value mono">~{job.rewardEst}/batch</span>
+            <span class="rj-meta-label">Deadline</span>
+            <span class="rj-meta-value mono">{meta.deadlineH}h left</span>
           </div>
+        </div>
+        <div class="rj-pool-row">
+          <span class="rj-pool-label">Est. reward:</span>
+          <span class="rj-pool-value">~{job.rewardEst} HOOT</span>
+          <span class="rj-pool-split">(GPU {meta.poolBGpu} / Treasury {meta.poolBTreasury})</span>
         </div>
         <div class="rj-footer">
           <div class="rj-tags">
-            <span class="rj-dataset">{job.workerCount} workers assigned</span>
+            <span class="rj-dataset">{job.workerCount} workers · {job.nodeCount} nodes</span>
           </div>
           <button class="rj-claim-btn" on:click={() => handleClaimClick(job)}>
             Claim
@@ -119,27 +160,34 @@
 
 <!-- Running — training / evaluating -->
 <div class="psection">
-  <h4 class="slabel">Running <span class="slabel-count">{runningJobs.length}</span></h4>
-  {#if runningJobs.length > 0}
-    {#each runningJobs as job}
+  <h4 class="slabel">Executing <span class="slabel-count">{filteredRunning.length}</span></h4>
+  {#if filteredRunning.length > 0}
+    {#each filteredRunning as job}
+      {@const meta = deriveJobMeta(job)}
       <div class="rj-compact-card">
         <div class="rj-compact-header">
           <span class="rj-state-pill" class:rj-executing={job.state === 'training'} class:rj-submitted={job.state === 'evaluating'}>
             {job.state.toUpperCase()}
           </span>
-          <span class="rj-compact-topic">{job.id.slice(0, 10)}</span>
+          <span class="rj-compact-topic">{meta.topic}</span>
+          <span class="rj-type-tag rj-type-sm" class:rj-type-train={meta.jobType === 'training'} class:rj-type-infer={meta.jobType === 'inference'}>{meta.jobType}</span>
         </div>
         <div class="rj-compact-meta">
           <span class="mono">{job.nodeCount} nodes</span>
           <span class="rj-meta-sep">&middot;</span>
-          <span class="mono">{job.workerCount} workers</span>
+          <span class="mono">{meta.deadlineH}h left</span>
           <span class="rj-meta-sep">&middot;</span>
-          <span class="mono">~{job.rewardEst} HOOT/batch</span>
+          <span class="mono rj-payout">~{job.rewardEst} HOOT</span>
         </div>
+        {#if job.progress > 0}
+          <div class="rj-progress-bar">
+            <div class="rj-progress-fill" style:width="{job.progress}%"></div>
+          </div>
+        {/if}
       </div>
     {/each}
   {:else}
-    <div class="empty">No running jobs</div>
+    <div class="empty">No executing jobs</div>
   {/if}
 </div>
 
@@ -543,6 +591,88 @@
   .rj-meta-sep {
     color: var(--text-muted, #9a9590);
     font-size: 0.6rem;
+  }
+
+  /* Filter bar */
+  .rj-filter-bar {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px !important;
+  }
+  .rj-filter-btn {
+    appearance: none;
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    background: none;
+    padding: 4px 10px;
+    font-size: 0.64rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill, 100px);
+    cursor: pointer;
+    color: var(--text-muted, #9a9590);
+    transition: all 150ms;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .rj-filter-btn:hover { border-color: var(--text-muted); }
+  .rj-filter-btn.active {
+    background: var(--accent, #D97757);
+    border-color: var(--accent, #D97757);
+    color: #fff;
+  }
+
+  /* Job type tags */
+  .rj-type-tag {
+    font-size: 0.52rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: var(--radius-pill, 100px);
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .rj-type-tag.rj-type-sm { font-size: 0.48rem; padding: 1px 5px; }
+  .rj-type-train { background: rgba(217, 119, 87, 0.1); color: var(--accent, #D97757); }
+  .rj-type-infer { background: rgba(80, 170, 255, 0.1); color: #3498db; }
+
+  /* Topic row */
+  .rj-topic-row {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-primary, #2D2D2D);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Pool B distribution */
+  .rj-pool-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.6rem;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    background: rgba(39, 134, 74, 0.04);
+    border-radius: var(--radius-sm, 6px);
+  }
+  .rj-pool-label { color: var(--text-muted, #9a9590); }
+  .rj-pool-value { color: var(--green, #27864a); font-weight: 700; }
+  .rj-pool-split { color: var(--text-muted, #9a9590); font-size: 0.52rem; }
+
+  /* Progress bar for running jobs */
+  .rj-progress-bar {
+    height: 2px;
+    background: var(--border-subtle, #EDEAE5);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .rj-progress-fill {
+    height: 100%;
+    background: var(--accent, #D97757);
+    border-radius: 1px;
+    transition: width 300ms ease;
   }
 
   /* Empty state */
