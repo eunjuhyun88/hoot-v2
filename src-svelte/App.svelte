@@ -97,16 +97,16 @@
   }
 
   .app-shell {
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    overflow: hidden;
   }
 
   .app-body {
     flex: 1;
     display: flex;
-    overflow: hidden;
+    min-height: 0; /* allow flex children to shrink below content size */
   }
 
   .app-main {
@@ -115,6 +115,7 @@
     flex-direction: column;
     position: relative;
     overflow-y: auto;
+    overflow-x: hidden;
     min-width: 0;
   }
 

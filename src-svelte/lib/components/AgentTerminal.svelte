@@ -132,7 +132,7 @@
     flex-direction: column;
     width: 320px;
     min-width: 320px;
-    height: 100%;
+    flex-shrink: 0;
     background: var(--surface, #fff);
     border-left: 1px solid var(--border, #E5E0DA);
     transition: width 200ms var(--ease-smooth, ease), min-width 200ms var(--ease-smooth, ease);
