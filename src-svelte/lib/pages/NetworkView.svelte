@@ -404,11 +404,11 @@
         <button class="ptab" class:active={activeTab === 'gpu'} on:click={() => activeTab = 'gpu'}>
           My GPU
         </button>
+        <button class="ptab" class:active={activeTab === 'bond-trust'} on:click={() => activeTab = 'bond-trust'}>
+          Bond &amp; Trust
+        </button>
         <button class="ptab" class:active={activeTab === 'jobs'} on:click={() => activeTab = 'jobs'}>
           Jobs <span class="tbadge" class:tbadge-green={liveJobs.length > 0}>{liveJobs.length}</span>
-        </button>
-        <button class="ptab" class:active={activeTab === 'bond-trust'} on:click={() => activeTab = 'bond-trust'}>
-          Bond
         </button>
         <button class="ptab" class:active={activeTab === 'swarms'} on:click={() => activeTab = 'swarms'}>
           Swarms <span class="tbadge">{model.jobs.length}</span>
