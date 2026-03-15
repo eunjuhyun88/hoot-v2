@@ -1,0 +1,11 @@
+{
+  "name": "@mesh/runtime-api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mesh/contracts": "*",
+    "@mesh/domain": "*",
+    "@mesh/autoresearch-adapter": "*"
+  }
+}

@@ -3,6 +3,12 @@
   "private": true,
   "type": "module",
   "version": "0.0.1",
+  "workspaces": [
+    "packages/contracts",
+    "packages/domain",
+    "packages/autoresearch-adapter",
+    "apps/runtime-api"
+  ],
   "scripts": {
     "dev": "vite",
     "dev:web": "vite",
