@@ -41,7 +41,8 @@ const INTENT_PATTERNS: { pattern: RegExp; intent: string; paramKeys?: string[] }
   { pattern: /^(모델|models?)\s*(보여|페이지|보기|go|show)?/i, intent: 'nav:models' },
   { pattern: /^(네트워크|network)\s*(보여|페이지|보기|go|show)?/i, intent: 'nav:network' },
   { pattern: /^(프로토콜|protocol)\s*(보여|페이지|보기|go|show)?/i, intent: 'nav:protocol' },
-  { pattern: /^(스튜디오|studio|홈|home|대시보드|dashboard)/i, intent: 'nav:studio' },
+  { pattern: /^(스튜디오|studio|마그넷|magnet)/i, intent: 'nav:studio' },
+  { pattern: /^(홈|home|대시보드|dashboard)/i, intent: 'nav:dashboard' },
 
   // Research control
   { pattern: /^(일시\s*정지|멈춰|pause|stop)\s*(리서치|research)?/i, intent: 'research:pause' },
@@ -184,8 +185,13 @@ function createAgentStore() {
       return;
     }
     if (intent === 'nav:studio') {
+      router.navigate('studio');
+      agentSay('Magnet Studio로 이동합니다.', { meta: { type: 'nav', route: 'studio' } });
+      return;
+    }
+    if (intent === 'nav:dashboard') {
       router.navigate('dashboard');
-      agentSay('스튜디오 홈으로 이동합니다.', { meta: { type: 'nav', route: 'dashboard' } });
+      agentSay('HOOT 홈으로 이동합니다.', { meta: { type: 'nav', route: 'dashboard' } });
       return;
     }
 

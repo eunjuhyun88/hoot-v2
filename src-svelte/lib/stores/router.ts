@@ -1,6 +1,6 @@
 import { writable, derived } from 'svelte/store';
 
-export type AppView = 'dashboard' | 'models' | 'research' | 'research-lab' | 'network' | 'model-detail' | 'protocol' | 'ontology' | 'pipeline';
+export type AppView = 'dashboard' | 'studio' | 'models' | 'research' | 'research-lab' | 'network' | 'model-detail' | 'protocol' | 'ontology' | 'pipeline';
 
 /** Params carried between routes (e.g. topic from Dashboard → Research) */
 export interface RouteParams {
@@ -13,8 +13,8 @@ export interface RouteParams {
 const ROUTE_MAP: Record<string, AppView> = {
   '/': 'dashboard',
   '/dashboard': 'dashboard',
-  '/studio': 'dashboard',       // alias — Magnet Studio
-  '/magnet-studio': 'dashboard', // alias
+  '/studio': 'studio',           // Magnet Studio
+  '/magnet-studio': 'studio',    // alias
   '/models': 'models',
   '/research': 'research',
   '/research-lab': 'research-lab',
@@ -31,6 +31,7 @@ const ROUTE_MAP: Record<string, AppView> = {
 
 const VIEW_TO_HASH: Record<AppView, string> = {
   dashboard: '/',
+  studio: '/studio',
   models: '/models',
   research: '/research',
   'research-lab': '/research-lab',
