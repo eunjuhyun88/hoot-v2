@@ -11,6 +11,7 @@
 
   const navItems: { view: AppView; label: string; icon: PixelIconType }[] = [
     { view: "studio", label: "Magnet Studio", icon: "sparkle" },
+    { view: "models", label: "Models", icon: "grid" },
     { view: "network", label: "Network", icon: "globe" },
     { view: "protocol", label: "Protocol", icon: "protocol" },
   ];
