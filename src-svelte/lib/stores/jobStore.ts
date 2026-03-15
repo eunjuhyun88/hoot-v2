@@ -14,6 +14,12 @@ import { mapRuntimeMeshToJob, applyRuntimeControllerToJob } from '../api/meshAda
 import { selectModification, generateExperiment, createTrainingExperiment } from '../api/simulationAdapter.ts';
 
 import type { RuntimeJobCommand } from '../../../packages/contracts/src/index.ts';
+import { capArray } from '../utils/perf.ts';
+
+/* ─── Performance Constants ─── */
+const MAX_EXPERIMENTS = 500;
+const RUNTIME_POLL_BASE_MS = 2500;
+const RUNTIME_POLL_MAX_MS = 10000;
 
 /* ─── Types ─── */
 
@@ -110,16 +116,16 @@ function createJobStore() {
   const store = writable<AutoresearchJob>(createEmptyJob());
   const { subscribe, set, update } = store;
 
-  let timers: ReturnType<typeof setTimeout | typeof setInterval>[] = [];
+  const timers = new Set<ReturnType<typeof setTimeout | typeof setInterval>>();
   let runtimeSession = 0;
 
   function addTimer(t: ReturnType<typeof setTimeout | typeof setInterval>) {
-    timers.push(t);
+    timers.add(t);
   }
 
   function clearAllTimers() {
     timers.forEach(t => { clearTimeout(t as any); clearInterval(t as any); });
-    timers = [];
+    timers.clear();
   }
 
   /** Start a new autoresearch job (local simulation) */
@@ -190,8 +196,28 @@ function createJobStore() {
     const connected = await pull();
     if (!connected) return false;
 
-    const poll = setInterval(() => { void pull(); }, 2500);
-    addTimer(poll);
+    // Exponential backoff polling: speeds up when data changes, slows down when idle
+    let pollInterval = RUNTIME_POLL_BASE_MS;
+    let lastHash = '';
+    const schedulePoll = () => {
+      const timer = setTimeout(async () => {
+        timers.delete(timer);
+        if (sessionId !== runtimeSession) return;
+        const prevHash = lastHash;
+        await pull();
+        const after = get(store);
+        const nextHash = `${after.experiments.length}-${after.bestMetric}-${after.phase}`;
+        if (nextHash === prevHash && nextHash === lastHash) {
+          pollInterval = Math.min(pollInterval * 1.5, RUNTIME_POLL_MAX_MS);
+        } else {
+          pollInterval = RUNTIME_POLL_BASE_MS;
+        }
+        lastHash = nextHash;
+        if (sessionId === runtimeSession) schedulePoll();
+      }, pollInterval);
+      addTimer(timer);
+    };
+    schedulePoll();
     return true;
   }
 
@@ -253,13 +279,16 @@ function createJobStore() {
     trainingId = firstExp.id;
     update(s => ({ ...s, experiments: [firstExp] }));
 
-    // Progress tick for training experiments
-    const progressTick = setInterval(() => {
-      if (trainingId === null) return;
+    // Combined tick: progress + verification (merged from 200ms + 400ms → single 400ms, doubled step sizes)
+    const combinedTick = setInterval(() => {
       update(s => {
+        const now = Date.now();
+        let changed = false;
         const exps = s.experiments.map(e => {
+          // Progress: training experiments (doubled step to compensate for slower tick)
           if (e.id === trainingId && e.status === 'training') {
-            const newProgress = Math.min(100, e.progress + 12 + Math.random() * 15);
+            const newProgress = Math.min(100, e.progress + 24 + Math.random() * 30);
+            changed = true;
             if (newProgress >= 100) {
               const metric = 1.4 + Math.random() * 0.3;
               trainingId = null;
@@ -274,16 +303,34 @@ function createJobStore() {
             }
             return { ...e, progress: newProgress };
           }
+          // Verification: commit-reveal pipeline
+          if (e.status !== 'training') {
+            const age = now - e.timestamp;
+            if (e.verification === 'pending' && age > 800) {
+              changed = true;
+              return { ...e, verification: 'committed' as VerificationState };
+            }
+            if (e.verification === 'committed' && age > 1400) {
+              changed = true;
+              return { ...e, verification: 'revealed' as VerificationState };
+            }
+            if (e.verification === 'revealed' && age > 1900) {
+              changed = true;
+              const isSpotChecked = Math.random() < 0.2;
+              return { ...e, verification: (isSpotChecked ? 'spot-checked' : 'verified') as VerificationState };
+            }
+          }
           return e;
         });
+        if (!changed) return s;
         const keeps = exps.filter(e => e.status === 'keep');
         const best = keeps.length > 0 ? Math.min(...keeps.map(k => k.metric)) : s.bestMetric;
         const newBaseline = s.baselineMetric === Infinity && keeps.length > 0
           ? keeps[keeps.length - 1].metric : s.baselineMetric;
-        return { ...s, experiments: exps, bestMetric: best === Infinity ? s.bestMetric : best, baselineMetric: newBaseline };
+        return { ...s, experiments: capArray(exps, MAX_EXPERIMENTS), bestMetric: best === Infinity ? s.bestMetric : best, baselineMetric: newBaseline };
       });
-    }, 200);
-    addTimer(progressTick);
+    }, 400);
+    addTimer(combinedTick);
 
     function scheduleNext() {
       const delay = 500 + Math.random() * 700;
@@ -314,7 +361,7 @@ function createJobStore() {
           const mod = selectModification(state.experiments, state.boostedCategories, state.pausedCategories);
           const trainExp = createTrainingExperiment(nextId++, branch.id, mod);
           trainingId = trainExp.id;
-          update(s => ({ ...s, experiments: [trainExp, ...s.experiments] }));
+          update(s => ({ ...s, experiments: capArray([trainExp, ...s.experiments], MAX_EXPERIMENTS) }));
           scheduleNext();
           return;
         }
@@ -325,7 +372,7 @@ function createJobStore() {
         );
 
         update(s => {
-          const exps = [newExp, ...s.experiments];
+          const exps = capArray([newExp, ...s.experiments], MAX_EXPERIMENTS);
           const updatedBranches = s.branches.map(b => {
             if (b.id !== branch.id) return b;
             const newBest = newExp.status === 'keep' && newExp.metric < b.bestMetric
@@ -341,34 +388,6 @@ function createJobStore() {
       }, delay);
       addTimer(timer);
     }
-
-    // Commit-Reveal verification simulation
-    const verifyTick = setInterval(() => {
-      update(s => {
-        let changed = false;
-        const now = Date.now();
-        const exps = s.experiments.map(e => {
-          if (e.status === 'training') return e;
-          const age = now - e.timestamp;
-          if (e.verification === 'pending' && age > 800) {
-            changed = true;
-            return { ...e, verification: 'committed' as VerificationState };
-          }
-          if (e.verification === 'committed' && age > 1400) {
-            changed = true;
-            return { ...e, verification: 'revealed' as VerificationState };
-          }
-          if (e.verification === 'revealed' && age > 1900) {
-            changed = true;
-            const isSpotChecked = Math.random() < 0.2;
-            return { ...e, verification: (isSpotChecked ? 'spot-checked' : 'verified') as VerificationState };
-          }
-          return e;
-        });
-        return changed ? { ...s, experiments: exps } : s;
-      });
-    }, 400);
-    addTimer(verifyTick);
 
     const kickoff = setTimeout(() => scheduleNext(), 1200);
     addTimer(kickoff);
@@ -490,6 +509,7 @@ export const metricHistory = derived(jobStore, $j => {
   const reversed = [];
   for (let i = filtered.length - 1; i >= 0; i--) {
     reversed.push({ x: reversed.length + 1, y: filtered[i].metric, status: filtered[i].status });
+    if (reversed.length >= 200) break;
   }
   return reversed;
 });
@@ -694,3 +714,46 @@ export const bestBranch = derived(jobStore, $j => {
 });
 
 export const isPaused = derived(jobStore, $j => $j.paused);
+
+/* ─── Page-level derived stores (moved from AutoresearchPage inline reactives) ─── */
+
+/** Average experiment duration (single-pass) */
+export const avgDuration = derived(jobStore, $j => {
+  let sum = 0, count = 0;
+  for (const e of $j.experiments) {
+    if (e.status !== 'training' && e.duration > 0) { sum += e.duration; count++; }
+  }
+  return count > 0 ? Math.round(sum / count) : 0;
+});
+
+/** Total GPU time formatted (single-pass reduce) */
+export const totalGpuTime = derived(jobStore, $j => {
+  const secs = $j.experiments.reduce((sum, e) => sum + (e.duration * e.tier), 0);
+  if (secs >= 3600) return `${(secs / 3600).toFixed(1)}h`;
+  if (secs >= 60) return `${Math.round(secs / 60)}m`;
+  return `${secs}s`;
+});
+
+/** Best-so-far monotonic frontier for sparkline */
+export const bestFrontier = derived(jobStore, $j => {
+  const keeps = $j.experiments.filter(e => e.status === 'keep');
+  const frontier: number[] = [];
+  let best = Infinity;
+  for (let i = keeps.length - 1; i >= 0; i--) {
+    if (keeps[i].metric < best) { best = keeps[i].metric; frontier.push(best); }
+  }
+  return frontier;
+});
+
+/** SVG polyline points string for sparkline */
+export const sparkPoints = derived(bestFrontier, $f => {
+  if ($f.length < 2) return '';
+  const min = Math.min(...$f);
+  const max = Math.max(...$f);
+  const range = max - min || 0.001;
+  return $f.map((v, i) => {
+    const x = (i / ($f.length - 1)) * 120;
+    const y = 18 - ((v - min) / range) * 16;
+    return `${x},${y}`;
+  }).join(' ');
+});
