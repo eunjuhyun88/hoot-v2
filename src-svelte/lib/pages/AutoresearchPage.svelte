@@ -484,7 +484,12 @@
       </div>
     </div>
     <div class="fd-progress">
-      <div class="fd-bar" style="width: {progress}%"></div>
+      <div
+        class="fd-bar"
+        class:fd-bar--active={phase === 'running' || phase === 'setup'}
+        class:fd-bar--complete={progress >= 100}
+        style="width: {progress}%"
+      ></div>
     </div>
   </div>
 </div>
@@ -844,9 +849,23 @@
     overflow: hidden;
   }
   .fd-bar {
-    height: 100%; background: #D97757;
+    height: 100%;
+    background: var(--accent, #D97757);
     border-radius: 2px;
-    transition: width 300ms ease;
+    transition: width 300ms ease, background 500ms ease;
+  }
+  .fd-bar--active {
+    background: linear-gradient(
+      90deg,
+      var(--accent, #D97757) 0%,
+      #e89a7e 50%,
+      var(--accent, #D97757) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+  .fd-bar--complete {
+    background: var(--green, #27864a);
   }
 
   /* ═══ MOBILE TABS (iOS segment control) ═══ */
