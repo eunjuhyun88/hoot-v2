@@ -149,6 +149,35 @@
   let surfaceWidth = 920;
   let surfaceHeight = 560;
 
+  // UX-Z4/Z5: Zoom animation direction on drill-down / zoom-out
+  let zoomDirection: 'in' | 'out' | null = null;
+  let _zoomTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function triggerZoom(dir: 'in' | 'out') {
+    zoomDirection = dir;
+    if (_zoomTimer) clearTimeout(_zoomTimer);
+    _zoomTimer = setTimeout(() => { zoomDirection = null; }, 320);
+  }
+
+  // UX-Z6: Timeframe morph animation
+  let morphing = false;
+  let _morphTimer: ReturnType<typeof setTimeout> | null = null;
+  let _prevTimeframe = timeframe;
+
+  // UX-Z7: Mouse position for smooth tooltip follow
+  let mouseX = 0;
+  let mouseY = 0;
+
+  function handleSurfaceMouseMove(e: MouseEvent) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  }
+
+  // UX-Z1: Squarify memoization cache
+  let _sqKey = '';
+  let _sqResult: TreemapCell[] = [];
+
   const PAD = 10;
 
   // Memoized valueFor — cache keyed by node.id + mode + frame
@@ -319,17 +348,26 @@
   // Pre-build children lookup Map for O(1) find in cells
   $: childrenMap = new Map(currentChildren.map(node => [node.id, node]));
 
+  // UX-Z6: Detect timeframe changes → trigger morph animation
+  $: if (timeframe !== _prevTimeframe) {
+    _prevTimeframe = timeframe;
+    morphing = true;
+    if (_morphTimer) clearTimeout(_morphTimer);
+    _morphTimer = setTimeout(() => { morphing = false; }, 300);
+  }
+
+  // UX-Z1: Memoized cells — skip squarify if inputs unchanged
   $: cells = (() => {
     if (surfaceWidth <= 0 || surfaceHeight <= 0 || currentChildren.length === 0) return [] as TreemapCell[];
-    const layout = squarify(
-      currentChildren.map(node => ({ id: node.id, value: Math.max(valueFor(node), 1) })),
-      PAD,
-      PAD,
-      Math.max(surfaceWidth - PAD * 2, 0),
-      Math.max(surfaceHeight - PAD * 2, 0),
-    );
+    const items = currentChildren.map(node => ({ id: node.id, value: Math.max(valueFor(node), 1) }));
+    const sqKey = items.map(i => `${i.id}:${i.value.toFixed(1)}`).join(',') + `|${surfaceWidth}|${surfaceHeight}`;
 
-    return layout.map(cell => {
+    if (sqKey === _sqKey && _sqResult.length > 0) return _sqResult;
+    _sqKey = sqKey;
+
+    const layout = squarify(items, PAD, PAD, Math.max(surfaceWidth - PAD * 2, 0), Math.max(surfaceHeight - PAD * 2, 0));
+
+    const result = layout.map(cell => {
       const node = childrenMap.get(cell.id)!;
       const value = valueFor(node);
       return {
@@ -343,21 +381,25 @@
         shareOfParent: currentTotal > 0 ? value / currentTotal : 0,
       };
     });
+    _sqResult = result;
+    return result;
   })();
 
   // O(1) hovered cell lookup via Map
   $: cellMap = new Map(cells.map(cell => [cell.node.id, cell]));
   $: hoveredCell = (hoveredNodeId && cellMap.get(hoveredNodeId)) ?? null;
+  // UX-Z7: Tooltip follows mouse with smooth CSS transition (transform-based for GPU accel)
   $: tooltipStyle = (() => {
     if (!hoveredCell) return 'display:none;';
-    const left = Math.min(Math.max(hoveredCell.x + hoveredCell.w * 0.52, 18), Math.max(surfaceWidth - 248, 18));
-    const top = Math.min(Math.max(hoveredCell.y + hoveredCell.h * 0.16, 18), Math.max(surfaceHeight - 138, 18));
-    return `left:${left}px;top:${top}px;`;
+    const left = Math.min(Math.max(mouseX + 16, 18), Math.max(surfaceWidth - 248, 18));
+    const top = Math.min(Math.max(mouseY - 40, 18), Math.max(surfaceHeight - 138, 18));
+    return `transform: translate3d(${left}px, ${top}px, 0);`;
   })();
 
   function handleCellClick(cell: TreemapCell) {
     selectedNodeId = cell.node.id;
     if (cell.node.children?.length) {
+      triggerZoom('in'); // UX-Z4
       focusPath = [...focusPath, cell.node.id];
       hoveredNodeId = null;
     }
@@ -370,12 +412,14 @@
   }
 
   function resetToRoot() {
+    triggerZoom('out'); // UX-Z5
     focusPath = [];
     selectedNodeId = null;
     hoveredNodeId = null;
   }
 
   function goToDepth(index: number) {
+    if (index < focusPath.length) triggerZoom('out'); // UX-Z5
     focusPath = focusPath.slice(0, index);
     hoveredNodeId = null;
     selectedNodeId = focusPath[index - 1] ?? null;
@@ -473,9 +517,17 @@
       </div>
 
       <div class="lab-surface-wrap">
-        <div class="lab-surface" bind:clientWidth={surfaceWidth} bind:clientHeight={surfaceHeight}>
+        <div
+          class="lab-surface"
+          class:zoom-in={zoomDirection === 'in'}
+          class:zoom-out={zoomDirection === 'out'}
+          bind:clientWidth={surfaceWidth}
+          bind:clientHeight={surfaceHeight}
+          on:mousemove={handleSurfaceMouseMove}
+        >
           <svg
             class="lab-svg"
+            class:morphing={morphing}
             role="img"
             aria-label="Semantic zoom research treemap"
             viewBox={`0 0 ${surfaceWidth} ${surfaceHeight}`}
@@ -501,9 +553,7 @@
                   width={Math.max(cell.w - 3, 0)}
                   height={Math.max(cell.h - 3, 0)}
                   rx="6"
-                  fill={hovered || selected ? tone.accent : tone.fill}
-                  stroke={tone.stroke}
-                  stroke-width={hovered || selected ? 2.4 : 1.2}
+                  style="fill: {hovered || selected ? tone.accent : tone.fill}; stroke: {tone.stroke}; stroke-width: {hovered || selected ? 2.4 : 1.2};"
                 />
 
                 {#if fs > 0}
@@ -875,14 +925,53 @@
     min-height: 560px;
   }
 
+  /* UX-Z4: Drill-down zoom-in animation */
+  .lab-surface.zoom-in {
+    animation: zoomIn 300ms ease-out;
+  }
+
+  /* UX-Z5: Breadcrumb zoom-out animation */
+  .lab-surface.zoom-out {
+    animation: zoomOut 300ms ease-out;
+  }
+
+  @keyframes zoomIn {
+    0% { transform: scale(0.94); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes zoomOut {
+    0% { transform: scale(1.04); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
   .lab-svg {
     display: block;
     width: 100%;
     height: 100%;
   }
 
+  /* UX-Z6: Morph animation when timeframe changes */
+  .lab-svg.morphing rect {
+    animation: cellMorph 280ms ease-out;
+  }
+
+  @keyframes cellMorph {
+    0% { opacity: 0.45; }
+    100% { opacity: 1; }
+  }
+
   .lab-cell {
     outline: none;
+  }
+
+  /* UX-Z3: Smooth fill/stroke transitions on cell rects */
+  .lab-cell rect {
+    transition: fill 220ms ease, stroke-width 180ms ease, filter 180ms ease;
+  }
+
+  .lab-cell:hover rect {
+    filter: brightness(1.06) saturate(1.1);
   }
 
   .lab-cell:focus-visible rect {
@@ -911,8 +1000,11 @@
     opacity: 0.72;
   }
 
+  /* UX-Z7: Tooltip uses transform for smooth GPU-accelerated following */
   .lab-tooltip {
     position: absolute;
+    left: 0;
+    top: 0;
     z-index: 10;
     min-width: 210px;
     padding: 14px 16px;
@@ -921,6 +1013,8 @@
     color: #fff;
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22);
     pointer-events: none;
+    transition: transform 70ms ease-out;
+    will-change: transform;
   }
 
   .tooltip-title {
@@ -1109,6 +1203,20 @@
     .lab-hero-card {
       order: -1;
     }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lab-surface.zoom-in,
+    .lab-surface.zoom-out { animation: none; }
+    .lab-svg.morphing rect { animation: none; }
+    .lab-cell rect { transition: none; }
+    .lab-tooltip { transition: none; }
+    .rail-row,
+    .lab-toggle-group button,
+    .timeframe-buttons button,
+    .strip-segment,
+    .crumb-btn,
+    .crumb-reset { transition: none; }
   }
 
   @media (max-width: 720px) {
