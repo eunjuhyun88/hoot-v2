@@ -455,8 +455,8 @@
 
               <h4 class="slabel" style="margin-top: 16px;">Activity Log</h4>
               <div class="activity-log">
-                {#each activityLog as entry, i}
-                  <div class="log-entry" style:--delay="{i * 60}ms">
+                {#each activityLog as entry, i (entry.time + entry.text + entry.type)}
+                  <div class="log-entry" in:fly={{ x: -10, duration: 250, delay: i * 50 }}>
                     <div class="log-indicator">
                       <span class="log-dot" class:train={entry.type === 'train'} class:claim={entry.type === 'claim'} class:result={entry.type === 'result'} class:available={entry.type === 'available'}></span>
                       {#if i < activityLog.length - 1}
@@ -823,15 +823,10 @@
 
   /* Activity Log */
   .activity-log { display: flex; flex-direction: column; }
+  /* UX-N5: log entry uses Svelte fly transition (replaces CSS animation) */
   .log-entry {
     display: flex;
     gap: 10px;
-    animation: log-fade 300ms ease both;
-    animation-delay: var(--delay, 0ms);
-  }
-  @keyframes log-fade {
-    from { opacity: 0; transform: translateX(-4px); }
-    to { opacity: 1; transform: translateX(0); }
   }
   .log-indicator {
     display: flex;
@@ -894,6 +889,15 @@
     color: var(--text-muted, #9a9590);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .network { transition: none; }
+    .side-panel { animation: none; }
+    .canvas-area::after { animation: none; }
+    .log-dot { transition: none; }
+    .job-card { transition: none; }
+    .ptab { transition: none; }
   }
 
   @media (max-width: 1024px) { .content { grid-template-columns: 1fr 300px; } }

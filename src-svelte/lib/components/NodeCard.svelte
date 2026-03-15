@@ -200,9 +200,23 @@
     transform: translateY(-1px);
   }
 
+  /* UX-N4: Scale bounce + glow ring on select */
   .node-card.selected {
     border-color: var(--accent, #D97757);
     background: rgba(217, 119, 87, 0.03);
+    box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.1), 0 4px 16px rgba(217, 119, 87, 0.08);
+    animation: cardSelect 350ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes cardSelect {
+    0% { transform: scale(0.97); }
+    50% { transform: scale(1.015); }
+    100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .node-card.selected { animation: none; }
+    .node-card { transition: none; }
   }
 
   /* Active glow bar at top */

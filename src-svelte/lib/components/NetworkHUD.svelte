@@ -29,15 +29,15 @@
       </div>
     </div>
     <div class="banner-stats">
-      <span class="bstat"><strong>{nodeCount.toLocaleString()}</strong> nodes{#if recentNodeJoinDelta > 0}<span class="delta">+{recentNodeJoinDelta}</span>{/if}</span>
+      <span class="bstat">{#key nodeCount}<strong class="bval">{nodeCount.toLocaleString()}</strong>{/key} nodes{#if recentNodeJoinDelta > 0}<span class="delta">+{recentNodeJoinDelta}</span>{/if}</span>
       <span class="bstat-sep"></span>
-      <span class="bstat"><strong>{totalGpu}</strong> GPU</span>
+      <span class="bstat">{#key totalGpu}<strong class="bval">{totalGpu}</strong>{/key} GPU</span>
       <span class="bstat-sep"></span>
-      <span class="bstat"><strong>{activeWorkers}</strong> workers</span>
+      <span class="bstat">{#key activeWorkers}<strong class="bval">{activeWorkers}</strong>{/key} workers</span>
       <span class="bstat-sep"></span>
-      <span class="bstat"><strong>{activeFlowCount}</strong> flows</span>
+      <span class="bstat">{#key activeFlowCount}<strong class="bval">{activeFlowCount}</strong>{/key} flows</span>
       <span class="bstat-sep"></span>
-      <span class="bstat"><strong>{Math.round(nodeCount * 1240).toLocaleString()}</strong> bonded</span>
+      <span class="bstat">{#key nodeCount}<strong class="bval">{Math.round(nodeCount * 1240).toLocaleString()}</strong>{/key} bonded</span>
       <span class="bstat-sep"></span>
       <span class="bstat green-stat"><strong>98.2%</strong> spot-check</span>
       <span class="bstat-sep"></span>
@@ -131,6 +131,18 @@
     color: var(--text-primary, #2D2D2D);
     font-variant-numeric: tabular-nums;
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  /* UX-N6: countUp flash when metric value changes */
+  .bval {
+    display: inline-block;
+    animation: countFlash 450ms ease-out;
+  }
+  @keyframes countFlash {
+    0% { color: var(--accent, #D97757); transform: scale(1.1); }
+    100% { color: var(--text-primary, #2D2D2D); transform: scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bval { animation: none; }
   }
   .bstat-sep { width: 1px; height: 14px; background: var(--border-subtle, #EDEAE5); }
   .bstat .delta { color: var(--green, #27864a); font-weight: 600; margin-left: 2px; font-size: 0.68rem; }
