@@ -10,6 +10,15 @@
   export let setupMessage: string = '';
   export let runtimeReadonly: boolean = false;
 
+  // Inline metrics
+  export let bestMetric: number = Infinity;
+  export let deltaPercent: number | null = null;
+  export let completed: number = 0;
+  export let total: number = 0;
+  export let keeps: number = 0;
+  export let crashes: number = 0;
+  export let hitRate: number = 0;
+
   const dispatch = createEventDispatcher<{
     stop: void;
     pause: void;
@@ -32,11 +41,16 @@
     <span class="sb-dot"></span>
     <span class="sb-topic" title={topic}>{topic}</span>
     <div class="sb-spacer"></div>
-    <div class="sb-progress-wrap">
-      <div class="sb-progress-fill" style="width: {progress}%"></div>
+    <div class="sb-metrics">
+      {#if bestMetric < Infinity}
+        <span class="sb-m-val">{bestMetric.toFixed(3)}</span>
+        {#if deltaPercent !== null}<span class="sb-m-delta">▼{deltaPercent}%</span>{/if}
+      {/if}
+      <span class="sb-m-stat">{completed}/{total}</span>
+      <span class="sb-m-keep">{keeps}K</span>
+      {#if crashes > 0}<span class="sb-m-crash">{crashes}C</span>{/if}
+      <span class="sb-m-hit">{hitRate}%</span>
     </div>
-    <span class="sb-progress-text">{progress}%</span>
-    <span class="sb-eta">ETA {eta}</span>
     <div class="sb-controls">
       <button class="sb-btn" on:click={() => dispatch('pause')} disabled={runtimeReadonly} title={paused ? 'Resume' : 'Pause'}>
         {#if paused}
@@ -100,20 +114,21 @@
   .sb-topic.dim { color: #999; font-weight: 400; }
   .sb-spacer { flex: 1; }
 
-  .sb-progress-wrap {
-    width: 60px; height: 3px; border-radius: 2px;
-    background: #eee; overflow: hidden; flex-shrink: 0;
+  .sb-metrics {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    font: 600 11px/1 'SF Mono', 'Fira Code', monospace;
+    font-variant-numeric: tabular-nums;
   }
-  .sb-progress-fill {
-    height: 100%; border-radius: 2px;
-    background: #D97757; transition: width 300ms ease;
+  .sb-m-val { color: #1a1a1a; }
+  .sb-m-delta {
+    color: #27864a; font-size: 10px;
+    background: rgba(39,134,74,0.06);
+    padding: 1px 4px; border-radius: 3px;
   }
-  .sb-progress-text {
-    font: 700 11px/1 'Inter', -apple-system, sans-serif;
-    color: #D97757; font-variant-numeric: tabular-nums;
-    min-width: 26px; text-align: right;
-  }
-  .sb-eta { font-size: 11px; color: #bbb; }
+  .sb-m-stat { color: #888; }
+  .sb-m-keep { color: #27864a; }
+  .sb-m-crash { color: #c0392b; }
+  .sb-m-hit { color: #D97757; }
 
   .sb-controls { display: flex; gap: 4px; flex-shrink: 0; }
   .sb-btn {

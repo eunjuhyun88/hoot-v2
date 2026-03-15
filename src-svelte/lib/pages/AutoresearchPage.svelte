@@ -28,7 +28,6 @@
   import DistributedView from '../components/DistributedView.svelte';
   import ParamScatterChart from '../components/ParamScatterChart.svelte';
   import ModificationHeatmap from '../components/ModificationHeatmap.svelte';
-  import PixelOwl from '../components/PixelOwl.svelte';
   import ResearchTerminal from '../components/ResearchTerminal.svelte';
   import OnboardingPanel from '../components/research/OnboardingPanel.svelte';
 
@@ -103,14 +102,6 @@
   const MOBILE_TABS: MobileTab[] = ['activity', 'charts', 'network'];
   let mobileTab: MobileTab = 'activity';
   $: mobileTabIndex = MOBILE_TABS.indexOf(mobileTab);
-
-  // Owl mood for hero
-  $: heroOwlMood = (() => {
-    if (phase === 'running') return 'research' as const;
-    if (phase === 'setup') return 'build' as const;
-    if (phase === 'complete') return 'celebrate' as const;
-    return 'idle' as const;
-  })();
 
   // Progress + ETA (cached — only recalculated when inputs change)
   $: totalExp = job.totalExperiments || 60;
@@ -208,6 +199,13 @@
       {progress} {eta} {paused}
       setupMessage={job.setupMessage}
       {runtimeReadonly}
+      bestMetric={job.bestMetric}
+      deltaPercent={delta?.percent ?? null}
+      completed={$completedCount}
+      total={totalExp}
+      keeps={$keepCount}
+      crashes={$crashCount}
+      hitRate={completed > 0 ? Math.round(($keepCount / completed) * 100) : 0}
       on:stop={handleStop}
       on:pause={handlePause}
       on:newresearch={handleNewResearch}

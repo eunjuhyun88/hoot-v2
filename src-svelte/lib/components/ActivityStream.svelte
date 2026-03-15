@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import { resolveExperimentCategory, CATEGORY_COLORS, CATEGORY_LABELS, type ModCategory } from '../data/modifications.ts';
   import { selectedExperimentId } from '../stores/selectionStore.ts';
-  import { jobStore, type Experiment } from '../stores/jobStore.ts';
+  import { jobStore, humanizeModification, type Experiment } from '../stores/jobStore.ts';
 
   export let experiments: Experiment[] = [];
   export let bestMetric: number = Infinity;
@@ -89,6 +89,7 @@
         <span class="st-dur">{formatDuration(exp.duration)}</span>
         {#if isNewBest(exp)}<span class="st-best">★</span>{/if}
       </button>
+      <div class="st-sub">{humanizeModification(exp.modification)}</div>
     {/each}
   </div>
 </div>
@@ -211,6 +212,11 @@
   .st-best {
     color: #d4a017; font-size: 10px; flex-shrink: 0;
     text-shadow: 0 0 4px rgba(212,160,23,0.3);
+  }
+  .st-sub {
+    font: 400 9px/1.3 'Inter', -apple-system, sans-serif;
+    color: #aaa; padding: 0 8px 2px 20px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 
   .stream.expanded .stream-head {
