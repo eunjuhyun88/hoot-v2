@@ -32,6 +32,9 @@
   import ModificationHeatmap from '../components/ModificationHeatmap.svelte';
   import ResearchTerminal from '../components/ResearchTerminal.svelte';
   import OnboardingPanel from '../components/research/OnboardingPanel.svelte';
+  import StopConfirmModal from '../components/StopConfirmModal.svelte';
+  import ForceCancelBanner from '../components/ForceCancelBanner.svelte';
+  import { toasts } from '../stores/toastStore.ts';
 
   // Reactive state
   $: job = $jobStore;
@@ -171,7 +174,25 @@
     jobStore.startJob(e.detail);
     router.navigate('research', { topic: e.detail });
   }
-  function handleStop() { jobStore.stopJob(); }
+  // ─── Stop confirm modal ───
+  let stopModalOpen = false;
+
+  function handleStop() {
+    stopModalOpen = true;
+  }
+
+  function confirmStop() {
+    stopModalOpen = false;
+    jobStore.stopJob();
+    const txHash = `0x${Math.random().toString(16).slice(2, 10)}…${Math.random().toString(16).slice(2, 6)}`;
+    toasts.tx('연구 중지됨', txHash, `${job.topic} 연구가 중지되었습니다`);
+  }
+
+  // ─── Force cancel banner (protocol-initiated) ───
+  let forceCancelVisible = false;
+  let forceCancelReason = '';
+  let forceCancelTx = '';
+
   function handleNewResearch() { jobStore.reset(); }
   function handlePause() { jobStore.togglePause(); }
   function openFocus(view: FocusView) { focusView = view; }
@@ -691,6 +712,31 @@
       {/if}
     {/key}
   </ResearchFocusModal>
+{/if}
+
+<!-- Stop Confirm Modal -->
+<StopConfirmModal
+  open={stopModalOpen}
+  topic={job.topic}
+  progress={progress}
+  experimentsCompleted={completed}
+  totalExperiments={totalExp}
+  on:confirm={confirmStop}
+  on:cancel={() => stopModalOpen = false}
+/>
+
+<!-- Force Cancel Banner (positioned inside research page) -->
+{#if forceCancelVisible}
+  <ForceCancelBanner
+    visible={forceCancelVisible}
+    reason={forceCancelReason}
+    txHash={forceCancelTx}
+    on:dismiss={() => forceCancelVisible = false}
+    on:viewDetails={() => {
+      toasts.info('Transaction', forceCancelTx);
+      forceCancelVisible = false;
+    }}
+  />
 {/if}
 
 <style>
