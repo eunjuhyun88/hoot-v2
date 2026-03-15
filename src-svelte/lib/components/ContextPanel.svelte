@@ -308,7 +308,7 @@
           {#each sortedBranches as br, i}
             <div class="branch-row" class:best={i === 0 && br.bestMetric < Infinity}>
               <span class="br-rank">#{i + 1}</span>
-              <span class="br-name">{br.label}</span>
+              <span class="br-name" title={br.label}>{br.label}</span>
               <span class="br-metric">{br.bestMetric < Infinity ? br.bestMetric.toFixed(4) : '—'}</span>
               <span class="br-stat">{br.keeps}k {br.crashes}c</span>
               {#if br.active}<span class="br-active">●</span>{/if}
@@ -367,7 +367,7 @@
         {#each sortedBranches as br, i}
           <div class="branch-row leaderboard" class:best={i === 0}>
             <span class="br-rank">#{i + 1}</span>
-            <span class="br-name">{br.label}</span>
+            <span class="br-name" title={br.label}>{br.label}</span>
             <span class="br-metric">{br.bestMetric < Infinity ? br.bestMetric.toFixed(4) : '—'}</span>
             <span class="br-detail">{br.total} iters, {br.keeps} keeps</span>
           </div>
@@ -608,7 +608,7 @@
   .branch-row.best { background: rgba(166,227,161,0.06); }
   .branch-row.leaderboard { padding: 5px 6px; }
   .br-rank { font: 700 10px/1 'SF Mono', monospace; color: #585b70; min-width: 18px; }
-  .br-name { color: #bac2de; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .br-name { color: #bac2de; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em; }
   .br-metric { font: 700 11px/1 'SF Mono', monospace; color: #a6e3a1; font-variant-numeric: tabular-nums; }
   .br-stat { font: 400 9px/1 'SF Mono', monospace; color: #585b70; min-width: 30px; text-align: right; }
   .br-detail { font: 400 9px/1 'SF Mono', monospace; color: #585b70; }

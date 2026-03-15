@@ -105,7 +105,7 @@
   .tl-type.type-discard { color: rgba(255,255,255,0.3); }
   .tl-type.type-system { color: #D97757; }
   .tl-type.type-training { color: #fbbf24; }
-  .tl-msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tl-msg { flex: 1; min-width: 0; white-space: normal; word-break: break-word; }
   .tl-blink { animation: blink 0.8s step-end infinite; color: #fbbf24; }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 </style>

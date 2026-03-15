@@ -200,8 +200,9 @@
     font-variant-numeric: tabular-nums;
   }
   .st-desc {
-    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    font-size: 9px; color: #999;
+    flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    font-size: 10px; color: #999;
   }
   .st-dur {
     color: #ccc; flex-shrink: 0;

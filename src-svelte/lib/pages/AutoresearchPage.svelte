@@ -568,7 +568,7 @@
   .research-page {
     height: calc(100vh - 48px);
     display: grid;
-    grid-template-columns: 150px minmax(100px, 1fr) 1fr 1fr 260px;
+    grid-template-columns: minmax(160px, 200px) minmax(100px, 1fr) 1fr 1fr 280px;
     grid-template-rows: auto 56px minmax(80px, 1fr) 1fr 36px;
     grid-template-areas:
       "prompt    prompt    prompt    prompt    prompt"
@@ -703,8 +703,9 @@
   }
   .br-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 4px; }
   .br-name {
-    font: 600 11px/1 'Inter', -apple-system, sans-serif;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font: 600 12px/1.3 'Inter', -apple-system, sans-serif;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     color: #444;
   }
   .br-live { font-size: 10px; }

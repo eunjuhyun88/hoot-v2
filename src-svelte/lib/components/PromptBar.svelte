@@ -95,7 +95,7 @@
   .sb-topic {
     font-weight: 600; color: #444;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 300px;
+    flex: 1; min-width: 0;
   }
   .sb-topic.dim { color: #999; font-weight: 400; }
   .sb-spacer { flex: 1; }
