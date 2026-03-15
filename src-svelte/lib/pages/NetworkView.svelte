@@ -516,7 +516,7 @@
             <h4 class="slabel">Active Swarms</h4>
             {#if activeSwarmPreview.length > 0}
               {#each activeSwarmPreview as swarm}
-                <div class="job-card" class:training={swarm.job.state === 'training'}>
+                <button class="job-card" class:training={swarm.job.state === 'training'} on:click={() => router.navigate('research', { jobId: swarm.job.id })}>
                   <div class="jhead">
                     <span class="jdot" class:training={swarm.job.state === 'training'} class:evaluating={swarm.job.state === 'evaluating'}></span>
                     <span class="jid">{swarm.job.id.slice(0, 8)}</span>
@@ -525,8 +525,9 @@
                   <div class="jmeta">
                     <span>{swarm.nodeCount} nodes</span>
                     <span>{getJobFlowCount(swarm.job)} flows</span>
+                    <span class="jgoto">연구 보기 →</span>
                   </div>
-                </div>
+                </button>
               {/each}
             {:else}
               <div class="empty">No active swarms</div>
@@ -706,13 +707,21 @@
 
   /* Job Cards (Swarms tab) */
   .job-card {
+    appearance: none; background: transparent; text-align: left; width: 100%;
     padding: 10px 12px;
     border-radius: var(--radius-md, 10px);
     border: 1px solid var(--border, #E5E0DA);
     margin-bottom: 6px;
     transition: all 150ms ease;
+    cursor: pointer;
+    font-family: inherit;
   }
-  .job-card:hover { border-color: var(--text-muted, #9a9590); }
+  .job-card:hover { border-color: var(--accent, #D97757); box-shadow: 0 1px 8px rgba(217,119,87,0.08); }
+  .jgoto {
+    margin-left: auto; font-size: 0.56rem; font-weight: 600;
+    color: var(--accent, #D97757); opacity: 0; transition: opacity 150ms;
+  }
+  .job-card:hover .jgoto { opacity: 1; }
   .job-card.training { border-color: rgba(217, 119, 87, 0.3); background: rgba(217, 119, 87, 0.03); }
   .jhead { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
   .jdot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }

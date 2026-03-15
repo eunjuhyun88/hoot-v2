@@ -146,8 +146,9 @@
   function openFocus(view: FocusView) { focusView = view; }
   function closeFocus() { focusView = null; }
   function handleDeploy(e: CustomEvent<{ target: string }>) {
-    console.log('Deploy requested:', e.detail.target);
-    alert(`Deploy to ${e.detail.target} — coming soon!`);
+    // Navigate to model detail for deployment
+    const modelId = job.topic ? `model-${job.topic.replace(/\s+/g, '-').toLowerCase()}` : 'model-latest';
+    router.navigate('model-detail', { modelId });
   }
   function handleRetrain(e: CustomEvent<{ code: string; parentId: number | null }>) {
     console.log('Retrain requested with edited code:', e.detail);

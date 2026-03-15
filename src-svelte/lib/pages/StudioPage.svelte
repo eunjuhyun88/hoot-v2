@@ -96,6 +96,7 @@
           <button class="fc-hint" on:click={() => { topicInput = s; }}>{s}</button>
         {/each}
       </div>
+      <button class="fc-advanced" on:click={() => nav('ontology')}>고급 설정 →</button>
     </div>
 
     <!-- Models Card -->
@@ -115,12 +116,13 @@
         <h3 class="section-label">연구 활동</h3>
         <div class="activity-list">
           {#each ds.events.filter(e => e.type === 'research' || e.type === 'model').slice(0, 5) as event}
-            <div class="activity-row">
+            <button class="activity-row activity-row--clickable" on:click={() => nav(event.type === 'model' ? 'models' : 'research')}>
               <span class="activity-dot" class:activity-dot--research={event.type === 'research'}
                 class:activity-dot--model={event.type === 'model'}></span>
               <span class="activity-text">{event.message}</span>
+              <span class="activity-goto">{event.type === 'model' ? '모델 →' : '연구 →'}</span>
               <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
+            </button>
           {/each}
         </div>
       </div>
@@ -350,6 +352,15 @@
   }
   .fc-hint:hover { border-color: var(--accent, #D97757); color: var(--accent, #D97757); }
 
+  .fc-advanced {
+    appearance: none; border: none; background: none;
+    color: var(--text-muted, #9a9590); font-size: 0.66rem; font-weight: 600;
+    cursor: pointer; padding: 2px 0; margin-top: 2px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    transition: color 150ms; text-align: left;
+  }
+  .fc-advanced:hover { color: var(--accent, #D97757); }
+
   /* ═══════ ACTIVITY ═══════ */
   .activity-section { display: flex; flex-direction: column; gap: 8px; }
   .section-label {
@@ -366,10 +377,20 @@
   }
   .activity-row {
     display: flex; align-items: center; gap: 10px;
-    padding: 8px 14px;
+    padding: 8px 14px; width: 100%;
     border-bottom: 1px solid var(--border-subtle, #EDEAE5);
+    appearance: none; border-left: none; border-right: none; border-top: none;
+    background: transparent; cursor: pointer; transition: background 150ms;
+    font-family: var(--font-body, 'Inter', sans-serif); text-align: left;
   }
   .activity-row:last-child { border-bottom: none; }
+  .activity-row--clickable:hover { background: rgba(217, 119, 87, 0.04); }
+  .activity-goto {
+    font-size: 0.58rem; font-weight: 600; color: var(--accent, #D97757);
+    opacity: 0; transition: opacity 150ms; flex-shrink: 0;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .activity-row--clickable:hover .activity-goto { opacity: 1; }
   .activity-dot {
     width: 5px; height: 5px; border-radius: 50%;
     background: var(--text-muted, #9a9590); flex-shrink: 0;

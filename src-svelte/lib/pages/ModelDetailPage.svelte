@@ -13,8 +13,23 @@
 
   // UX-MD4: "Use this model" dropdown
   let dropdownOpen = false;
+  let deployModalOpen = false;
+  let downloadModalOpen = false;
   function toggleDropdown() { dropdownOpen = !dropdownOpen; }
   function closeDropdown() { dropdownOpen = false; }
+
+  function handleDeploy() {
+    closeDropdown();
+    deployModalOpen = true;
+  }
+  function handleDownload() {
+    closeDropdown();
+    downloadModalOpen = true;
+  }
+  function handleFork() {
+    closeDropdown();
+    router.navigate('ontology');
+  }
 
   const m = DEMO_MODEL;
   const experimentLog = EXPERIMENT_LOG;
@@ -37,7 +52,7 @@
 <div class="detail">
   <!-- UX-MD2: Accessible breadcrumb -->
   <nav class="breadcrumb" aria-label="Breadcrumb">
-    <button class="bc-link" on:click={() => router.navigate('dashboard')}>Dashboard</button>
+    <button class="bc-link" on:click={() => router.navigate('studio')}>Studio</button>
     <span class="bc-sep">/</span>
     <button class="bc-link" on:click={() => router.navigate('models')}>Models</button>
     <span class="bc-sep">/</span>
@@ -82,17 +97,17 @@
               </button>
               {#if dropdownOpen}
               <div class="dropdown-menu" transition:fly={{ y: -8, duration: 150 }}>
-                <button class="dropdown-item" on:click={closeDropdown}>
+                <button class="dropdown-item" on:click={handleDeploy}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 14a1 1 0 0 1-.78-1.63l9-11a1 1 0 0 1 1.78.63v7h6a1 1 0 0 1 .78 1.63l-9 11a1 1 0 0 1-1.78-.63v-7H4z" stroke="currentColor" stroke-width="1.5"/></svg>
                   Deploy
                 </button>
-                <button class="dropdown-item" on:click={closeDropdown}>
+                <button class="dropdown-item" on:click={handleDownload}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   Download
                 </button>
-                <button class="dropdown-item" on:click={closeDropdown}>
+                <button class="dropdown-item" on:click={handleFork}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  Fork
+                  Fork &amp; Retrain
                 </button>
               </div>
               {/if}
@@ -179,7 +194,114 @@
   </div>
 </div>
 
+<!-- Deploy Modal -->
+{#if deployModalOpen}
+  <div class="modal-backdrop" on:click={() => deployModalOpen = false} transition:fade={{ duration: 150 }}>
+    <div class="modal-card" on:click|stopPropagation transition:fly={{ y: 20, duration: 200 }}>
+      <h3 class="modal-title">Deploy Model</h3>
+      <p class="modal-desc">{m.name}을 API 엔드포인트로 배포합니다.</p>
+      <div class="modal-endpoint">
+        <span class="modal-label">Endpoint URL</span>
+        <code class="modal-url">https://api.hoot.network/v1/models/{m.slug}/predict</code>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" on:click={() => deployModalOpen = false}>취소</button>
+        <button class="modal-btn primary" on:click={() => { deployModalOpen = false; activeTab = 'api'; }}>배포 확인</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Download Modal -->
+{#if downloadModalOpen}
+  <div class="modal-backdrop" on:click={() => downloadModalOpen = false} transition:fade={{ duration: 150 }}>
+    <div class="modal-card" on:click|stopPropagation transition:fly={{ y: 20, duration: 200 }}>
+      <h3 class="modal-title">Download Model</h3>
+      <p class="modal-desc">{m.name} 모델 파일을 다운로드합니다.</p>
+      <div class="modal-files">
+        <button class="modal-file-row">
+          <span class="file-name">model.pt</span>
+          <span class="file-size">142 MB</span>
+        </button>
+        <button class="modal-file-row">
+          <span class="file-name">config.json</span>
+          <span class="file-size">2.1 KB</span>
+        </button>
+        <button class="modal-file-row">
+          <span class="file-name">tokenizer.json</span>
+          <span class="file-size">512 KB</span>
+        </button>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" on:click={() => downloadModalOpen = false}>닫기</button>
+        <button class="modal-btn primary" on:click={() => downloadModalOpen = false}>전체 다운로드</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <style>
+  /* ═══ Modals ═══ */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-card {
+    background: var(--surface, #fff); border-radius: 16px;
+    padding: 28px; max-width: 440px; width: 90%;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.16);
+  }
+  .modal-title {
+    font-size: 1.1rem; font-weight: 700; margin: 0 0 8px;
+    color: var(--text-primary, #2D2D2D);
+  }
+  .modal-desc {
+    font-size: 0.78rem; color: var(--text-muted, #9a9590);
+    margin: 0 0 16px; line-height: 1.5;
+  }
+  .modal-endpoint {
+    background: var(--page-bg, #FAF9F7); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 20px;
+  }
+  .modal-label {
+    display: block; font-size: 0.6rem; font-weight: 600;
+    color: var(--text-muted, #9a9590); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 6px;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .modal-url {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.72rem; color: var(--accent, #D97757);
+    word-break: break-all;
+  }
+  .modal-files { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
+  .modal-file-row {
+    appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
+    background: var(--page-bg, #FAF9F7); border-radius: 8px;
+    padding: 10px 14px; display: flex; justify-content: space-between;
+    cursor: pointer; transition: border-color 150ms;
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  }
+  .modal-file-row:hover { border-color: var(--accent, #D97757); }
+  .file-name { font-size: 0.76rem; color: var(--text-primary, #2D2D2D); }
+  .file-size { font-size: 0.66rem; color: var(--text-muted, #9a9590); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn {
+    appearance: none; border: none; border-radius: 8px;
+    padding: 8px 18px; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; transition: all 150ms;
+  }
+  .modal-btn.secondary {
+    background: transparent; color: var(--text-muted, #9a9590);
+  }
+  .modal-btn.secondary:hover { color: var(--text-primary, #2D2D2D); }
+  .modal-btn.primary {
+    background: var(--accent, #D97757); color: #fff;
+  }
+  .modal-btn.primary:hover {
+    background: color-mix(in srgb, var(--accent, #D97757) 85%, #000);
+  }
   .detail {
     max-width: 1280px;
     margin: 0 auto;

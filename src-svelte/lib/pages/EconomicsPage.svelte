@@ -268,6 +268,19 @@
               </div>
             </div>
           </div>
+          <!-- Cross-page links -->
+          <div class="panel cross-links" style="--panel-delay: 3">
+            <button class="cross-link" on:click={() => router.navigate('network')}>
+              <span class="cl-icon">🌐</span>
+              <span class="cl-text">Active Jobs 보기</span>
+              <span class="cl-arrow">→</span>
+            </button>
+            <button class="cross-link" on:click={() => router.navigate('studio')}>
+              <span class="cl-icon">🔬</span>
+              <span class="cl-text">새 연구 시작</span>
+              <span class="cl-arrow">→</span>
+            </button>
+          </div>
         </div>
         {/if}
 
@@ -313,6 +326,26 @@
 </div>
 
 <style>
+  /* ====== CROSS LINKS ====== */
+  .cross-links {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 8px !important;
+  }
+  .cross-link {
+    appearance: none; border: none;
+    background: transparent; width: 100%;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 8px;
+    cursor: pointer; transition: background 150ms;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    text-align: left;
+  }
+  .cross-link:hover { background: rgba(217, 119, 87, 0.06); }
+  .cl-icon { font-size: 1rem; }
+  .cl-text { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--text-primary, #2D2D2D); }
+  .cl-arrow { font-size: 0.78rem; color: var(--accent, #D97757); opacity: 0; transition: opacity 150ms; }
+  .cross-link:hover .cl-arrow { opacity: 1; }
+
   /* ====== BASE ====== */
   .econ {
     width: 100%;

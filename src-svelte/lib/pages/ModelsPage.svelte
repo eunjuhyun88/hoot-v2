@@ -200,7 +200,7 @@
         <p class="page-sub">Trained by autonomous research. Ready to deploy.</p>
       </div>
     </div>
-    <button class="header-cta" on:click={() => router.navigate('research')}>
+    <button class="header-cta" on:click={() => router.navigate('studio')}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
