@@ -4,7 +4,7 @@ import type {
   RuntimeJob,
   RuntimeJobCommand,
   RuntimeSnapshot,
-} from "../../contracts/src/index.ts";
+} from "@mesh/contracts";
 
 export type RuntimeState = {
   jobs: Record<string, RuntimeJob>;

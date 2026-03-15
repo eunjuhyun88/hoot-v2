@@ -7,10 +7,10 @@ import type {
   RuntimeEvent,
   RuntimeJobCommand,
   RuntimeMeshSummary,
-} from "../../../packages/contracts/src/index.ts";
+} from "@mesh/contracts";
 import {
   readAutoresearchStackStatus,
-} from "../../../packages/autoresearch-adapter/src/index.ts";
+} from "@mesh/autoresearch-adapter";
 import {
   applyJobCommand,
   applyRuntimeEvent,
@@ -19,7 +19,7 @@ import {
   listRuntimeJobs,
   selectRuntimeEvents,
   selectRuntimeJob,
-} from "../../../packages/domain/src/index.ts";
+} from "@mesh/domain";
 import { createRuntimeMeshBroker } from "./mesh-broker.ts";
 import { createRuntimePersistence } from "./persistence.ts";
 import { seedModels } from "./seeds/models.ts";

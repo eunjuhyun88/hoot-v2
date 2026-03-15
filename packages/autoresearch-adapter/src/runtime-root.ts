@@ -11,7 +11,7 @@ import type {
   RuntimeWorkspaceResultStatus,
   RuntimeWorkspaceStatus,
   RuntimeWorkspaceSummary,
-} from "../../contracts/src/index.ts";
+} from "@mesh/contracts";
 
 type ManifestWorkspace = {
   workspace: string;

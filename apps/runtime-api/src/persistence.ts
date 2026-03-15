@@ -6,8 +6,8 @@ import type {
   RuntimeEvent,
   RuntimeJob,
   RuntimeMeshSummary,
-} from "../../../packages/contracts/src/index.ts";
-import { hydrateRuntimeState, type RuntimeState } from "../../../packages/domain/src/index.ts";
+} from "@mesh/contracts";
+import { hydrateRuntimeState, type RuntimeState } from "@mesh/domain";
 
 export type RuntimePersistence = {
   dbPath: string;

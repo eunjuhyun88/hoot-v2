@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import type {
   RuntimeMeshEvent,
   RuntimeMeshSummary,
-} from "../../../packages/contracts/src/index.ts";
-import { inspectAutoresearchRuntimeRoot } from "../../../packages/autoresearch-adapter/src/index.ts";
+} from "@mesh/contracts";
+import { inspectAutoresearchRuntimeRoot } from "@mesh/autoresearch-adapter";
 import type { RuntimePersistence } from "./persistence.ts";
 
 type MeshBroker = {
