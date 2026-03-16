@@ -2,22 +2,25 @@
   import { onMount, onDestroy } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import PixelOwl from '../components/PixelOwl.svelte';
+  import PixelIcon from '../components/PixelIcon.svelte';
 
   // ── Pipeline stages ──
+  type PixelIconType = "search" | "brain" | "flask" | "bars" | "layers" | "rocket";
+
   interface PipelineStage {
     label: string;
-    emoji: string;
+    icon: PixelIconType;
     detail: string;
     status: 'done' | 'active' | 'pending';
   }
 
   const STAGE_TEMPLATES: Omit<PipelineStage, 'status'>[] = [
-    { label: 'Research',     emoji: '🔍', detail: 'Found 47 relevant papers, extracted 312 features from market data sources' },
-    { label: 'Hypothesis',   emoji: '🧠', detail: 'Identified 3 core patterns in MEV extraction across Solana DEX trades' },
-    { label: 'Experiment',   emoji: '🧪', detail: 'Batch complete — precision: 0.891, recall: 0.847 across 24 configurations' },
-    { label: 'Evaluate',     emoji: '📊', detail: 'Validation accuracy: 0.831 (±0.012) on holdout set, AUC: 0.917' },
-    { label: 'Build Model',  emoji: '🏗', detail: 'Model training complete! F1=0.862, ensemble of 3 gradient boosted trees' },
-    { label: 'Deploy',       emoji: '🚀', detail: '✨ Model deployed! Endpoint: /api/v1/mev-detect, latency: 12ms p99' },
+    { label: 'Research',     icon: 'search',  detail: 'Found 47 relevant papers, extracted 312 features from market data sources' },
+    { label: 'Hypothesis',   icon: 'brain',   detail: 'Identified 3 core patterns in MEV extraction across Solana DEX trades' },
+    { label: 'Experiment',   icon: 'flask',   detail: 'Batch complete — precision: 0.891, recall: 0.847 across 24 configurations' },
+    { label: 'Evaluate',     icon: 'bars',    detail: 'Validation accuracy: 0.831 (±0.012) on holdout set, AUC: 0.917' },
+    { label: 'Build Model',  icon: 'layers',  detail: 'Model training complete! F1=0.862, ensemble of 3 gradient boosted trees' },
+    { label: 'Deploy',       icon: 'rocket',  detail: 'Model deployed! Endpoint: /api/v1/mev-detect, latency: 12ms p99' },
   ];
 
   // ── Simulation state ──
@@ -152,7 +155,7 @@
           <div class="header-meta">Topic: <strong>{topic}</strong></div>
           <div class="header-meta">Session: <strong>{sessionId}</strong></div>
           <div class="header-finding">
-            <span class="finding-icon">💡</span>
+            <span class="finding-icon"><PixelIcon type="bulb" size={14} /></span>
             <span class="finding-text">{finding}</span>
           </div>
         </div>
@@ -182,7 +185,7 @@
             </div>
             <div class="stage-content">
               <div class="stage-label-row">
-                <span class="stage-emoji">{stage.emoji}</span>
+                <span class="stage-icon"><PixelIcon type={stage.icon} size={14} /></span>
                 <span class="stage-label">{stage.label}</span>
               </div>
             </div>
@@ -354,7 +357,7 @@
     font-size: 0.72rem;
     color: #4ade80;
   }
-  .finding-icon { font-size: 0.85rem; }
+  .finding-icon { display: inline-flex; align-items: center; color: #fbbf24; }
 
   /* ── Pipeline Stages ── */
   .stages {
@@ -436,10 +439,14 @@
     align-items: center;
     gap: 8px;
   }
-  .stage-emoji {
-    font-size: 1rem;
-    line-height: 1;
+  .stage-icon {
+    display: inline-flex;
+    align-items: center;
+    color: rgba(255,255,255,0.3);
+    transition: color 400ms ease;
   }
+  .stage-row.done .stage-icon { color: rgba(74,222,128,0.7); }
+  .stage-row.active .stage-icon { color: #D97757; }
   .stage-label {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
     font-size: 0.88rem;
