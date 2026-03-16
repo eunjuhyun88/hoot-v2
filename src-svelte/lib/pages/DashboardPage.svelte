@@ -7,6 +7,7 @@
   import { router } from "../stores/router.ts";
   import { toasts } from "../stores/toastStore.ts";
   import { jobStore, completedCount } from "../stores/jobStore.ts";
+  import PixelIcon from "../components/PixelIcon.svelte";
 
   onMount(() => {
     dashboardStore.init();
@@ -72,7 +73,7 @@
   <div class="home-content">
     <!-- Header -->
     <div class="home-header" in:fade={{ duration: 400 }}>
-      <div class="hh-logo">🦉</div>
+      <div class="hh-logo"><PixelIcon type="sparkle" size={36} /></div>
       <h1 class="hh-title">HOOT Protocol</h1>
       <p class="hh-sub">Decentralized AI Research Infrastructure</p>
     </div>
@@ -82,7 +83,7 @@
       <!-- Magnet Studio -->
       <div class="pillar-wrap">
         <button class="pillar-card pillar--studio" on:click={() => toggleCard('studio')}>
-          <div class="pc-icon">🔬</div>
+          <div class="pc-icon"><PixelIcon type="research" size={24} /></div>
           <div class="pc-body">
             <h2 class="pc-title">Magnet Studio</h2>
             {#if researchState === 'running'}
@@ -162,7 +163,7 @@
       <!-- GPU Network -->
       <div class="pillar-wrap">
         <button class="pillar-card pillar--network" on:click={() => toggleCard('network')}>
-          <div class="pc-icon">🌐</div>
+          <div class="pc-icon"><PixelIcon type="globe" size={24} /></div>
           <div class="pc-body">
             <h2 class="pc-title">GPU Network</h2>
             <p class="pc-desc">Register idle GPUs · Contribute compute · Earn rewards</p>
@@ -187,7 +188,7 @@
       <!-- Protocol -->
       <div class="pillar-wrap">
         <button class="pillar-card pillar--protocol" on:click={() => toggleCard('protocol')}>
-          <div class="pc-icon">🏛</div>
+          <div class="pc-icon"><PixelIcon type="protocol" size={24} /></div>
           <div class="pc-body">
             <h2 class="pc-title">Protocol</h2>
             <p class="pc-desc">Bond HOOT · Stake · Participate in governance</p>
@@ -275,9 +276,9 @@
     padding: 16px 0 4px;
   }
   .hh-logo {
-    font-size: 2.2rem;
     line-height: 1;
     margin-bottom: 8px;
+    color: var(--accent, #D97757);
   }
   .hh-title {
     font-family: var(--font-display, 'Playfair Display', serif);
@@ -326,7 +327,6 @@
   .pillar--protocol:hover { border-color: #8B6914; }
 
   .pc-icon {
-    font-size: 1.6rem;
     flex-shrink: 0;
     width: 48px;
     height: 48px;
@@ -336,9 +336,9 @@
     background: rgba(0, 0, 0, 0.02);
     border-radius: 14px;
   }
-  .pillar--studio .pc-icon { background: rgba(217, 119, 87, 0.06); }
-  .pillar--network .pc-icon { background: rgba(39, 134, 74, 0.06); }
-  .pillar--protocol .pc-icon { background: rgba(139, 105, 20, 0.06); }
+  .pillar--studio .pc-icon { background: rgba(217, 119, 87, 0.06); color: var(--accent, #D97757); }
+  .pillar--network .pc-icon { background: rgba(39, 134, 74, 0.06); color: var(--green, #27864a); }
+  .pillar--protocol .pc-icon { background: rgba(139, 105, 20, 0.06); color: #8B6914; }
 
   .pc-body {
     flex: 1;
