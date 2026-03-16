@@ -272,7 +272,7 @@
 
 <svelte:window bind:innerWidth bind:innerHeight />
 
-<div class="research-page" class:idle={phase === 'idle'} class:running={phase === 'running' || phase === 'setup'} class:resizing={resizingCol !== null} style="--grid-cols: {gridCols}">
+<div class="research-page" class:idle={phase === 'idle'} class:running={phase === 'running' || phase === 'setup'} class:complete={phase === 'complete'} class:resizing={resizingCol !== null} style="--grid-cols: {gridCols}">
 
   <button class="res-back" on:click={() => router.navigate('dashboard')} aria-label="Back to dashboard">
     <PixelIcon type="arrow" size={14} />
@@ -1260,6 +1260,24 @@
     }
   }
 
+  /* ═══ COMPLETE STATE ═══ */
+  .research-page.complete {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto auto auto auto;
+    grid-template-areas:
+      "prompt    prompt"
+      "hero      stats"
+      "converge  converge"
+      "branches  context"
+      "treemap   lineage"
+      "scatter   effect"
+      "footer    footer";
+    height: auto;
+    overflow-y: auto;
+    gap: 6px;
+    padding: 0 8px 14px;
+  }
+
   @media (max-width: 600px) {
     .research-page {
       grid-template-columns: 1fr;
@@ -1278,6 +1296,24 @@
         "treemap"
         "lineage"
         "mesh"
+        "footer";
+      gap: 8px;
+      padding: 0 6px 14px;
+    }
+    .research-page.complete {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      grid-template-areas:
+        "prompt"
+        "hero"
+        "stats"
+        "converge"
+        "branches"
+        "context"
+        "treemap"
+        "scatter"
+        "effect"
+        "lineage"
         "footer";
       gap: 8px;
       padding: 0 6px 14px;
