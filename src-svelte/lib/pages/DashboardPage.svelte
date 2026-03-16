@@ -3,7 +3,6 @@
   import { fade, slide } from "svelte/transition";
   import MeshCanvas from "../components/MeshCanvas.svelte";
   import { dashboardStore } from "../stores/dashboardStore.ts";
-  import { agentStore } from "../stores/agentStore.ts";
   import { wallet } from "../stores/walletStore.ts";
   import { router } from "../stores/router.ts";
   import { toasts } from "../stores/toastStore.ts";
@@ -11,7 +10,6 @@
 
   onMount(() => {
     dashboardStore.init();
-    agentStore.greet();
     return () => dashboardStore.destroy();
   });
 
