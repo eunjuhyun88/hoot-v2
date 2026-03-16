@@ -2,6 +2,7 @@
   import { router } from "../stores/router.ts";
   import { fmtNumber } from "../utils/format.ts";
   import { modelPublishStore } from "../stores/modelPublishStore.ts";
+  import PixelIcon from "../components/PixelIcon.svelte";
 
   let searchQuery = "";
   let debouncedQuery = "";
@@ -210,11 +211,7 @@
   <div class="page-header">
     <div class="header-left">
       <div class="header-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <PixelIcon type="layers" size={24} />
       </div>
       <div>
         <span class="page-eyebrow">MODEL HUB</span>
@@ -223,9 +220,7 @@
       </div>
     </div>
     <button class="header-cta" on:click={() => router.navigate('studio')}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
+      <PixelIcon type="research" size={14} />
       New Research
     </button>
   </div>
@@ -233,10 +228,7 @@
   <!-- Search + Filters -->
   <div class="toolbar">
     <div class="search-bar">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="search-icon">
-        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.5"/>
-        <path d="m21 21-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
+      <span class="search-icon"><PixelIcon type="search" size={16} /></span>
       <input
         type="text"
         class="search-input"
@@ -266,11 +258,7 @@
         <!-- Card Header -->
         <div class="card-top">
           <div class="card-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-              <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <PixelIcon type="layers" size={20} />
           </div>
           <span class="card-framework">{model.framework}</span>
         </div>
@@ -326,10 +314,7 @@
   {#if filteredModels.length === 0}
     <div class="empty-state">
       <div class="empty-icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1"/>
-          <path d="m21 21-4.3-4.3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
-        </svg>
+        <PixelIcon type="search" size={40} />
       </div>
       <h3 class="empty-title">No models found</h3>
       <p class="empty-desc">Try a different search query or filter.</p>
@@ -474,7 +459,7 @@
     box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.08), 0 0 12px rgba(217, 119, 87, 0.04);
   }
 
-  .search-icon { color: var(--text-muted, #9a9590); flex-shrink: 0; }
+  .search-icon { color: var(--text-muted, #9a9590); flex-shrink: 0; display: inline-flex; align-items: center; }
 
   .search-input {
     flex: 1;
