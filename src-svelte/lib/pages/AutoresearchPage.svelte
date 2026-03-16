@@ -278,7 +278,7 @@
 
 <div class="research-page" class:idle={phase === 'idle'} class:running={phase === 'running' || phase === 'setup'} class:complete={phase === 'complete'} class:resizing={resizingCol !== null} style="--grid-cols: {gridCols}">
 
-  <button class="res-back" on:click={() => router.navigate('dashboard')} aria-label="Back to dashboard">
+  <button class="res-back" on:click={() => router.navigate('studio')} aria-label="Back to studio">
     <PixelIcon type="arrow" size={14} />
   </button>
 
