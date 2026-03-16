@@ -23,6 +23,7 @@
   import { ppapStore } from '../stores/ppapStore.ts';
   import { nodeStore } from '../stores/nodeStore.ts';
   import { router } from '../stores/router.ts';
+  import PixelIcon from '../components/PixelIcon.svelte';
 
   let visible = false;
   let isMobile = false;
@@ -145,22 +146,7 @@
     <div class="page-header-inner">
       <div class="page-header-text">
         <h1 class="page-title">
-          <svg width="28" height="28" viewBox="0 0 16 16" fill="none" class="px-icon title-icon" shape-rendering="crispEdges">
-            <rect x="3" y="1" width="4" height="2" fill="var(--accent)"/>
-            <rect x="1" y="3" width="2" height="4" fill="var(--accent)"/>
-            <rect x="7" y="3" width="2" height="2" fill="var(--accent)"/>
-            <rect x="3" y="7" width="2" height="2" fill="var(--accent)" opacity="0.5"/>
-            <rect x="5" y="5" width="2" height="2" fill="var(--accent)" opacity="0.5"/>
-            <rect x="7" y="7" width="2" height="2" fill="var(--accent)" opacity="0.5"/>
-            <rect x="9" y="9" width="2" height="2" fill="var(--accent)" opacity="0.5"/>
-            <rect x="11" y="7" width="2" height="2" fill="var(--accent)" opacity="0.5"/>
-            <rect x="9" y="5" width="4" height="2" fill="var(--accent)"/>
-            <rect x="13" y="7" width="2" height="4" fill="var(--accent)"/>
-            <rect x="9" y="11" width="4" height="2" fill="var(--accent)"/>
-            <rect x="7" y="11" width="2" height="2" fill="var(--accent)"/>
-            <rect x="1" y="5" width="2" height="2" fill="var(--accent)"/>
-            <rect x="3" y="5" width="2" height="2" fill="var(--accent)"/>
-          </svg>
+          <span class="title-icon"><PixelIcon type="protocol" size={28} /></span>
           HOOT Protocol
         </h1>
         <p class="page-subtitle">On-chain operations, token flows & protocol mechanics</p>
@@ -216,15 +202,15 @@
   <!-- 2. MOBILE SEGMENT CONTROL -->
   <div class="mobile-tabs" role="tablist" aria-label="Protocol sections">
     <button class="mtab-btn" class:mtab-active={mobileTab === 'operations'} role="tab" aria-selected={mobileTab === 'operations'} on:click={() => mobileTab = 'operations'}>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <PixelIcon type="layers" size={12} />
       Operations
     </button>
     <button class="mtab-btn" class:mtab-active={mobileTab === 'analytics'} role="tab" aria-selected={mobileTab === 'analytics'} on:click={() => mobileTab = 'analytics'}>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M23 6l-9.5 9.5-5-5L1 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <PixelIcon type="chart" size={12} />
       Analytics
     </button>
     <button class="mtab-btn" class:mtab-active={mobileTab === 'events'} role="tab" aria-selected={mobileTab === 'events'} on:click={() => mobileTab = 'events'}>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <PixelIcon type="clock" size={12} />
       Events
     </button>
   </div>
@@ -237,7 +223,7 @@
       {#if !isMobile || mobileTab === 'operations'}
       <div class="left-col" in:fly={{ y: isMobile ? 8 : 0, duration: isMobile ? 200 : 0 }}>
         <div class="section-label">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="section-icon"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <PixelIcon type="layers" size={14} />
           On-chain Operations
         </div>
         <BurnPanel simulatedBalance={12450} on:openModal={e => openContractModal(e.detail)} />
@@ -265,7 +251,7 @@
         {#if !isMobile || mobileTab === 'analytics'}
         <div class="mobile-group" in:fly={{ y: isMobile ? 8 : 0, duration: isMobile ? 200 : 0 }}>
           <div class="section-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="section-icon"><path d="M23 6l-9.5 9.5-5-5L1 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <PixelIcon type="chart" size={14} />
             Analytics & Flow
           </div>
           <TokenFlowPanel />
@@ -293,14 +279,14 @@
           <!-- Cross-page links -->
           <div class="panel cross-links" style="--panel-delay: 3">
             <button class="cross-link" on:click={() => router.navigate('network')}>
-              <span class="cl-icon">🌐</span>
+              <span class="cl-icon"><PixelIcon type="globe" size={16} /></span>
               <span class="cl-text">View Active Jobs</span>
-              <span class="cl-arrow">→</span>
+              <span class="cl-arrow"><PixelIcon type="arrow" size={12} /></span>
             </button>
             <button class="cross-link" on:click={() => router.navigate('studio')}>
-              <span class="cl-icon">🔬</span>
+              <span class="cl-icon"><PixelIcon type="research" size={16} /></span>
               <span class="cl-text">Start New Research</span>
-              <span class="cl-arrow">→</span>
+              <span class="cl-arrow"><PixelIcon type="arrow" size={12} /></span>
             </button>
           </div>
         </div>
@@ -363,9 +349,9 @@
     text-align: left;
   }
   .cross-link:hover { background: rgba(217, 119, 87, 0.06); }
-  .cl-icon { font-size: 1rem; }
+  .cl-icon { color: var(--accent, #D97757); display: inline-flex; align-items: center; }
   .cl-text { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--text-primary, #2D2D2D); }
-  .cl-arrow { font-size: 0.78rem; color: var(--accent, #D97757); opacity: 0; transition: opacity 150ms; }
+  .cl-arrow { color: var(--accent, #D97757); opacity: 0; transition: opacity 150ms; display: inline-flex; align-items: center; }
   .cross-link:hover .cl-arrow { opacity: 1; }
 
   /* ====== BASE ====== */
@@ -415,8 +401,9 @@
   }
 
   .title-icon {
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+    color: var(--accent, #D97757);
+    display: inline-flex;
+    align-items: center;
   }
 
   .page-subtitle {
@@ -677,10 +664,10 @@
   }
 
   /* UX-E6: Section icon micro-rotation on hover/visibility */
-  .section-label :global(.section-icon) {
+  .section-label :global(.px-icon) {
     transition: transform 300ms var(--ease-out-expo);
   }
-  .section-label:hover :global(.section-icon) {
+  .section-label:hover :global(.px-icon) {
     transform: rotate(12deg) scale(1.1);
   }
 
