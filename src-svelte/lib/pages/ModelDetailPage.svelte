@@ -8,6 +8,7 @@
   import PlaygroundTab from "../components/PlaygroundTab.svelte";
   import ApiTab from "../components/ApiTab.svelte";
   import ModelSidebar from "../components/ModelSidebar.svelte";
+  import PixelIcon from "../components/PixelIcon.svelte";
 
   let activeTab: 'card' | 'playground' | 'api' | 'experiments' | 'benchmark' = 'card';
 
@@ -69,11 +70,7 @@
         <div class="header-top">
           <div class="header-identity">
             <div class="header-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-                <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <PixelIcon type="layers" size={24} />
             </div>
             <div>
               <h1 class="model-name">{m.name}</h1>
@@ -98,15 +95,15 @@
               {#if dropdownOpen}
               <div class="dropdown-menu" transition:fly={{ y: -8, duration: 150 }}>
                 <button class="dropdown-item" on:click={handleDeploy}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 14a1 1 0 0 1-.78-1.63l9-11a1 1 0 0 1 1.78.63v7h6a1 1 0 0 1 .78 1.63l-9 11a1 1 0 0 1-1.78-.63v-7H4z" stroke="currentColor" stroke-width="1.5"/></svg>
+                  <PixelIcon type="deploy" size={14} />
                   Deploy
                 </button>
                 <button class="dropdown-item" on:click={handleDownload}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <PixelIcon type="arrow" size={14} />
                   Download
                 </button>
                 <button class="dropdown-item" on:click={handleFork}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <PixelIcon type="ontology" size={14} />
                   Fork &amp; Retrain
                 </button>
               </div>
@@ -118,9 +115,7 @@
         <!-- Tags -->
         <div class="header-tags">
           <span class="htag task">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-              <path d="M23 6l-9.5 9.5-5-5L1 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
+            <PixelIcon type="chart" size={10} />
             Prediction
           </span>
           <span class="htag framework">{m.framework}</span>
@@ -135,38 +130,24 @@
       <!-- Tabs -->
       <div class="tabs" role="tablist" aria-label="Model sections">
         <button class="tab" class:active={activeTab === 'card'} role="tab" aria-selected={activeTab === 'card'} on:click={() => activeTab = 'card'}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
-            <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
+          <PixelIcon type="file" size={14} />
           Model Card
         </button>
         <button class="tab" class:active={activeTab === 'experiments'} role="tab" aria-selected={activeTab === 'experiments'} on:click={() => activeTab = 'experiments'}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M23 6l-9.5 9.5-5-5L1 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
+          <PixelIcon type="chart" size={14} />
           Experiments
           <span class="tab-count" class:tab-count-active={activeTab === 'experiments'}>{m.totalExperiments}</span>
         </button>
         <button class="tab" class:active={activeTab === 'benchmark'} role="tab" aria-selected={activeTab === 'benchmark'} on:click={() => activeTab = 'benchmark'}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="12" width="4" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
-            <rect x="10" y="7" width="4" height="14" rx="1" stroke="currentColor" stroke-width="1.5"/>
-            <rect x="17" y="3" width="4" height="18" rx="1" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
+          <PixelIcon type="bars" size={14} />
           Benchmark
         </button>
         <button class="tab" class:active={activeTab === 'playground'} role="tab" aria-selected={activeTab === 'playground'} on:click={() => activeTab = 'playground'}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          </svg>
+          <PixelIcon type="play" size={14} />
           Playground
         </button>
         <button class="tab" class:active={activeTab === 'api'} role="tab" aria-selected={activeTab === 'api'} on:click={() => activeTab = 'api'}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <polyline points="16 18 22 12 16 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <polyline points="8 6 2 12 8 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <PixelIcon type="code" size={14} />
           API
         </button>
       </div>
