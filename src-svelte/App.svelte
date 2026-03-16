@@ -152,6 +152,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     min-width: 0;
+    padding-bottom: 80px; /* space for AgentDock */
   }
 
   .page-transition {
