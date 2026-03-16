@@ -492,7 +492,7 @@
           <button class="ca-btn ca-btn--deploy" on:click={() => {
             studioStore.goToPublish();
           }}>
-            <span class="ca-icon">🚀</span>
+            <span class="ca-icon"><PixelIcon type="rocket" size={18} /></span>
             <span class="ca-text">
               <strong>Deploy</strong>
               <small>Deploy and mint model</small>
@@ -503,7 +503,7 @@
             studioStore.reset();
             goToCreate(topic);
           }}>
-            <span class="ca-icon">🔄</span>
+            <span class="ca-icon"><PixelIcon type="arrow" size={18} /></span>
             <span class="ca-text">
               <strong>Retrain</strong>
               <small>Retrain with same settings</small>
@@ -514,7 +514,7 @@
             studioStore.reset();
             goToCreate(topic);
           }}>
-            <span class="ca-icon">💡</span>
+            <span class="ca-icon"><PixelIcon type="bulb" size={18} /></span>
             <span class="ca-text">
               <strong>Improve</strong>
               <small>Research with improved settings</small>
