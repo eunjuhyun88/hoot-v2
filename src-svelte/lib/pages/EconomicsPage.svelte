@@ -144,6 +144,9 @@
   <!-- 0. PAGE HEADER -->
   <div class="page-header">
     <div class="page-header-inner">
+      <button class="back-btn" on:click={() => router.navigate('dashboard')} aria-label="Back to dashboard">
+        <PixelIcon type="arrow" size={14} />
+      </button>
       <div class="page-header-text">
         <h1 class="page-title">
           <span class="title-icon"><PixelIcon type="protocol" size={28} /></span>
@@ -380,11 +383,21 @@
     border-bottom: 1px solid var(--border-subtle, #EDEAE5);
   }
 
+  .back-btn {
+    appearance: none; border: none; background: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px;
+    color: var(--text-muted, #9a9590); cursor: pointer;
+    transition: all 140ms ease; flex-shrink: 0;
+    transform: scaleX(-1);
+  }
+  .back-btn:hover { color: var(--accent, #D97757); background: rgba(217,119,87,0.06); }
+
   .page-header-inner {
     max-width: 1400px;
     margin: 0 auto;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
     gap: 16px;
   }
