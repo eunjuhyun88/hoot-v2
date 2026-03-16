@@ -3,6 +3,7 @@
   import { fly, fade } from 'svelte/transition';
   import PixelOwl from '../components/PixelOwl.svelte';
   import PixelIcon from '../components/PixelIcon.svelte';
+  import { router } from '../stores/router.ts';
 
   // ── Pipeline stages ──
   type PixelIconType = "search" | "brain" | "flask" | "bars" | "layers" | "rocket";
@@ -131,7 +132,7 @@
     <!-- Terminal chrome -->
     <div class="term-chrome">
       <div class="term-dots">
-        <span class="td red"></span>
+        <button class="td red" on:click={() => router.navigate('dashboard')} title="Back to dashboard"></button>
         <span class="td yellow"></span>
         <span class="td green"></span>
       </div>
@@ -257,8 +258,11 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
+    appearance: none; border: none; padding: 0;
+    cursor: default;
   }
-  .td.red { background: #FF5F57; }
+  .td.red { background: #FF5F57; cursor: pointer; }
+  .td.red:hover { background: #ff3b30; box-shadow: 0 0 6px rgba(255,95,87,0.5); }
   .td.yellow { background: #FEBC2E; }
   .td.green { background: #28C840; }
   .term-title {
