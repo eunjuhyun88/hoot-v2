@@ -196,69 +196,110 @@
 
     {#if phase === 'idle'}
       <!-- ═══════════════════════════════════════════════════ -->
-      <!-- IDLE STATE: Dashboard-style landing                  -->
+      <!-- IDLE STATE: Multi-model studio dashboard              -->
       <!-- ═══════════════════════════════════════════════════ -->
       <div class="studio-header" in:fade={{ duration: 300 }}>
-        <button class="sh-back" on:click={() => nav('dashboard')}>← HOOT</button>
-        <h1 class="sh-title">Magnet Studio</h1>
-        <p class="sh-sub">Autonomous Research · Model Training · Deployment</p>
+        <button class="sh-back" on:click={() => nav('dashboard')}>← Home</button>
+        <div class="sh-title-row">
+          <PixelIcon type="sparkle" size={20} />
+          <h1 class="sh-title">Magnet Studio</h1>
+        </div>
+        <p class="sh-sub">Train, evaluate, and deploy AI models on the HOOT mesh</p>
       </div>
 
-      <!-- LIVE Research Hero -->
-      {#if heroJob}
-        <button class="running-hero" on:click={() => nav('research')} in:fly={{ y: 10, duration: 220 }}>
-          <div class="rh-left">
-            <div class="rh-badge"><span class="rh-dot"></span>LIVE</div>
-            <span class="rh-topic">{heroJob.topic}</span>
+      <!-- Stats Overview -->
+      <div class="stats-row" in:fade={{ duration: 300, delay: 50 }}>
+        <div class="stat-item">
+          <span class="stat-val">{ds.liveJobs.filter(j => j.status === 'running').length}</span>
+          <span class="stat-label">Active</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-val">{$modelPublishStore.length}</span>
+          <span class="stat-label">Models</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-val">{ds.researchSummary.totalExperiments ?? 0}</span>
+          <span class="stat-label">Experiments</span>
+        </div>
+      </div>
+
+      <!-- Primary CTA: New Research -->
+      <button class="cta-new-research" on:click={() => goToCreate()}>
+        <div class="cta-left">
+          <PixelIcon type="research" size={20} />
+          <div class="cta-text">
+            <strong>New Research</strong>
+            <span>Start a new AI model research project</span>
           </div>
-          <div class="rh-right">
-            <div class="rh-progress"><div class="rh-progress-bar" style="width: {heroProgress}%"></div></div>
-            <div class="rh-meta">
-              <span>{heroProgress}%</span>
-              <span>{heroJob.metrics?.bestMetric?.toFixed(4) ?? '—'} best</span>
-              <span class="rh-goto">View →</span>
-            </div>
+        </div>
+        <span class="cta-arrow">→</span>
+      </button>
+
+      <!-- Active Research Jobs -->
+      {#if ds.liveJobs.length > 0}
+        <div class="section-block" in:fly={{ y: 10, duration: 220 }}>
+          <h3 class="section-label">Active Research</h3>
+          <div class="jobs-list">
+            {#each ds.liveJobs as job}
+              {@const progress = Math.round(((job.metrics?.epoch ?? 0) / Math.max(job.metrics?.totalEpochs ?? 1, 1)) * 100)}
+              <button class="job-row" on:click={() => nav('research')}>
+                <div class="job-left">
+                  <span class="job-status" class:job-status--running={job.status === 'running'} class:job-status--done={job.status === 'completed'}></span>
+                  <div class="job-info">
+                    <span class="job-topic">{job.topic}</span>
+                    <div class="job-progress-wrap">
+                      <div class="job-progress"><div class="job-progress-bar" style="width: {progress}%"></div></div>
+                      <span class="job-pct">{progress}%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="job-right">
+                  <span class="job-metric">{job.metrics?.bestMetric?.toFixed(4) ?? '—'}</span>
+                  <span class="job-arrow">→</span>
+                </div>
+              </button>
+            {/each}
           </div>
-        </button>
+        </div>
       {/if}
 
-      <!-- Research Card -->
-      <div class="flow-card flow-card--research">
-        <div class="fc-header">
-          <PixelIcon type="research" size={18} />
-          <span class="fc-title">Research</span>
-          {#if ds.researchSummary.runningJobs > 0}
-            <span class="fc-badge">{ds.researchSummary.runningJobs} running</span>
+      <!-- My Models -->
+      <div class="section-block">
+        <div class="section-header">
+          <h3 class="section-label">My Models</h3>
+          {#if $modelPublishStore.length > 0}
+            <button class="section-action" on:click={() => nav('models')}>View All →</button>
           {/if}
         </div>
-        <p class="fc-desc">Enter a topic and AI will automatically run experiments to find the optimal model</p>
-        <form class="fc-form" on:submit|preventDefault={startResearch}>
-          <input
-            bind:value={topicInput}
-            on:keydown={handleKeydown}
-            class="fc-input"
-            placeholder="Enter research topic... (e.g. BTC price prediction)"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          {#if topicInput.trim()}
-            <button class="fc-go" type="submit">Start →</button>
-          {/if}
-        </form>
-        <div class="fc-hints">
-          {#each ds.topicSuggestions.slice(0, 3) as s}
-            <button class="fc-hint" on:click={() => goToCreate(s)}>{s}</button>
-          {/each}
-        </div>
-        <button class="fc-advanced" on:click={() => nav('ontology')}>Advanced Settings →</button>
-        {#if !$nodeStore.hasActiveNode}
-          <button class="fc-advanced" on:click={() => gpuWizardOpen = true}>Register GPU Node →</button>
+        {#if $modelPublishStore.length > 0}
+          <div class="models-grid">
+            {#each $modelPublishStore as model}
+              <button class="model-card" on:click={() => nav('model-detail')}>
+                <div class="model-card-top">
+                  <PixelIcon type="portfolio" size={14} />
+                  <span class="model-state" class:model-state--active={model.state === 'NETWORK_ACTIVE'}>
+                    {model.state === 'NETWORK_ACTIVE' ? 'Live' : model.state === 'PAUSED' ? 'Paused' : 'Retired'}
+                  </span>
+                </div>
+                <span class="model-card-name">{model.name}</span>
+                <span class="model-card-meta">{model.metrics?.experiments ?? 0} exp · {model.metrics?.best?.toFixed(3) ?? '—'}</span>
+              </button>
+            {/each}
+          </div>
+        {:else}
+          <div class="empty-state">
+            <PixelIcon type="portfolio" size={24} />
+            <span class="empty-text">No models yet</span>
+            <span class="empty-sub">Complete a research to deploy your first model</span>
+          </div>
         {/if}
       </div>
 
-      <!-- Research Presets -->
-      <div class="preset-section">
-        <h3 class="section-label">Recommended Topics</h3>
+      <!-- Quick Start Templates -->
+      <div class="section-block">
+        <h3 class="section-label">Quick Start Templates</h3>
         <div class="preset-grid">
           {#each presets as p}
             {@const meta = PRESET_META[p.id]}
@@ -286,44 +327,23 @@
         </div>
       </div>
 
-      <!-- My Models (published) -->
-      {#if $modelPublishStore.length > 0}
-        <div class="my-models-section">
-          <h3 class="section-label">My Models</h3>
-          <div class="my-models-list">
-            {#each $modelPublishStore as model}
-              <button class="model-row" on:click={() => nav('model-detail')}>
-                <div class="model-row-left">
-                  <span class="model-status" class:model-status--live={true}></span>
-                  <div class="model-info">
-                    <span class="model-name">{model.name}</span>
-                    <span class="model-meta">{model.slug} · {model.metrics?.experiments ?? 0} experiments</span>
-                  </div>
-                </div>
-                <span class="model-arrow">→</span>
-              </button>
-            {/each}
-          </div>
-          <button class="fc-advanced" on:click={() => nav('models')}>View All Models →</button>
-        </div>
-      {/if}
-
-      <!-- Recent Research -->
-      {#if ds.events.filter(e => e.type === 'research').length > 0}
-        <div class="activity-section">
-          <h3 class="section-label">Recent Research</h3>
-          <div class="activity-list">
-            {#each ds.events.filter(e => e.type === 'research').slice(0, 4) as event}
-              <button class="activity-row activity-row--clickable" on:click={() => nav('research')}>
-                <span class="activity-dot activity-dot--research"></span>
-                <span class="activity-text">{event.message}</span>
-                <span class="activity-goto">View →</span>
-                <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-              </button>
-            {/each}
-          </div>
-        </div>
-      {/if}
+      <!-- Quick Links -->
+      <div class="quick-links">
+        <button class="quick-link" on:click={() => nav('ontology')}>
+          <PixelIcon type="ontology" size={14} />
+          <span>Advanced Config</span>
+        </button>
+        {#if !$nodeStore.hasActiveNode}
+          <button class="quick-link" on:click={() => gpuWizardOpen = true}>
+            <PixelIcon type="globe" size={14} />
+            <span>Register GPU</span>
+          </button>
+        {/if}
+        <button class="quick-link" on:click={() => nav('models')}>
+          <PixelIcon type="grid" size={14} />
+          <span>Model Hub</span>
+        </button>
+      </div>
 
     {:else if phase === 'step1' || phase === 'step2'}
       <!-- ═══════════════════════════════════════════════════ -->
@@ -618,6 +638,7 @@
     transition: color 150ms;
   }
   .sh-back:hover { color: var(--accent, #D97757); }
+  .sh-title-row { display: flex; align-items: center; gap: 8px; color: var(--accent, #D97757); }
   .sh-title {
     font-family: var(--font-display, 'Playfair Display', serif);
     font-size: 1.5rem; font-weight: 700;
@@ -628,126 +649,166 @@
     font-size: 0.7rem; color: var(--text-muted, #9a9590); margin: 4px 0 0;
   }
 
-  /* ═══════ RUNNING HERO ═══════ */
-  .running-hero {
-    appearance: none;
+  /* ═══════ STATS ROW ═══════ */
+  .stats-row {
+    display: flex; align-items: center; justify-content: center; gap: 0;
+    background: var(--surface, #fff);
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    border-radius: 12px; padding: 12px 0;
+  }
+  .stat-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .stat-val {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 1.1rem; font-weight: 700; color: var(--text-primary, #2D2D2D);
+  }
+  .stat-label {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.5rem; font-weight: 600; color: var(--text-muted, #9a9590);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .stat-divider { width: 1px; height: 28px; background: var(--border-subtle, #EDEAE5); }
+
+  /* ═══════ CTA: NEW RESEARCH ═══════ */
+  .cta-new-research {
+    appearance: none; width: 100%;
     border: 1px solid rgba(217, 119, 87, 0.25);
     background: linear-gradient(135deg, rgba(217, 119, 87, 0.06) 0%, rgba(217, 119, 87, 0.02) 100%);
-    border-radius: 14px; padding: 14px 18px;
-    cursor: pointer; transition: all 180ms ease;
-    display: flex; align-items: center; gap: 16px;
-    width: 100%; text-align: left;
+    border-radius: 14px; padding: 16px 18px;
+    cursor: pointer; transition: all 200ms ease;
+    display: flex; align-items: center; justify-content: space-between;
+    text-align: left; font-family: var(--font-body, 'Inter', sans-serif);
   }
-  .running-hero:hover {
+  .cta-new-research:hover {
     border-color: var(--accent, #D97757);
-    box-shadow: 0 2px 16px rgba(217, 119, 87, 0.12);
+    box-shadow: 0 4px 20px rgba(217, 119, 87, 0.12);
+    transform: translateY(-1px);
   }
-  .rh-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-  .rh-badge {
-    display: flex; align-items: center; gap: 5px;
+  .cta-left { display: flex; align-items: center; gap: 12px; color: var(--accent, #D97757); }
+  .cta-text { display: flex; flex-direction: column; gap: 2px; }
+  .cta-text strong { font-size: 0.88rem; color: var(--text-primary, #2D2D2D); }
+  .cta-text span { font-size: 0.64rem; color: var(--text-muted, #9a9590); }
+  .cta-arrow {
+    font-size: 1.1rem; color: var(--accent, #D97757);
+    transition: transform 150ms;
+  }
+  .cta-new-research:hover .cta-arrow { transform: translateX(3px); }
+
+  /* ═══════ SECTION BLOCKS ═══════ */
+  .section-block { display: flex; flex-direction: column; gap: 8px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; }
+  .section-action {
+    appearance: none; border: none; background: none;
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.52rem; font-weight: 700; letter-spacing: 0.08em;
-    color: var(--accent, #D97757);
-    background: rgba(217, 119, 87, 0.1);
-    padding: 3px 8px; border-radius: 6px;
+    font-size: 0.56rem; font-weight: 600;
+    color: var(--accent, #D97757); cursor: pointer;
+    transition: opacity 150ms;
   }
-  .rh-dot {
-    width: 5px; height: 5px; border-radius: 50%;
+  .section-action:hover { opacity: 0.7; }
+
+  /* ═══════ JOBS LIST ═══════ */
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .jobs-list {
+    background: var(--surface, #fff);
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    border-radius: 12px; overflow: hidden;
+  }
+  .job-row {
+    appearance: none; border: none; background: transparent;
+    width: 100%; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: background 150ms;
+    border-bottom: 1px solid var(--border-subtle, #EDEAE5);
+    font-family: var(--font-body, 'Inter', sans-serif); text-align: left;
+  }
+  .job-row:last-child { border-bottom: none; }
+  .job-row:hover { background: rgba(217, 119, 87, 0.03); }
+  .job-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .job-status {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text-muted, #9a9590); flex-shrink: 0;
+  }
+  .job-status--running {
     background: var(--accent, #D97757);
     animation: pulse 1.5s ease infinite;
   }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .rh-topic { font-size: 0.84rem; font-weight: 600; color: var(--text-primary, #2D2D2D); white-space: nowrap; }
-  .rh-right { flex: 1; min-width: 0; }
-  .rh-progress { width: 100%; height: 3px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden; }
-  .rh-progress-bar { height: 100%; background: var(--accent, #D97757); border-radius: 2px; transition: width 400ms ease; }
-  .rh-meta {
-    display: flex; gap: 12px; margin-top: 5px;
+  .job-status--done { background: #27864a; }
+  .job-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .job-topic {
+    font-size: 0.78rem; font-weight: 600; color: var(--text-primary, #2D2D2D);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .job-progress-wrap { display: flex; align-items: center; gap: 8px; }
+  .job-progress { flex: 1; height: 3px; background: rgba(0,0,0,0.06); border-radius: 2px; overflow: hidden; }
+  .job-progress-bar { height: 100%; background: var(--accent, #D97757); border-radius: 2px; transition: width 400ms ease; }
+  .job-pct {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.58rem; color: var(--text-muted, #9a9590);
+    font-size: 0.52rem; font-weight: 600; color: var(--text-muted, #9a9590);
+    flex-shrink: 0; min-width: 24px;
   }
-  .rh-goto { margin-left: auto; color: var(--accent, #D97757); font-weight: 600; }
+  .job-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: 12px; }
+  .job-metric {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.6rem; font-weight: 600; color: var(--text-primary, #2D2D2D);
+  }
+  .job-arrow { font-size: 0.8rem; color: var(--text-muted, #9a9590); transition: transform 150ms; }
+  .job-row:hover .job-arrow { transform: translateX(3px); color: var(--accent, #D97757); }
 
-  /* ═══════ FLOW CARDS ═══════ */
-  .flow-card {
-    appearance: none;
-    border: 1px solid var(--border-subtle, #EDEAE5);
-    background: var(--surface, #fff);
-    border-radius: 14px; padding: 16px 18px;
-    text-align: left; cursor: pointer;
-    transition: all 180ms ease;
-    display: flex; flex-direction: column; gap: 6px;
-    width: 100%; font-family: var(--font-body, 'Inter', sans-serif);
+  /* ═══════ MODELS GRID ═══════ */
+  .models-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .model-card {
+    appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
+    background: var(--surface, #fff); border-radius: 12px;
+    padding: 12px 14px; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; gap: 4px;
+    transition: all 180ms; font-family: var(--font-body, 'Inter', sans-serif);
   }
-  .flow-card:hover {
+  .model-card:hover {
     border-color: var(--accent, #D97757);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
     transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }
-  .flow-card--research {
-    cursor: default;
-    border-color: rgba(217, 119, 87, 0.2);
-    background: linear-gradient(135deg, rgba(217, 119, 87, 0.03) 0%, var(--surface, #fff) 100%);
-  }
-  .flow-card--research:hover { transform: none; border-color: rgba(217, 119, 87, 0.2); box-shadow: none; }
-
-  .fc-header { display: flex; align-items: center; gap: 8px; color: var(--text-muted, #9a9590); }
-  .fc-title { font-size: 0.82rem; font-weight: 700; color: var(--text-primary, #2D2D2D); }
-  .fc-badge {
-    margin-left: auto;
+  .model-card-top { display: flex; align-items: center; justify-content: space-between; color: var(--text-muted, #9a9590); }
+  .model-state {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.52rem; font-weight: 600;
-    color: var(--accent, #D97757); background: rgba(217, 119, 87, 0.08);
-    padding: 2px 8px; border-radius: 100px;
+    font-size: 0.46rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 2px 6px; border-radius: 100px;
+    color: var(--text-muted, #9a9590); background: rgba(0,0,0,0.04);
   }
-  .fc-badge--blue { color: #2980b9; background: rgba(41, 128, 185, 0.08); }
-  .fc-desc { font-size: 0.72rem; color: var(--text-muted, #9a9590); line-height: 1.5; margin: 0; }
-  .fc-action { font-size: 0.7rem; font-weight: 600; color: var(--accent, #D97757); margin-top: 2px; }
-
-  .fc-form {
-    display: flex; align-items: center;
-    background: var(--page-bg, #FAF9F7);
-    border: 1px solid var(--border-subtle, #EDEAE5);
-    border-radius: 10px; padding: 2px 2px 2px 12px;
-    margin-top: 4px; transition: border-color 200ms;
+  .model-state--active { color: #27864a; background: rgba(39, 134, 74, 0.08); }
+  .model-card-name {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-primary, #2D2D2D);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .fc-form:focus-within { border-color: var(--accent, #D97757); }
-  .fc-input {
-    flex: 1; appearance: none; border: none; background: transparent;
-    color: var(--text-primary, #2D2D2D); font-size: 0.78rem; padding: 8px 0;
-    outline: none; font-family: var(--font-body, 'Inter', sans-serif); min-width: 0;
-  }
-  .fc-input::placeholder { color: var(--text-muted, #9a9590); font-size: 0.74rem; }
-  .fc-go {
-    appearance: none; border: none;
-    background: var(--accent, #D97757); color: #fff;
-    font-size: 0.72rem; font-weight: 600;
-    padding: 7px 14px; border-radius: 8px;
-    cursor: pointer; white-space: nowrap;
-    transition: background 150ms;
-    font-family: var(--font-body, 'Inter', sans-serif);
-  }
-  .fc-go:hover { background: color-mix(in srgb, var(--accent, #D97757) 85%, #000); }
-
-  .fc-hints { display: flex; gap: 5px; margin-top: 4px; }
-  .fc-hint {
-    appearance: none;
-    border: 1px solid var(--border-subtle, #EDEAE5);
-    background: transparent; color: var(--text-muted, #9a9590);
-    font-size: 0.6rem; padding: 3px 10px; border-radius: 100px;
-    cursor: pointer; transition: all 150ms;
-    font-family: var(--font-body, 'Inter', sans-serif);
-  }
-  .fc-hint:hover { border-color: var(--accent, #D97757); color: var(--accent, #D97757); }
-
-  .fc-advanced {
-    appearance: none; border: none; background: none;
-    color: var(--text-muted, #9a9590); font-size: 0.66rem; font-weight: 600;
-    cursor: pointer; padding: 2px 0; margin-top: 2px;
+  .model-card-meta {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    transition: color 150ms; text-align: left;
+    font-size: 0.5rem; color: var(--text-muted, #9a9590);
   }
-  .fc-advanced:hover { color: var(--accent, #D97757); }
+
+  /* ═══════ EMPTY STATE ═══════ */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 28px 16px;
+    background: var(--surface, #fff);
+    border: 1px dashed var(--border-subtle, #EDEAE5);
+    border-radius: 12px; color: var(--text-muted, #9a9590);
+  }
+  .empty-text { font-size: 0.78rem; font-weight: 600; color: var(--text-primary, #2D2D2D); }
+  .empty-sub { font-size: 0.6rem; color: var(--text-muted, #9a9590); }
+
+  /* ═══════ QUICK LINKS ═══════ */
+  .quick-links { display: flex; gap: 8px; flex-wrap: wrap; }
+  .quick-link {
+    appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
+    background: var(--surface, #fff); border-radius: 10px;
+    padding: 8px 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 0.66rem; font-weight: 500; color: var(--text-muted, #9a9590);
+    transition: all 150ms;
+  }
+  .quick-link:hover { border-color: var(--accent, #D97757); color: var(--accent, #D97757); }
 
   /* ═══════ PRESET SECTION ═══════ */
   .preset-section { display: flex; flex-direction: column; gap: 8px; }
@@ -824,46 +885,13 @@
     letter-spacing: 0.04em; margin-bottom: 4px;
   }
 
-  /* ═══════ ACTIVITY ═══════ */
-  .activity-section { display: flex; flex-direction: column; gap: 8px; }
+  /* ═══════ SECTION LABELS ═══════ */
   .section-label {
     font-family: var(--font-mono, 'JetBrains Mono', monospace);
     font-size: 0.56rem; font-weight: 700;
     color: var(--text-muted, #9a9590);
     text-transform: uppercase; letter-spacing: 0.06em;
     margin: 0; padding-left: 2px;
-  }
-  .activity-list {
-    background: var(--surface, #fff);
-    border: 1px solid var(--border-subtle, #EDEAE5);
-    border-radius: 10px; overflow: hidden;
-  }
-  .activity-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 14px; width: 100%;
-    border-bottom: 1px solid var(--border-subtle, #EDEAE5);
-    appearance: none; border-left: none; border-right: none; border-top: none;
-    background: transparent; cursor: pointer; transition: background 150ms;
-    font-family: var(--font-body, 'Inter', sans-serif); text-align: left;
-  }
-  .activity-row:last-child { border-bottom: none; }
-  .activity-row--clickable:hover { background: rgba(217, 119, 87, 0.04); }
-  .activity-goto {
-    font-size: 0.58rem; font-weight: 600; color: var(--accent, #D97757);
-    opacity: 0; transition: opacity 150ms; flex-shrink: 0;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  }
-  .activity-row--clickable:hover .activity-goto { opacity: 1; }
-  .activity-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted, #9a9590); flex-shrink: 0; }
-  .activity-dot--research { background: var(--accent, #D97757); }
-  .activity-dot--model { background: #2980b9; }
-  .activity-text {
-    flex: 1; font-size: 0.72rem; color: var(--text-primary, #2D2D2D);
-    min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .activity-time {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.52rem; color: var(--text-muted, #9a9590); flex-shrink: 0;
   }
 
   /* ═══════ CREATE STATE ═══════ */
@@ -1010,47 +1038,6 @@
   .ca-btn--deploy { border-color: rgba(217, 119, 87, 0.3); background: rgba(217, 119, 87, 0.03); }
   .ca-btn--deploy:hover { border-color: var(--accent, #D97757); }
 
-  /* ═══════ MY MODELS ═══════ */
-  .my-models-section { display: flex; flex-direction: column; gap: 8px; }
-  .my-models-list {
-    background: var(--surface, #fff);
-    border: 1px solid var(--border-subtle, #EDEAE5);
-    border-radius: 12px; overflow: hidden;
-  }
-  .model-row {
-    appearance: none; border: none; background: transparent;
-    width: 100%; padding: 12px 16px;
-    display: flex; align-items: center; justify-content: space-between;
-    cursor: pointer; transition: background 150ms;
-    border-bottom: 1px solid var(--border-subtle, #EDEAE5);
-    font-family: var(--font-body, 'Inter', sans-serif); text-align: left;
-  }
-  .model-row:last-child { border-bottom: none; }
-  .model-row:hover { background: rgba(217, 119, 87, 0.03); }
-  .model-row-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .model-status {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--text-muted, #9a9590); flex-shrink: 0;
-  }
-  .model-status--live {
-    background: var(--green, #27864a);
-    box-shadow: 0 0 6px rgba(39, 134, 74, 0.4);
-  }
-  .model-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .model-name {
-    font-size: 0.78rem; font-weight: 600; color: var(--text-primary, #2D2D2D);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .model-meta {
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 0.54rem; color: var(--text-muted, #9a9590);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .model-arrow {
-    font-size: 0.9rem; color: var(--text-muted, #9a9590);
-    flex-shrink: 0; transition: transform 150ms;
-  }
-  .model-row:hover .model-arrow { transform: translateX(3px); color: var(--accent, #D97757); }
 
   /* ═══════ PUBLISH STATE ═══════ */
   .publish-section { display: flex; flex-direction: column; gap: 14px; }
