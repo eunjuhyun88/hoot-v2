@@ -7,7 +7,7 @@
   import SiteFooter from "./lib/layout/SiteFooter.svelte";
   import SplashScreen from "./lib/components/SplashScreen.svelte";
   import PageSkeleton from "./lib/components/PageSkeleton.svelte";
-  import AgentBar from "./lib/components/AgentBar.svelte";
+  import AgentDock from "./lib/components/agent/AgentDock.svelte";
   import ToastContainer from "./lib/components/ToastContainer.svelte";
   import WalletModal from "./lib/components/WalletModal.svelte";
   import DisconnectConfirmModal from "./lib/components/DisconnectConfirmModal.svelte";
@@ -57,9 +57,9 @@
   $: isDashboard = $router === 'dashboard';
   $: pagePromise = !isDashboard ? pageLoaders[$router]?.() : null;
 
-  // Pages that have their own full-screen UI — hide AgentBar
+  // Pages that have their own full-screen UI — hide AgentDock
   const FULL_SCREEN_PAGES: AppView[] = ['research', 'research-lab', 'network'];
-  $: showAgentBar = !FULL_SCREEN_PAGES.includes($router);
+  $: showAgentDock = !FULL_SCREEN_PAGES.includes($router);
 
 </script>
 
@@ -98,8 +98,8 @@
       {/if}
     </main>
   </div>
-  {#if showAgentBar}
-    <AgentBar />
+  {#if showAgentDock}
+    <AgentDock />
   {/if}
 </div>
 
