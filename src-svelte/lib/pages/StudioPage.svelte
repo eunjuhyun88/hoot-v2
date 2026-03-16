@@ -12,6 +12,7 @@
   import { toasts } from "../stores/toastStore.ts";
   import { ONTOLOGY_PRESETS } from "../data/ontologyData.ts";
   import type { ContractCall } from "../data/protocolData.ts";
+  import { modelPublishStore } from "../stores/modelPublishStore.ts";
   import PixelIcon from "../components/PixelIcon.svelte";
   import StudioPublish from "../components/studio/StudioPublish.svelte";
   import GPUOnboardWizard from "../components/studio/GPUOnboardWizard.svelte";
@@ -91,7 +92,7 @@
     // Build contract call for confirmation
     pendingTopic = topic;
     modalCall = {
-      title: 'Research Job 생성',
+      title: 'Create Research Job',
       contract: '0x7a3f…ResearchRegistry',
       fn: 'createResearchJob',
       params: [
@@ -101,7 +102,7 @@
       ],
       fee: `${creditRequired} HOOT`,
       gas: '~0.0008 ETH',
-      note: 'AI가 자동으로 실험을 구성하고 최적의 모델을 탐색합니다. 실험 수와 비용은 예상치입니다.',
+      note: 'AI will automatically configure experiments and search for optimal models. Experiment count and cost are estimates.',
       accentColor: 'var(--accent)',
     };
     modalStep = 'review';
@@ -114,7 +115,7 @@
     setTimeout(() => {
       modalStep = 'confirmed';
       const txHash = `0x${Math.random().toString(16).slice(2, 10)}…${Math.random().toString(16).slice(2, 6)}`;
-      toasts.tx('Research Job 생성됨', txHash, `${pendingTopic} 연구가 시작됩니다`);
+      toasts.tx('Research Job Created', txHash, `${pendingTopic} research is starting`);
       // Actually launch after a brief confirmed display
       setTimeout(() => {
         modalOpen = false;
@@ -183,10 +184,10 @@
   }
 
   const RESOURCE_MODES: { id: ResourceMode; label: string; desc: string }[] = [
-    { id: 'demo', label: 'Demo', desc: '로컬 시뮬레이션' },
-    { id: 'local', label: 'Local', desc: '로컬 GPU' },
-    { id: 'network', label: 'Network', desc: 'HOOT 메시' },
-    { id: 'hybrid', label: 'Hybrid', desc: '로컬 + 네트워크' },
+    { id: 'demo', label: 'Demo', desc: 'Local simulation' },
+    { id: 'local', label: 'Local', desc: 'Local GPU' },
+    { id: 'network', label: 'Network', desc: 'HOOT mesh' },
+    { id: 'hybrid', label: 'Hybrid', desc: 'Local + Network' },
   ];
 </script>
 
@@ -200,7 +201,7 @@
       <div class="studio-header" in:fade={{ duration: 300 }}>
         <button class="sh-back" on:click={() => nav('dashboard')}>← HOOT</button>
         <h1 class="sh-title">Magnet Studio</h1>
-        <p class="sh-sub">AI 자율 연구 · 모델 학습 · 배포</p>
+        <p class="sh-sub">Autonomous Research · Model Training · Deployment</p>
       </div>
 
       <!-- LIVE Research Hero -->
@@ -215,7 +216,7 @@
             <div class="rh-meta">
               <span>{heroProgress}%</span>
               <span>{heroJob.metrics?.bestMetric?.toFixed(4) ?? '—'} best</span>
-              <span class="rh-goto">보기 →</span>
+              <span class="rh-goto">View →</span>
             </div>
           </div>
         </button>
@@ -230,18 +231,18 @@
             <span class="fc-badge">{ds.researchSummary.runningJobs} running</span>
           {/if}
         </div>
-        <p class="fc-desc">주제를 입력하면 AI가 자동으로 실험하고 최적의 모델을 찾아드립니다</p>
+        <p class="fc-desc">Enter a topic and AI will automatically run experiments to find the optimal model</p>
         <form class="fc-form" on:submit|preventDefault={startResearch}>
           <input
             bind:value={topicInput}
             on:keydown={handleKeydown}
             class="fc-input"
-            placeholder="연구 주제 입력... (예: BTC price prediction)"
+            placeholder="Enter research topic... (e.g. BTC price prediction)"
             autocomplete="off"
             spellcheck="false"
           />
           {#if topicInput.trim()}
-            <button class="fc-go" type="submit">시작 →</button>
+            <button class="fc-go" type="submit">Start →</button>
           {/if}
         </form>
         <div class="fc-hints">
@@ -249,15 +250,15 @@
             <button class="fc-hint" on:click={() => goToCreate(s)}>{s}</button>
           {/each}
         </div>
-        <button class="fc-advanced" on:click={() => nav('ontology')}>고급 설정 →</button>
+        <button class="fc-advanced" on:click={() => nav('ontology')}>Advanced Settings →</button>
         {#if !$nodeStore.hasActiveNode}
-          <button class="fc-advanced" on:click={() => gpuWizardOpen = true}>GPU 노드 등록 →</button>
+          <button class="fc-advanced" on:click={() => gpuWizardOpen = true}>Register GPU Node →</button>
         {/if}
       </div>
 
       <!-- Research Presets -->
       <div class="preset-section">
-        <h3 class="section-label">추천 연구 주제</h3>
+        <h3 class="section-label">Recommended Topics</h3>
         <div class="preset-grid">
           {#each presets as p}
             <button class="preset-card" on:click={() => goToCreate(p.name)}>
@@ -268,17 +269,39 @@
         </div>
       </div>
 
-      <!-- Recent Research Only (not all events) -->
+      <!-- My Models (published) -->
+      {#if $modelPublishStore.records.length > 0}
+        <div class="my-models-section">
+          <h3 class="section-label">My Models</h3>
+          <div class="my-models-list">
+            {#each $modelPublishStore.records as model}
+              <button class="model-row" on:click={() => nav('model-detail')}>
+                <div class="model-row-left">
+                  <span class="model-status" class:model-status--live={true}></span>
+                  <div class="model-info">
+                    <span class="model-name">{model.name}</span>
+                    <span class="model-meta">{model.topic} · {model.vtr?.experiments ?? 0} experiments</span>
+                  </div>
+                </div>
+                <span class="model-arrow">→</span>
+              </button>
+            {/each}
+          </div>
+          <button class="fc-advanced" on:click={() => nav('models')}>View All Models →</button>
+        </div>
+      {/if}
+
+      <!-- Recent Research -->
       {#if ds.events.filter(e => e.type === 'research').length > 0}
         <div class="activity-section">
-          <h3 class="section-label">최근 연구</h3>
+          <h3 class="section-label">Recent Research</h3>
           <div class="activity-list">
             {#each ds.events.filter(e => e.type === 'research').slice(0, 4) as event}
               <button class="activity-row activity-row--clickable" on:click={() => nav('research')}>
                 <span class="activity-dot activity-dot--research"></span>
                 <span class="activity-text">{event.message}</span>
-                <span class="activity-goto">보기 →</span>
-                <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span class="activity-goto">View →</span>
+                <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
               </button>
             {/each}
           </div>
@@ -291,18 +314,18 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <div class="create-header" in:fly={{ y: -10, duration: 200 }}>
         <button class="sh-back" on:click={goBackToIdle}>← Studio</button>
-        <h1 class="sh-title">새 연구 시작</h1>
-        <p class="sh-sub">주제를 입력하고 연구를 구성하세요</p>
+        <h1 class="sh-title">New Research</h1>
+        <p class="sh-sub">Enter a topic and configure your research</p>
       </div>
 
       <div class="create-input-section" in:fly={{ y: 10, duration: 250, delay: 50 }}>
-        <label class="create-label">연구 주제</label>
+        <label class="create-label">Research Topic</label>
         <div class="create-input-wrap">
           <input
             bind:value={topicInput}
             on:keydown={handleKeydown}
             class="create-input"
-            placeholder="예: Bitcoin price prediction, Protein folding, ..."
+            placeholder="e.g. Bitcoin price prediction, Protein folding, ..."
             autocomplete="off"
             spellcheck="false"
             autofocus
@@ -315,7 +338,7 @@
         <div class="ai-rec-panel" in:slide={{ duration: 250 }}>
           <div class="ai-rec-header">
             <span class="ai-rec-icon">AI</span>
-            <span class="ai-rec-title">추천 구성</span>
+            <span class="ai-rec-title">Recommended Configuration</span>
           </div>
 
           <!-- Preset Chips -->
@@ -334,26 +357,26 @@
           <!-- Ontology Preview -->
           <div class="ai-rec-preview">
             <div class="ai-rec-row">
-              <span class="ai-rec-label">브랜치</span>
+              <span class="ai-rec-label">Branches</span>
               <span class="ai-rec-val">Architecture, Optimization, Data, Evaluation</span>
             </div>
             <div class="ai-rec-row">
-              <span class="ai-rec-label">실험 수</span>
+              <span class="ai-rec-label">Experiments</span>
               <span class="ai-rec-val">~60 experiments</span>
             </div>
             <div class="ai-rec-row">
-              <span class="ai-rec-label">예상 비용</span>
+              <span class="ai-rec-label">Est. Cost</span>
               <span class="ai-rec-val">~12.5 HOOT</span>
             </div>
             <div class="ai-rec-row">
-              <span class="ai-rec-label">메트릭</span>
+              <span class="ai-rec-label">Metric</span>
               <span class="ai-rec-val">val_bpb (lower is better)</span>
             </div>
           </div>
 
           <!-- Resource Mode -->
           <div class="resource-section">
-            <span class="resource-label">리소스 모드</span>
+            <span class="resource-label">Resource Mode</span>
             <div class="resource-modes">
               {#each RESOURCE_MODES as rm}
                 <button
@@ -377,14 +400,14 @@
           disabled={topicInput.trim().length < 2}
           on:click={handleQuickStart}
         >
-          연구 시작 →
+          Start Research →
         </button>
         <button
           class="create-btn create-btn--secondary"
           disabled={topicInput.trim().length < 2}
           on:click={handleAdvancedSetup}
         >
-          고급 설정
+          Advanced Setup
         </button>
       </div>
 
@@ -393,9 +416,9 @@
       <!-- SETUP STATE: Advanced ontology configuration         -->
       <!-- ═══════════════════════════════════════════════════ -->
       <div class="setup-section" in:fly={{ y: 10, duration: 300 }}>
-        <button class="sh-back" on:click={() => studioStore.goBack()}>← 돌아가기</button>
-        <h1 class="sh-title">고급 설정</h1>
-        <p class="sh-sub">실험 브랜치, 모델, 파라미터를 직접 구성하세요</p>
+        <button class="sh-back" on:click={() => studioStore.goBack()}>← Back</button>
+        <h1 class="sh-title">Advanced Setup</h1>
+        <p class="sh-sub">Configure experiment branches, models, and parameters manually</p>
         {#await import('../components/studio/OntologySetup.svelte') then mod}
           <svelte:component
             this={mod.default}
@@ -414,12 +437,12 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <div class="complete-section" in:fly={{ y: 10, duration: 300 }}>
         <button class="sh-back" on:click={goBackToIdle}>← Studio</button>
-        <h1 class="sh-title">연구 완료</h1>
-        <p class="sh-sub">{stState.createTopic || '연구'} 완료</p>
+        <h1 class="sh-title">Research Complete</h1>
+        <p class="sh-sub">{stState.createTopic || 'Research'} completed</p>
 
         <div class="complete-summary">
-          <div class="cs-row"><span class="cs-label">주제</span><span class="cs-val">{stState.createTopic}</span></div>
-          <div class="cs-row"><span class="cs-label">상태</span><span class="cs-val cs-val--done">Complete</span></div>
+          <div class="cs-row"><span class="cs-label">Topic</span><span class="cs-val">{stState.createTopic}</span></div>
+          <div class="cs-row"><span class="cs-label">Status</span><span class="cs-val cs-val--done">Complete</span></div>
         </div>
 
         <div class="complete-actions">
@@ -429,7 +452,7 @@
             <span class="ca-icon">🚀</span>
             <span class="ca-text">
               <strong>Deploy</strong>
-              <small>모델 배포 및 민팅</small>
+              <small>Deploy and mint model</small>
             </span>
           </button>
           <button class="ca-btn ca-btn--retrain" on:click={() => {
@@ -440,7 +463,7 @@
             <span class="ca-icon">🔄</span>
             <span class="ca-text">
               <strong>Retrain</strong>
-              <small>같은 설정으로 재학습</small>
+              <small>Retrain with same settings</small>
             </span>
           </button>
           <button class="ca-btn ca-btn--improve" on:click={() => {
@@ -451,13 +474,13 @@
             <span class="ca-icon">💡</span>
             <span class="ca-text">
               <strong>Improve</strong>
-              <small>개선된 설정으로 재연구</small>
+              <small>Research with improved settings</small>
             </span>
           </button>
         </div>
 
         <button class="create-btn create-btn--secondary" style="margin-top: 12px;" on:click={() => nav('research')}>
-          연구 결과 상세 보기 →
+          View Research Details →
         </button>
       </div>
 
@@ -466,9 +489,9 @@
       <!-- PUBLISH STATE: Model mint wizard                     -->
       <!-- ═══════════════════════════════════════════════════ -->
       <div class="publish-section" in:fly={{ y: 10, duration: 300 }}>
-        <button class="sh-back" on:click={() => studioStore.setPhase('complete')}>← 결과로 돌아가기</button>
-        <h1 class="sh-title">모델 배포</h1>
-        <p class="sh-sub">연구 결과를 HOOT 네트워크에 배포합니다</p>
+        <button class="sh-back" on:click={() => studioStore.setPhase('complete')}>← Back to Results</button>
+        <h1 class="sh-title">Deploy Model</h1>
+        <p class="sh-sub">Deploy research results to the HOOT network</p>
         <StudioPublish
           topic={stState.createTopic}
           bestMetric={$jobStore.bestMetric === Infinity ? 0 : $jobStore.bestMetric}
@@ -509,7 +532,7 @@
   on:confirm={handleModalConfirm}
   on:connectWallet={() => {
     modalOpen = false;
-    toasts.warning('지갑 연결 필요', '연구를 시작하려면 먼저 지갑을 연결하세요');
+    toasts.warning('Wallet Required', 'Please connect your wallet to start research');
   }}
 />
 
@@ -522,7 +545,7 @@
   on:buyCredits={() => {
     creditModalOpen = false;
     nav('protocol');
-    toasts.info('크레딧 충전', 'Protocol 페이지에서 크레딧을 충전할 수 있습니다');
+    toasts.info('Top Up Credits', 'You can purchase credits on the Protocol page');
   }}
 />
 
@@ -532,7 +555,7 @@
     on:close={() => gpuWizardOpen = false}
     on:complete={(e) => {
       gpuWizardOpen = false;
-      toasts.success('GPU 등록 완료', `${e.detail.nodeId} 등록됨`);
+      toasts.success('GPU Registered', `${e.detail.nodeId} registered`);
     }}
   />
 {/if}
@@ -906,6 +929,48 @@
   .ca-text small { font-size: 0.62rem; color: var(--text-muted, #9a9590); }
   .ca-btn--deploy { border-color: rgba(217, 119, 87, 0.3); background: rgba(217, 119, 87, 0.03); }
   .ca-btn--deploy:hover { border-color: var(--accent, #D97757); }
+
+  /* ═══════ MY MODELS ═══════ */
+  .my-models-section { display: flex; flex-direction: column; gap: 8px; }
+  .my-models-list {
+    background: var(--surface, #fff);
+    border: 1px solid var(--border-subtle, #EDEAE5);
+    border-radius: 12px; overflow: hidden;
+  }
+  .model-row {
+    appearance: none; border: none; background: transparent;
+    width: 100%; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: background 150ms;
+    border-bottom: 1px solid var(--border-subtle, #EDEAE5);
+    font-family: var(--font-body, 'Inter', sans-serif); text-align: left;
+  }
+  .model-row:last-child { border-bottom: none; }
+  .model-row:hover { background: rgba(217, 119, 87, 0.03); }
+  .model-row-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .model-status {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-muted, #9a9590); flex-shrink: 0;
+  }
+  .model-status--live {
+    background: var(--green, #27864a);
+    box-shadow: 0 0 6px rgba(39, 134, 74, 0.4);
+  }
+  .model-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .model-name {
+    font-size: 0.78rem; font-weight: 600; color: var(--text-primary, #2D2D2D);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .model-meta {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.54rem; color: var(--text-muted, #9a9590);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .model-arrow {
+    font-size: 0.9rem; color: var(--text-muted, #9a9590);
+    flex-shrink: 0; transition: transform 150ms;
+  }
+  .model-row:hover .model-arrow { transform: translateX(3px); color: var(--accent, #D97757); }
 
   /* ═══════ PUBLISH STATE ═══════ */
   .publish-section { display: flex; flex-direction: column; gap: 14px; }

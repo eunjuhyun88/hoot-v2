@@ -54,7 +54,7 @@
   }
 
   function quickRegisterNode() {
-    toasts.info('노드 등록', 'Network 페이지에서 GPU 노드를 등록할 수 있습니다');
+    toasts.info('Node Registration', 'Register your GPU node on the Network page');
     nav('network');
   }
 </script>
@@ -86,25 +86,25 @@
           <div class="pc-body">
             <h2 class="pc-title">Magnet Studio</h2>
             {#if researchState === 'running'}
-              <p class="pc-desc">연구 진행 중 · {$jobStore.topic || 'AI Research'}</p>
+              <p class="pc-desc">Research in progress · {$jobStore.topic || 'AI Research'}</p>
               <div class="pc-stats">
-                <span class="pc-stat pc-stat--pulse">{researchProgress}% 완료</span>
+                <span class="pc-stat pc-stat--pulse">{researchProgress}% complete</span>
                 <span class="pc-stat">{$completedCount}/{$jobStore.totalExperiments} exp</span>
               </div>
             {:else if researchState === 'complete'}
-              <p class="pc-desc">연구 완료 · 배포 대기 중</p>
+              <p class="pc-desc">Research complete · Ready to deploy</p>
               <div class="pc-stats">
-                <span class="pc-stat pc-stat--green">완료됨</span>
+                <span class="pc-stat pc-stat--green">Complete</span>
                 <span class="pc-stat">{ds.modelsSummary.count} models</span>
               </div>
             {:else if researchState === 'deployed'}
-              <p class="pc-desc">모델 배포됨 · 서비스 중</p>
+              <p class="pc-desc">Model deployed · Serving</p>
               <div class="pc-stats">
                 <span class="pc-stat pc-stat--green">{ds.modelsSummary.count} models</span>
                 <span class="pc-stat">{ds.researchSummary.completedJobs} jobs</span>
               </div>
             {:else}
-              <p class="pc-desc">AI 자율 연구 실행 · 모델 학습 · 배포</p>
+              <p class="pc-desc">Autonomous AI research · Train · Deploy</p>
               <div class="pc-stats">
                 <span class="pc-stat">{ds.researchSummary.runningJobs} jobs</span>
                 <span class="pc-stat">{ds.modelsSummary.count} models</span>
@@ -124,35 +124,35 @@
                 <span class="qa-progress-label">{$jobStore.topic}</span>
               </div>
               <div class="qa-links">
-                <button class="qa-link qa-link--accent" on:click={() => nav('research')}>연구 현황 보기</button>
-                <button class="qa-link" on:click={() => nav('studio')}>Studio 열기</button>
+                <button class="qa-link qa-link--accent" on:click={() => nav('research')}>View Progress</button>
+                <button class="qa-link" on:click={() => nav('studio')}>Open Studio</button>
               </div>
             {:else if researchState === 'complete'}
               <!-- Complete: deploy prompt -->
-              <div class="qa-status-msg">연구가 완료되었습니다. 모델을 배포하세요.</div>
+              <div class="qa-status-msg">Research complete. Deploy your model now.</div>
               <div class="qa-links">
-                <button class="qa-link qa-link--accent" on:click={() => nav('models')}>모델 배포</button>
-                <button class="qa-link" on:click={() => nav('research')}>결과 확인</button>
-                <button class="qa-link" on:click={() => nav('studio')}>새 연구</button>
+                <button class="qa-link qa-link--accent" on:click={() => nav('models')}>Deploy Model</button>
+                <button class="qa-link" on:click={() => nav('research')}>View Results</button>
+                <button class="qa-link" on:click={() => nav('studio')}>New Research</button>
               </div>
             {:else if researchState === 'deployed'}
               <!-- Deployed: model stats -->
               <div class="qa-links">
-                <button class="qa-link" on:click={() => nav('models')}>모델 관리</button>
-                <button class="qa-link" on:click={() => nav('studio')}>새 연구 시작</button>
-                <button class="qa-link" on:click={() => nav('research')}>연구 기록</button>
+                <button class="qa-link" on:click={() => nav('models')}>Manage Models</button>
+                <button class="qa-link" on:click={() => nav('studio')}>New Research</button>
+                <button class="qa-link" on:click={() => nav('research')}>Research History</button>
               </div>
             {:else}
               <!-- None: topic input -->
               <form class="qa-form" on:submit|preventDefault={quickResearch}>
-                <input class="qa-input" bind:value={quickTopic} placeholder="연구 주제 입력..." autocomplete="off" />
+                <input class="qa-input" bind:value={quickTopic} placeholder="Enter research topic..." autocomplete="off" />
                 {#if quickTopic.trim()}
-                  <button class="qa-go" type="submit">시작 →</button>
+                  <button class="qa-go" type="submit">Start →</button>
                 {/if}
               </form>
               <div class="qa-links">
-                <button class="qa-link" on:click={() => nav('studio')}>Studio 열기</button>
-                <button class="qa-link" on:click={() => nav('models')}>모델 목록</button>
+                <button class="qa-link" on:click={() => nav('studio')}>Open Studio</button>
+                <button class="qa-link" on:click={() => nav('models')}>Browse Models</button>
               </div>
             {/if}
           </div>
@@ -165,7 +165,7 @@
           <div class="pc-icon">🌐</div>
           <div class="pc-body">
             <h2 class="pc-title">GPU Network</h2>
-            <p class="pc-desc">유휴 GPU 등록 · 연산 기여 · 보상 획득</p>
+            <p class="pc-desc">Register idle GPUs · Contribute compute · Earn rewards</p>
             <div class="pc-stats">
               <span class="pc-stat pc-stat--green">{ds.networkSummary.nodes} nodes</span>
               <span class="pc-stat pc-stat--green">{ds.networkSummary.gpuCount} GPUs</span>
@@ -176,9 +176,9 @@
         {#if expandedCard === 'network'}
           <div class="qa-panel" transition:slide={{ duration: 200 }}>
             <div class="qa-links">
-              <button class="qa-link" on:click={() => nav('network')}>네트워크 맵</button>
-              <button class="qa-link" on:click={quickRegisterNode}>노드 등록</button>
-              <button class="qa-link" on:click={() => nav('network')}>보상 확인</button>
+              <button class="qa-link" on:click={() => nav('network')}>Network Map</button>
+              <button class="qa-link" on:click={quickRegisterNode}>Register Node</button>
+              <button class="qa-link" on:click={() => nav('network')}>View Rewards</button>
             </div>
           </div>
         {/if}
@@ -190,7 +190,7 @@
           <div class="pc-icon">🏛</div>
           <div class="pc-body">
             <h2 class="pc-title">Protocol</h2>
-            <p class="pc-desc">HOOT 본딩 · 스테이킹 · 거버넌스 참여</p>
+            <p class="pc-desc">Bond HOOT · Stake · Participate in governance</p>
             <div class="pc-stats">
               <span class="pc-stat">{ds.protocolSummary.tvl} TVL</span>
               {#if $wallet.connected}
@@ -203,10 +203,10 @@
         {#if expandedCard === 'protocol'}
           <div class="qa-panel" transition:slide={{ duration: 200 }}>
             <div class="qa-links">
-              <button class="qa-link" on:click={() => nav('protocol')}>본딩/스테이킹</button>
-              <button class="qa-link" on:click={() => nav('protocol')}>HOOT 번</button>
+              <button class="qa-link" on:click={() => nav('protocol')}>Bond / Stake</button>
+              <button class="qa-link" on:click={() => nav('protocol')}>HOOT Burn</button>
               {#if !$wallet.connected}
-                <button class="qa-link qa-link--accent" on:click={() => nav('protocol')}>지갑 연결 후 참여</button>
+                <button class="qa-link qa-link--accent" on:click={() => nav('protocol')}>Connect to participate</button>
               {/if}
             </div>
           </div>
@@ -217,7 +217,7 @@
     <!-- Activity Feed -->
     {#if ds.events.length > 0}
       <div class="activity-section">
-        <h3 class="section-label">최근 활동</h3>
+        <h3 class="section-label">Recent Activity</h3>
         <div class="activity-list">
           {#each ds.events.slice(0, 5) as event}
             <div class="activity-row">
@@ -225,7 +225,7 @@
                 class:activity-dot--model={event.type === 'model'}
                 class:activity-dot--network={event.type === 'network'}></span>
               <span class="activity-text">{event.message}</span>
-              <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span class="activity-time">{new Date(event.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           {/each}
         </div>

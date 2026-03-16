@@ -10,13 +10,13 @@
 
   function selectWallet(name: string) {
     wallet.connect(name);
-    toasts.success('지갑 연결됨', `${name}이(가) 연결되었습니다`);
+    toasts.success('Wallet Connected', `${name} has been connected`);
     dispatch('close');
   }
 
   function handleDisconnect() {
     wallet.disconnect();
-    toasts.info('지갑 연결 해제', '지갑 연결이 해제되었습니다');
+    toasts.info('Wallet Disconnected', 'Your wallet has been disconnected');
     dispatch('close');
   }
 
@@ -47,12 +47,12 @@
           <div class="wm-bal-row"><span class="wm-bal-label">ETH</span><span class="wm-bal-value">0.342</span></div>
           <div class="wm-bal-row"><span class="wm-bal-label">Credit</span><span class="wm-bal-value">85.0</span></div>
         </div>
-        <button class="wm-btn wm-btn--disconnect" on:click={handleDisconnect}>연결 해제</button>
+        <button class="wm-btn wm-btn--disconnect" on:click={handleDisconnect}>Disconnect</button>
 
       {:else}
         <!-- Disconnected — wallet picker -->
-        <h3 class="wm-title">지갑 연결</h3>
-        <p class="wm-sub">HOOT 네트워크에 연결할 지갑을 선택하세요</p>
+        <h3 class="wm-title">Connect Wallet</h3>
+        <p class="wm-sub">Choose a wallet to connect to the HOOT network</p>
         <div class="wm-options">
           {#each WALLET_OPTIONS as opt}
             <button class="wm-option" on:click={() => selectWallet(opt.name)}>

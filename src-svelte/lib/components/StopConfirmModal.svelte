@@ -22,38 +22,38 @@
       <button class="sc-close" on:click={() => dispatch('cancel')}>×</button>
 
       <div class="sc-icon">⏹</div>
-      <h3 class="sc-title">연구 중지</h3>
-      <p class="sc-desc">진행 중인 연구를 중지하시겠습니까?</p>
+      <h3 class="sc-title">Stop Research</h3>
+      <p class="sc-desc">Are you sure you want to stop the current research?</p>
 
       <div class="sc-info">
         <div class="sc-row">
-          <span class="sc-label">연구 주제</span>
+          <span class="sc-label">Topic</span>
           <span class="sc-val">{topic || '—'}</span>
         </div>
         <div class="sc-row">
-          <span class="sc-label">진행률</span>
+          <span class="sc-label">Progress</span>
           <span class="sc-val">{progress}%</span>
         </div>
         <div class="sc-row">
-          <span class="sc-label">실험</span>
+          <span class="sc-label">Experiments</span>
           <span class="sc-val sc-val--mono">{experimentsCompleted}/{totalExperiments}</span>
         </div>
         <div class="sc-divider"></div>
         <div class="sc-row sc-row--warn">
-          <span class="sc-label">⚠ 이 작업은 온체인 서명이 필요합니다</span>
+          <span class="sc-label">⚠ This action requires an on-chain signature</span>
         </div>
       </div>
 
       <div class="sc-warning">
-        중지하면 현재까지의 실험 결과만 유지됩니다. 미완료 실험은 폐기되며, 사용한 크레딧은 환불되지 않습니다.
+        Only completed experiment results will be kept. Incomplete experiments will be discarded, and used credits will not be refunded.
       </div>
 
       <div class="sc-actions">
         <button class="sc-btn sc-btn--danger" on:click={() => dispatch('confirm')}>
-          서명 후 중지
+          Sign & Stop
         </button>
         <button class="sc-btn sc-btn--cancel" on:click={() => dispatch('cancel')}>
-          계속 진행
+          Keep Running
         </button>
       </div>
     </div>

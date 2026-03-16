@@ -25,12 +25,12 @@
   let inputEl: HTMLInputElement;
 
   const examples = [
-    { label: '한국어 법률 Q&A 챗봇', topic: '한국어 법률 Q&A 챗봇' },
-    { label: '스팸 탐지', topic: '스팸 탐지 모델' },
-    { label: '의료 영상 분류', topic: '의료 영상 분류 모델' },
-    { label: '고객 이탈 예측', topic: '고객 이탈 예측 모델' },
-    { label: '감성 분석', topic: '감성 분석 모델' },
-    { label: '시계열 예측', topic: '시계열 가격 예측 모델' },
+    { label: 'Legal Q&A Chatbot', topic: 'Legal Q&A Chatbot' },
+    { label: 'Spam Detection', topic: 'Spam Detection Model' },
+    { label: 'Medical Image Classification', topic: 'Medical Image Classification Model' },
+    { label: 'Customer Churn Prediction', topic: 'Customer Churn Prediction Model' },
+    { label: 'Sentiment Analysis', topic: 'Sentiment Analysis Model' },
+    { label: 'Time Series Forecasting', topic: 'Time Series Price Prediction Model' },
   ];
 
   function selectExample(ex: typeof examples[0]) {
@@ -57,14 +57,14 @@
 
 <div class="step1">
   <div class="step1-header">
-    <button class="back-btn" on:click={() => dispatch('back')} aria-label="돌아가기">
+    <button class="back-btn" on:click={() => dispatch('back')} aria-label="Go back">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>돌아가기</span>
+      <span>Back</span>
     </button>
   </div>
 
   <div class="step1-body">
-    <h2 class="step1-question">어떤 연구를 하고 싶으세요?</h2>
+    <h2 class="step1-question">What would you like to research?</h2>
 
     <div class="input-wrap">
       <input
@@ -73,13 +73,13 @@
         type="text"
         class="topic-input"
         class:has-value={topic.trim().length > 0}
-        placeholder="비트코인 가격 예측 모델"
+        placeholder="Bitcoin price prediction model"
         on:keydown={handleKeydown}
       />
     </div>
 
     <div class="examples">
-      <span class="examples-label">예시를 눌러보세요</span>
+      <span class="examples-label">Try an example</span>
       <div class="example-chips">
         {#each examples as ex}
           <button
@@ -99,7 +99,7 @@
         disabled={!topic.trim()}
         on:click={handleContinue}
       >
-        계속 &rarr;
+        Continue &rarr;
       </button>
     </div>
   </div>

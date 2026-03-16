@@ -199,14 +199,14 @@
   <div class="modal-backdrop" on:click={() => deployModalOpen = false} transition:fade={{ duration: 150 }}>
     <div class="modal-card" on:click|stopPropagation transition:fly={{ y: 20, duration: 200 }}>
       <h3 class="modal-title">Deploy Model</h3>
-      <p class="modal-desc">{m.name}을 API 엔드포인트로 배포합니다.</p>
+      <p class="modal-desc">Deploy {m.name} as an API endpoint.</p>
       <div class="modal-endpoint">
         <span class="modal-label">Endpoint URL</span>
         <code class="modal-url">https://api.hoot.network/v1/models/{m.slug}/predict</code>
       </div>
       <div class="modal-actions">
-        <button class="modal-btn secondary" on:click={() => deployModalOpen = false}>취소</button>
-        <button class="modal-btn primary" on:click={() => { deployModalOpen = false; activeTab = 'api'; }}>배포 확인</button>
+        <button class="modal-btn secondary" on:click={() => deployModalOpen = false}>Cancel</button>
+        <button class="modal-btn primary" on:click={() => { deployModalOpen = false; activeTab = 'api'; }}>Confirm Deploy</button>
       </div>
     </div>
   </div>
@@ -217,7 +217,7 @@
   <div class="modal-backdrop" on:click={() => downloadModalOpen = false} transition:fade={{ duration: 150 }}>
     <div class="modal-card" on:click|stopPropagation transition:fly={{ y: 20, duration: 200 }}>
       <h3 class="modal-title">Download Model</h3>
-      <p class="modal-desc">{m.name} 모델 파일을 다운로드합니다.</p>
+      <p class="modal-desc">Download model files for {m.name}.</p>
       <div class="modal-files">
         <button class="modal-file-row">
           <span class="file-name">model.pt</span>
@@ -233,8 +233,8 @@
         </button>
       </div>
       <div class="modal-actions">
-        <button class="modal-btn secondary" on:click={() => downloadModalOpen = false}>닫기</button>
-        <button class="modal-btn primary" on:click={() => downloadModalOpen = false}>전체 다운로드</button>
+        <button class="modal-btn secondary" on:click={() => downloadModalOpen = false}>Close</button>
+        <button class="modal-btn primary" on:click={() => downloadModalOpen = false}>Download All</button>
       </div>
     </div>
   </div>

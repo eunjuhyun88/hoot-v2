@@ -185,7 +185,7 @@
     stopModalOpen = false;
     jobStore.stopJob();
     const txHash = `0x${Math.random().toString(16).slice(2, 10)}…${Math.random().toString(16).slice(2, 6)}`;
-    toasts.tx('연구 중지됨', txHash, `${job.topic} 연구가 중지되었습니다`);
+    toasts.tx('Research Stopped', txHash, `${job.topic} research has been stopped`);
   }
 
   // ─── Force cancel banner (protocol-initiated) ───

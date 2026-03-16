@@ -61,7 +61,7 @@
   function copyAddress() {
     if ($wallet.address) {
       navigator.clipboard?.writeText($wallet.address);
-      toasts.success('주소 복사됨', $wallet.address);
+      toasts.success('Address Copied', $wallet.address);
     }
     walletDropdownOpen = false;
   }
@@ -153,7 +153,7 @@
               </div>
               <button class="wallet-dd-item" on:click={copyAddress}>
                 <span class="wallet-dd-icon">📋</span>
-                주소 복사
+                Copy Address
               </button>
               <button class="wallet-dd-item" on:click={openExplorer}>
                 <span class="wallet-dd-icon">🔗</span>
@@ -161,7 +161,7 @@
               </button>
               <button class="wallet-dd-item wallet-dd-disconnect" on:click={requestDisconnect}>
                 <span class="wallet-dd-icon">🔌</span>
-                연결 해제
+                Disconnect
               </button>
             </div>
           {/if}

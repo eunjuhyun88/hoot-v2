@@ -54,7 +54,7 @@
   $: recoBudget = estimateBudgetHoot(recoOntology);
   $: recoMetric = recoOntology.evaluation?.metric ?? 'accuracy';
   $: recoDirection = recoOntology.evaluation?.direction ?? 'maximize';
-  $: estimatedTime = recoTotal > 60 ? '~2시간' : recoTotal > 30 ? '~1시간' : '~30분';
+  $: estimatedTime = recoTotal > 60 ? '~2 hours' : recoTotal > 30 ? '~1 hour' : '~30 min';
 
   // Fork source detection
   $: forkSource = $studioStore.forkSource;
@@ -66,16 +66,16 @@
 
   function buildResourceOptions(gpu: boolean, wallet: boolean) {
     const opts: { id: ResourceMode; label: string; available: boolean }[] = [
-      { id: 'demo', label: '데모 (무료, 시뮬레이션)', available: true },
+      { id: 'demo', label: 'Demo (Free, Simulation)', available: true },
     ];
     if (gpu) {
-      opts.push({ id: 'local', label: '내 GPU (무료)', available: true });
+      opts.push({ id: 'local', label: 'My GPU (Free)', available: true });
     }
     if (wallet) {
-      opts.push({ id: 'network', label: `네트워크 (~${recoBudget} HOOT)`, available: true });
+      opts.push({ id: 'network', label: `Network (~${recoBudget} HOOT)`, available: true });
     }
     if (gpu && wallet) {
-      opts.push({ id: 'hybrid', label: `하이브리드 (~${Math.round(recoBudget / 2)} HOOT)`, available: true });
+      opts.push({ id: 'hybrid', label: `Hybrid (~${Math.round(recoBudget / 2)} HOOT)`, available: true });
     }
     return opts;
   }
@@ -93,7 +93,7 @@
 
 <div class="step2">
   <div class="step2-header">
-    <button class="back-btn" on:click={() => dispatch('back')} aria-label="돌아가기">
+    <button class="back-btn" on:click={() => dispatch('back')} aria-label="Go back">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>{topic}</span>
     </button>
@@ -109,14 +109,14 @@
       </div>
     {/if}
 
-    <h2 class="step2-title">이렇게 연구할게요</h2>
+    <h2 class="step2-title">Here's the research plan</h2>
 
     <!-- AI Recommendation Card -->
     <div class="reco-card">
       {#if matchedPreset}
         <div class="preset-badge">
           <PixelIcon type="sparkle" size={12} />
-          <span>{matchedPreset.name} 프리셋 적용</span>
+          <span>{matchedPreset.name} preset applied</span>
         </div>
       {/if}
 
@@ -136,30 +136,30 @@
     <!-- Summary -->
     <div class="summary-card">
       <div class="summary-row">
-        <span class="sum-label">총 실험</span>
-        <span class="sum-value">{recoTotal}회</span>
+        <span class="sum-label">Total Experiments</span>
+        <span class="sum-value">{recoTotal}</span>
       </div>
       <div class="summary-row">
-        <span class="sum-label">예상 시간</span>
+        <span class="sum-label">Estimated Time</span>
         <span class="sum-value">{estimatedTime}</span>
       </div>
       <div class="summary-row">
-        <span class="sum-label">예상 비용</span>
+        <span class="sum-label">Estimated Cost</span>
         <span class="sum-value sum-accent">~{recoBudget} HOOT</span>
       </div>
       <div class="summary-row">
-        <span class="sum-label">메트릭</span>
+        <span class="sum-label">Metric</span>
         <span class="sum-value">{recoMetric} ({recoDirection})</span>
       </div>
       <div class="summary-row">
-        <span class="sum-label">데이터</span>
-        <span class="sum-value">AI 자동 수집</span>
+        <span class="sum-label">Data</span>
+        <span class="sum-value">AI auto-collected</span>
       </div>
     </div>
 
     <!-- Resource selection -->
     <div class="resource-section">
-      <span class="resource-label">실행 방식</span>
+      <span class="resource-label">Execution Mode</span>
       <div class="resource-options">
         {#each resourceOptions as opt}
           <label class="resource-option" class:selected={resourceMode === opt.id}>
@@ -175,17 +175,17 @@
     {#if !hasWallet}
       <div class="wallet-cta">
         <PixelIcon type="protocol" size={14} />
-        <span>지갑 연결하면 실제 GPU로 실행할 수 있어요</span>
+        <span>Connect your wallet to run on real GPUs</span>
       </div>
     {/if}
 
     <!-- Actions -->
     <div class="step2-actions">
       <button class="setup-btn" on:click={handleSetup}>
-        세부 설정 변경 &rarr;
+        Customize Settings &rarr;
       </button>
       <button class="start-btn" on:click={handleStart} disabled={!topic.trim()}>
-        연구 시작하기 &rarr;
+        Start Research &rarr;
       </button>
     </div>
   </div>

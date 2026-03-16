@@ -23,9 +23,9 @@
 
   // ── Context-aware placeholder ──
   $: contextPlaceholder = (() => {
-    if ($dockContext === 'running') return `${$jobStore.topic || 'Research'} — ${$jobStore.progress}% 진행 중`;
-    if ($dockContext === 'complete') return '개선 지시를 입력하거나 /help';
-    return '연구 토픽을 입력하세요...  ⌘K';
+    if ($dockContext === 'running') return `${$jobStore.topic || 'Research'} — ${$jobStore.progress}% in progress`;
+    if ($dockContext === 'complete') return 'Enter improvement instructions or /help';
+    return 'Enter a research topic...  ⌘K';
   })();
 
   // ── Running ETA for status ──

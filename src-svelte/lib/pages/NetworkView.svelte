@@ -525,7 +525,7 @@
                   <div class="jmeta">
                     <span>{swarm.nodeCount} nodes</span>
                     <span>{getJobFlowCount(swarm.job)} flows</span>
-                    <span class="jgoto">연구 보기 →</span>
+                    <span class="jgoto">View Research →</span>
                   </div>
                 </button>
               {/each}

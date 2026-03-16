@@ -52,7 +52,7 @@
 
   function formatTime(ts: number): string {
     const d = new Date(ts);
-    return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   }
 </script>
 
@@ -101,7 +101,7 @@
         bind:value={inputText}
         on:keydown={handleKeydown}
         class="at-input"
-        placeholder="무엇이든 물어보세요..."
+        placeholder="Ask anything..."
         autocomplete="off"
         spellcheck="false"
       />
@@ -156,7 +156,7 @@
             bind:value={inputText}
             on:keydown={handleKeydown}
             class="at-input"
-            placeholder="무엇이든 물어보세요..."
+            placeholder="Ask anything..."
             autocomplete="off"
           />
           <button class="at-send" type="submit" disabled={!inputText.trim()} aria-label="Send">

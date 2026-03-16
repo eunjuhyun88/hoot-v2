@@ -93,7 +93,7 @@ function createDockStore() {
 
       jobStore.startJob(topic, branches, itersPerBranch);
       studioStore.launchFromDock(topic, state.selectedPresetId ?? undefined);
-      toasts.success('연구 시작', '연구가 시작되었습니다');
+      toasts.success('Research Started', 'Your research has been launched');
 
       update(s => ({ ...s, expansion: 'collapsed' }));
     },
@@ -121,7 +121,7 @@ function createDockStore() {
           if (job.phase === 'running') {
             jobStore.stopJob();
             studioStore.reset();
-            toasts.warning('연구 중단', '연구가 중단되었습니다');
+            toasts.warning('Research Stopped', 'The research has been stopped');
           }
           break;
         }
@@ -130,7 +130,7 @@ function createDockStore() {
           if (job.phase === 'running') {
             router.navigate('research');
           } else {
-            toasts.info('상태', '현재 진행 중인 연구가 없습니다');
+            toasts.info('Status', 'No research is currently in progress');
           }
           break;
         }
@@ -143,7 +143,7 @@ function createDockStore() {
           break;
         }
         default:
-          toasts.info('알 수 없는 명령', `/${cmd} — /help로 도움말을 확인하세요.`);
+          toasts.info('Unknown Command', `/${cmd} — type /help to see available commands.`);
       }
     },
 

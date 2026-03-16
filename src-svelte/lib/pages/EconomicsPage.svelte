@@ -294,12 +294,12 @@
           <div class="panel cross-links" style="--panel-delay: 3">
             <button class="cross-link" on:click={() => router.navigate('network')}>
               <span class="cl-icon">🌐</span>
-              <span class="cl-text">Active Jobs 보기</span>
+              <span class="cl-text">View Active Jobs</span>
               <span class="cl-arrow">→</span>
             </button>
             <button class="cross-link" on:click={() => router.navigate('studio')}>
               <span class="cl-icon">🔬</span>
-              <span class="cl-text">새 연구 시작</span>
+              <span class="cl-text">Start New Research</span>
               <span class="cl-arrow">→</span>
             </button>
           </div>

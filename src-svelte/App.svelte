@@ -31,7 +31,7 @@
     const name = $wallet.name;
     wallet.disconnect();
     disconnectConfirmOpen = false;
-    toasts.info('지갑 연결 해제', `${name} 연결이 해제되었습니다`);
+    toasts.info('Wallet Disconnected', `${name} has been disconnected`);
   }
 
   // Lazy-loaded page components (everything except Dashboard which is the landing page)

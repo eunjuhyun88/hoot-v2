@@ -17,17 +17,17 @@
   <div class="dc-overlay" on:click|self={() => dispatch('cancel')} role="dialog" aria-modal="true" transition:fade={{ duration: 150 }}>
     <div class="dc-card" in:fly={{ y: 16, duration: 240 }}>
       <div class="dc-icon">⚠️</div>
-      <h3 class="dc-title">지갑 연결 해제</h3>
+      <h3 class="dc-title">Disconnect Wallet</h3>
       <p class="dc-desc">
-        <strong>{walletName}</strong> 연결을 해제하시겠습니까?<br/>
-        진행 중인 트랜잭션이 있으면 중단될 수 있습니다.
+        Disconnect <strong>{walletName}</strong>?<br/>
+        Any pending transactions may be interrupted.
       </p>
       <div class="dc-actions">
         <button class="dc-btn dc-btn--danger" on:click={() => dispatch('confirm')}>
-          연결 해제
+          Disconnect
         </button>
         <button class="dc-btn dc-btn--cancel" on:click={() => dispatch('cancel')}>
-          취소
+          Cancel
         </button>
       </div>
     </div>

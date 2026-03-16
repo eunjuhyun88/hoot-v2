@@ -22,31 +22,31 @@
       <button class="ci-close" on:click={() => dispatch('close')}>×</button>
 
       <div class="ci-icon">⚡</div>
-      <h3 class="ci-title">크레딧 부족</h3>
-      <p class="ci-desc">연구를 시작하려면 추가 크레딧이 필요합니다</p>
+      <h3 class="ci-title">Insufficient Credits</h3>
+      <p class="ci-desc">Additional credits are needed to start this research</p>
 
       <div class="ci-breakdown">
         <div class="ci-row">
-          <span class="ci-label">필요 크레딧</span>
+          <span class="ci-label">Required</span>
           <span class="ci-val">{required.toFixed(1)} HOOT</span>
         </div>
         <div class="ci-row">
-          <span class="ci-label">보유 크레딧</span>
+          <span class="ci-label">Available</span>
           <span class="ci-val">{available.toFixed(1)} HOOT</span>
         </div>
         <div class="ci-divider"></div>
         <div class="ci-row ci-row--deficit">
-          <span class="ci-label">부족분</span>
+          <span class="ci-label">Shortfall</span>
           <span class="ci-val ci-val--red">{deficit.toFixed(1)} HOOT</span>
         </div>
       </div>
 
       <div class="ci-actions">
         <button class="ci-btn ci-btn--primary" on:click={() => dispatch('buyCredits')}>
-          크레딧 충전 →
+          Buy Credits →
         </button>
         <button class="ci-btn ci-btn--secondary" on:click={() => dispatch('close')}>
-          나중에
+          Not Now
         </button>
       </div>
     </div>

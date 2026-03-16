@@ -185,7 +185,7 @@
     <div class="complete-view">
       <div class="complete-header">
         <span class="complete-check">✓</span>
-        <span class="complete-topic">{runTopic || $studioStore.createTopic} — 완료</span>
+        <span class="complete-topic">{runTopic || $studioStore.createTopic} — Complete</span>
       </div>
       <div class="complete-meta">
         Best: {$jobStore.bestMetric?.toFixed(3) ?? '—'} AUC · {runTotalExp} experiments
