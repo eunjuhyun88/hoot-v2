@@ -115,8 +115,10 @@
   let rightColW = 260; // px
   $: isMobileLayout = innerWidth <= 600;
   $: isTabletLayout = innerWidth <= 1024 && innerWidth > 600;
+  $: isCompletePhase = phase === 'complete';
   $: gridCols = isMobileLayout ? '1fr'
     : isTabletLayout ? '1fr 1fr'
+    : isCompletePhase ? '1fr 1.2fr 1fr'
     : `${leftColW}px minmax(80px, 1fr) 1fr 1fr ${rightColW}px`;
 
   function startResize(col: 'left' | 'right', e: MouseEvent) {
@@ -1258,6 +1260,20 @@
         "onboard  context"
         "footer   footer";
     }
+    .research-page.complete {
+      grid-template-columns: 1fr 1fr !important;
+      grid-template-rows: auto auto auto auto auto auto;
+      grid-template-areas:
+        "prompt    prompt"
+        "hero      stats"
+        "converge  converge"
+        "branches  context"
+        "treemap   lineage"
+        "scatter   effect"
+        "footer    footer";
+      gap: 8px;
+      padding: 0 8px 14px;
+    }
     .terminal-tile {
       min-height: 200px;
     }
@@ -1265,20 +1281,18 @@
 
   /* ═══ COMPLETE STATE ═══ */
   .research-page.complete {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto auto auto auto auto;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    grid-template-rows: auto auto auto auto auto auto;
     grid-template-areas:
-      "prompt    prompt"
-      "hero      stats"
-      "converge  converge"
-      "branches  context"
-      "treemap   lineage"
-      "scatter   effect"
-      "footer    footer";
+      "prompt    prompt    prompt"
+      "hero      converge  stats"
+      "branches  scatter   context"
+      "treemap   lineage   effect"
+      "footer    footer    footer";
     height: auto;
     overflow-y: auto;
-    gap: 6px;
-    padding: 0 8px 14px;
+    gap: 8px;
+    padding: 0 12px 14px;
   }
 
   @media (max-width: 600px) {
