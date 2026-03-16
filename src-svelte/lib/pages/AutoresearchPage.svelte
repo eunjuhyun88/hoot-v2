@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import { router } from '../stores/router.ts';
+  import PixelIcon from '../components/PixelIcon.svelte';
   import {
     jobStore, keepCount, crashCount, completedCount, activeNodeCount,
     experimentTree, scatterData, heatmapData,
@@ -272,6 +273,10 @@
 <svelte:window bind:innerWidth bind:innerHeight />
 
 <div class="research-page" class:idle={phase === 'idle'} class:running={phase === 'running' || phase === 'setup'} class:resizing={resizingCol !== null} style="--grid-cols: {gridCols}">
+
+  <button class="res-back" on:click={() => router.navigate('dashboard')} aria-label="Back to dashboard">
+    <PixelIcon type="arrow" size={14} />
+  </button>
 
   <!-- ═══ PROMPT BAR ═══ -->
   <div class="tile prompt-tile" style="grid-area: prompt">
@@ -741,7 +746,22 @@
 
 <style>
   /* ═══ GRID LAYOUT ═══ */
+  .res-back {
+    position: absolute; top: 8px; left: 8px; z-index: 20;
+    appearance: none; border: none;
+    background: var(--glass-bg, rgba(255,255,255,0.85));
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px;
+    color: var(--text-muted, #9a9590); cursor: pointer;
+    transition: all 140ms ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transform: scaleX(-1);
+  }
+  .res-back:hover { color: var(--accent, #D97757); background: rgba(255,255,255,0.95); }
+
   .research-page {
+    position: relative;
     height: calc(100vh - 48px);
     display: grid;
     grid-template-columns: var(--grid-cols, 180px minmax(80px, 1fr) 1fr 1fr 260px);
