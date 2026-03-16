@@ -226,6 +226,24 @@ function defaultBranch(type: BranchTypeId, overrides?: Partial<OntologyBranch>):
   };
 }
 
+// ─── Preset Metadata (for UI cards) ─────────────────────────────
+
+export type PresetDifficulty = 'beginner' | 'intermediate' | 'advanced';
+
+export interface PresetMeta {
+  icon: string;
+  difficulty: PresetDifficulty;
+  estimatedTime: string;
+  techTags: string[];
+}
+
+export const PRESET_META: Record<string, PresetMeta> = {
+  crypto_market: { icon: '⚡', difficulty: 'advanced', estimatedTime: '~4h', techTags: ['XGBoost', 'On-chain'] },
+  defi_risk: { icon: '🛡', difficulty: 'intermediate', estimatedTime: '~2h', techTags: ['Classification', 'Risk'] },
+  fraud_detection: { icon: '🔍', difficulty: 'intermediate', estimatedTime: '~3h', techTags: ['Anomaly', 'MLP'] },
+  time_series: { icon: '📈', difficulty: 'beginner', estimatedTime: '~1h', techTags: ['Forecasting', 'Tabular'] },
+};
+
 export const ONTOLOGY_PRESETS: OntologyPreset[] = [
   {
     id: 'crypto_market',

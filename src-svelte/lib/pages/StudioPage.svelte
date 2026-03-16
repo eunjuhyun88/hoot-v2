@@ -10,7 +10,7 @@
   import { isConnected } from "../stores/connectionStore.ts";
   import { wallet } from "../stores/walletStore.ts";
   import { toasts } from "../stores/toastStore.ts";
-  import { ONTOLOGY_PRESETS } from "../data/ontologyData.ts";
+  import { ONTOLOGY_PRESETS, PRESET_META, type PresetDifficulty } from "../data/ontologyData.ts";
   import type { ContractCall } from "../data/protocolData.ts";
   import { modelPublishStore } from "../stores/modelPublishStore.ts";
   import PixelIcon from "../components/PixelIcon.svelte";
@@ -261,26 +261,43 @@
         <h3 class="section-label">Recommended Topics</h3>
         <div class="preset-grid">
           {#each presets as p}
+            {@const meta = PRESET_META[p.id]}
             <button class="preset-card" on:click={() => goToCreate(p.name)}>
+              <div class="preset-card-top">
+                <span class="preset-icon">{meta?.icon ?? '⚡'}</span>
+                {#if meta}
+                  <span class="preset-difficulty preset-difficulty--{meta.difficulty}">{meta.difficulty}</span>
+                {/if}
+              </div>
               <span class="preset-name">{p.name}</span>
               <span class="preset-desc">{p.description ?? ''}</span>
+              {#if meta}
+                <div class="preset-card-footer">
+                  <span class="preset-time">{meta.estimatedTime}</span>
+                  <div class="preset-tags">
+                    {#each meta.techTags as tag}
+                      <span class="preset-tag">{tag}</span>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
             </button>
           {/each}
         </div>
       </div>
 
       <!-- My Models (published) -->
-      {#if $modelPublishStore.records.length > 0}
+      {#if $modelPublishStore.length > 0}
         <div class="my-models-section">
           <h3 class="section-label">My Models</h3>
           <div class="my-models-list">
-            {#each $modelPublishStore.records as model}
+            {#each $modelPublishStore as model}
               <button class="model-row" on:click={() => nav('model-detail')}>
                 <div class="model-row-left">
                   <span class="model-status" class:model-status--live={true}></span>
                   <div class="model-info">
                     <span class="model-name">{model.name}</span>
-                    <span class="model-meta">{model.topic} · {model.vtr?.experiments ?? 0} experiments</span>
+                    <span class="model-meta">{model.slug} · {model.metrics?.experiments ?? 0} experiments</span>
                   </div>
                 </div>
                 <span class="model-arrow">→</span>
@@ -314,8 +331,14 @@
       <!-- ═══════════════════════════════════════════════════ -->
       <div class="create-header" in:fly={{ y: -10, duration: 200 }}>
         <button class="sh-back" on:click={goBackToIdle}>← Studio</button>
+        <div class="step-indicator">
+          <div class="step-dot" class:step-dot--active={true} class:step-dot--done={phase === 'step2'}></div>
+          <div class="step-line" class:step-line--active={phase === 'step2'}></div>
+          <div class="step-dot" class:step-dot--active={phase === 'step2'}></div>
+        </div>
+        <span class="step-label">Step {phase === 'step1' ? '1' : '2'} of 2 — {phase === 'step1' ? 'Topic' : 'Configure'}</span>
         <h1 class="sh-title">New Research</h1>
-        <p class="sh-sub">Enter a topic and configure your research</p>
+        <p class="sh-sub">{phase === 'step1' ? 'What would you like to research?' : 'Review configuration and launch'}</p>
       </div>
 
       <div class="create-input-section" in:fly={{ y: 10, duration: 250, delay: 50 }}>
@@ -728,21 +751,78 @@
 
   /* ═══════ PRESET SECTION ═══════ */
   .preset-section { display: flex; flex-direction: column; gap: 8px; }
-  .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .preset-card {
     appearance: none; border: 1px solid var(--border-subtle, #EDEAE5);
-    background: var(--surface, #fff); border-radius: 10px;
-    padding: 12px 14px; cursor: pointer; text-align: left;
-    display: flex; flex-direction: column; gap: 3px;
-    transition: all 180ms; font-family: var(--font-body, 'Inter', sans-serif);
+    background: var(--surface, #fff); border-radius: 14px;
+    padding: 14px 16px; cursor: pointer; text-align: left;
+    display: flex; flex-direction: column; gap: 6px;
+    transition: all 220ms ease; font-family: var(--font-body, 'Inter', sans-serif);
   }
   .preset-card:hover {
     border-color: var(--accent, #D97757);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(217, 119, 87, 0.08);
   }
-  .preset-name { font-size: 0.72rem; font-weight: 600; color: var(--text-primary, #2D2D2D); }
-  .preset-desc { font-size: 0.58rem; color: var(--text-muted, #9a9590); line-height: 1.4; }
+  .preset-card-top { display: flex; align-items: center; justify-content: space-between; }
+  .preset-icon { font-size: 1.2rem; line-height: 1; }
+  .preset-difficulty {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.48rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 2px 7px; border-radius: 100px;
+  }
+  .preset-difficulty--beginner { color: #27864a; background: rgba(39, 134, 74, 0.08); }
+  .preset-difficulty--intermediate { color: #d4a017; background: rgba(212, 160, 23, 0.08); }
+  .preset-difficulty--advanced { color: var(--accent, #D97757); background: rgba(217, 119, 87, 0.08); }
+  .preset-name { font-size: 0.74rem; font-weight: 600; color: var(--text-primary, #2D2D2D); line-height: 1.3; }
+  .preset-desc { font-size: 0.58rem; color: var(--text-muted, #9a9590); line-height: 1.45; }
+  .preset-card-footer {
+    display: flex; align-items: center; gap: 6px; margin-top: 2px;
+    padding-top: 8px; border-top: 1px solid var(--border-subtle, #EDEAE5);
+  }
+  .preset-time {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.5rem; font-weight: 600; color: var(--text-muted, #9a9590);
+    flex-shrink: 0;
+  }
+  .preset-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+  .preset-tag {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.46rem; font-weight: 500; color: var(--text-muted, #9a9590);
+    background: var(--page-bg, #FAF9F7); padding: 1px 6px; border-radius: 4px;
+    border: 1px solid var(--border-subtle, #EDEAE5);
+  }
+
+  /* ═══════ STEP INDICATOR ═══════ */
+  .step-indicator {
+    display: flex; align-items: center; gap: 0; margin-bottom: 8px;
+  }
+  .step-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    border: 1.5px solid var(--border-subtle, #EDEAE5);
+    background: transparent; transition: all 250ms ease;
+    flex-shrink: 0;
+  }
+  .step-dot--active {
+    border-color: var(--accent, #D97757);
+    background: var(--accent, #D97757);
+  }
+  .step-dot--done {
+    border-color: #27864a;
+    background: #27864a;
+  }
+  .step-line {
+    width: 32px; height: 1.5px;
+    background: var(--border-subtle, #EDEAE5);
+    transition: background 250ms ease;
+  }
+  .step-line--active { background: var(--accent, #D97757); }
+  .step-label {
+    font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    font-size: 0.52rem; font-weight: 600;
+    color: var(--accent, #D97757);
+    letter-spacing: 0.04em; margin-bottom: 4px;
+  }
 
   /* ═══════ ACTIVITY ═══════ */
   .activity-section { display: flex; flex-direction: column; gap: 8px; }
