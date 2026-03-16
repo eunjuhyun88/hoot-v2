@@ -48,7 +48,7 @@
         : `${$dashboardStore.runningCount} running`,
       label: 'RESEARCH',
       color: $dockContext === 'complete' ? 'var(--green, #27864a)' : 'var(--accent, #D97757)',
-      view: 'studio' as AppView,
+      view: ($dockContext === 'running' || $dockContext === 'complete') ? 'research' as AppView : 'studio' as AppView,
     },
     {
       icon: 'grid' as const,
