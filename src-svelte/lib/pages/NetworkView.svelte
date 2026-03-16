@@ -29,6 +29,7 @@
   import NetworkHUD from "../components/NetworkHUD.svelte";
   import JobsPanel from "../components/JobsPanel.svelte";
   import { router } from "../stores/router.ts";
+  import PixelIcon from "../components/PixelIcon.svelte";
   import { jobStore } from '../stores/jobStore.ts';
   import { wallet } from '../stores/walletStore.ts';
   import ContractCallModal from '../components/ContractCallModal.svelte';
@@ -394,6 +395,9 @@
 </script>
 
 <div class="network" class:mounted>
+  <button class="net-back" on:click={() => router.navigate('dashboard')} aria-label="Back to dashboard">
+    <PixelIcon type="arrow" size={14} />
+  </button>
   <NetworkHUD
     nodeCount={renderNodes.length}
     {recentNodeJoinDelta}
@@ -416,7 +420,7 @@
       }
       telemetryMode = e.detail;
     }}
-    on:viewGlobe={() => router.navigate('globe')}
+    on:viewGlobe={() => router.navigate('network')}
   />
 
   <!-- Content: Canvas + Side Panel -->
@@ -593,6 +597,20 @@
     overflow: hidden;
   }
   .network.mounted { opacity: 1; }
+
+  .net-back {
+    position: absolute; top: 12px; left: 12px; z-index: 20;
+    appearance: none; border: none;
+    background: var(--glass-bg, rgba(255,255,255,0.85));
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px;
+    color: var(--text-muted, #9a9590); cursor: pointer;
+    transition: all 140ms ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transform: scaleX(-1);
+  }
+  .net-back:hover { color: var(--accent, #D97757); background: rgba(255,255,255,0.95); }
 
   /* Content */
   .content {
