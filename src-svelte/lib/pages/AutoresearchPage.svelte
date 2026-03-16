@@ -113,7 +113,11 @@
   let resizingCol: 'left' | 'right' | null = null;
   let leftColW = 180;  // px
   let rightColW = 260; // px
-  $: gridCols = `${leftColW}px minmax(80px, 1fr) 1fr 1fr ${rightColW}px`;
+  $: isMobileLayout = innerWidth <= 600;
+  $: isTabletLayout = innerWidth <= 1024 && innerWidth > 600;
+  $: gridCols = isMobileLayout ? '1fr'
+    : isTabletLayout ? '1fr 1fr'
+    : `${leftColW}px minmax(80px, 1fr) 1fr 1fr ${rightColW}px`;
 
   function startResize(col: 'left' | 'right', e: MouseEvent) {
     e.preventDefault();
@@ -545,8 +549,6 @@
         trainingExp={$trainingExperiment}
       />
     </div>
-  {:else}
-    <div style="grid-area: terminal"></div>
   {/if}
 
   <!-- ═══ LINEAGE TREE ═══ -->
@@ -830,7 +832,8 @@
     justify-self: start;
   }
   .research-page.resizing { user-select: none; cursor: col-resize; }
-  .research-page.idle .resize-handle { display: none; }
+  .research-page.idle .resize-handle,
+  .research-page.complete .resize-handle { display: none; }
 
   .tile {
     background: var(--surface, #fff);
@@ -1230,7 +1233,7 @@
   /* ═══ RESPONSIVE ═══ */
   @media (max-width: 1024px) {
     .research-page {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr !important;
       grid-template-rows: auto auto auto auto auto auto auto auto auto;
       grid-template-areas:
         "prompt    prompt"
@@ -1280,7 +1283,8 @@
 
   @media (max-width: 600px) {
     .research-page {
-      grid-template-columns: 1fr;
+      --grid-cols: 1fr !important;
+      grid-template-columns: 1fr !important;
       grid-template-rows: auto auto auto auto auto auto auto auto auto auto auto auto auto auto;
       grid-template-areas:
         "prompt"
@@ -1299,9 +1303,11 @@
         "footer";
       gap: 8px;
       padding: 0 6px 14px;
+      height: auto !important;
+      overflow-y: auto !important;
     }
     .research-page.complete {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr !important;
       grid-template-rows: auto;
       grid-template-areas:
         "prompt"
@@ -1328,6 +1334,16 @@
         "footer";
     }
     .hero-owl { display: none; }
+    .terminal-tile {
+      display: none !important;
+    }
+    .resize-handle,
+    .resize-left,
+    .resize-right {
+      display: none !important;
+      grid-column: auto !important;
+      grid-row: auto !important;
+    }
     .hero-tile {
       justify-content: flex-start;
       padding: 10px 12px;
