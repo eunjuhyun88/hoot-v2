@@ -20,6 +20,7 @@
     estimateBudgetHoot,
   } from "../data/ontologyData.ts";
   import OntologyBranchCard from "../components/OntologyBranchCard.svelte";
+  import PixelIcon from "../components/PixelIcon.svelte";
 
   // ─── State ───────────────────────────────────────
   let ontology: ResearchOntology = createEmptyOntology();
@@ -174,7 +175,7 @@
   <!-- Header Bar -->
   <div class="header-bar">
     <button class="back-btn" on:click={() => router.navigate('studio')} aria-label="Back to studio">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <PixelIcon type="arrow" size={14} />
     </button>
     <div class="header-title">
       <h1>Research Ontology</h1>
@@ -205,7 +206,7 @@
       <!-- ═══ SECTION: Overview ═══ -->
       <section class="section">
         <div class="section-header">
-          <span class="section-icon">&#9673;</span>
+          <span class="section-icon"><PixelIcon type="sparkle" size={14} /></span>
           <span class="section-title">Overview</span>
           <span class="section-hint">Define your research job</span>
         </div>
@@ -271,7 +272,7 @@
       <!-- ═══ SECTION: Branches ═══ -->
       <section class="section">
         <div class="section-header">
-          <span class="section-icon">&#8862;</span>
+          <span class="section-icon"><PixelIcon type="ontology" size={14} /></span>
           <span class="section-title">Branch Strategy</span>
           <span class="section-hint">{enabledBranches.length}/{BRANCH_CATALOG.length} active</span>
         </div>
@@ -303,7 +304,7 @@
       <!-- ═══ SECTION: Data ═══ -->
       <section class="section">
         <div class="section-header">
-          <span class="section-icon">&#9636;</span>
+          <span class="section-icon"><PixelIcon type="grid" size={14} /></span>
           <span class="section-title">Dataset</span>
           <span class="section-hint">Configure data source</span>
         </div>
@@ -358,7 +359,7 @@
                 on:click={() => document.getElementById('csv-input')?.click()}
                 on:keydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); document.getElementById('csv-input')?.click(); }}}
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <PixelIcon type="file" size={28} />
                 <span class="upload-main">Drop CSV here or click to browse</span>
                 <span class="upload-sub">Max 50 MB · UTF-8 · comma-separated</span>
               </div>
@@ -383,7 +384,7 @@
       <!-- ═══ SECTION: Eval ═══ -->
       <section class="section">
         <div class="section-header">
-          <span class="section-icon">&#9672;</span>
+          <span class="section-icon"><PixelIcon type="chart" size={14} /></span>
           <span class="section-title">Evaluation</span>
           <span class="section-hint">Metric, target & validation</span>
         </div>
@@ -450,7 +451,7 @@
       <!-- ═══ SECTION: Config ═══ -->
       <section class="section">
         <div class="section-header">
-          <span class="section-icon">&#9881;</span>
+          <span class="section-icon"><PixelIcon type="protocol" size={14} /></span>
           <span class="section-title">Resources & Config</span>
           <span class="section-hint">GPU, budget, reproducibility</span>
         </div>
@@ -551,7 +552,7 @@
         <span class="spinner"></span>
         Launching...
       {:else}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+        <PixelIcon type="rocket" size={14} />
         Launch Research
       {/if}
     </button>
