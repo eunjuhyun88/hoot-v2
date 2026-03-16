@@ -4,6 +4,7 @@
   import { dashboardStore } from "../stores/dashboardStore.ts";
   import { studioStore, studioPhase, type ResourceMode } from "../stores/studioStore.ts";
   import { jobStore } from "../stores/jobStore.ts";
+  import { nodeStore } from "../stores/nodeStore.ts";
   import { router } from "../stores/router.ts";
   import { readRuntimeConfig } from "../api/client.ts";
   import { isConnected } from "../stores/connectionStore.ts";
@@ -12,7 +13,8 @@
   import { ONTOLOGY_PRESETS } from "../data/ontologyData.ts";
   import type { ContractCall } from "../data/protocolData.ts";
   import PixelIcon from "../components/PixelIcon.svelte";
-  import StudioPublish from "../components/StudioPublish.svelte";
+  import StudioPublish from "../components/studio/StudioPublish.svelte";
+  import GPUOnboardWizard from "../components/studio/GPUOnboardWizard.svelte";
   import ContractCallModal from "../components/ContractCallModal.svelte";
   import CreditInsufficientModal from "../components/CreditInsufficientModal.svelte";
 
@@ -30,9 +32,13 @@
   let creditRequired = 12.5;
   let creditAvailable = 85.0;
 
+  // GPU onboard wizard
+  let gpuWizardOpen = false;
+
   onMount(() => {
     dashboardStore.init();
     studioStore.syncFromJobStore();
+    nodeStore.init();
     return () => dashboardStore.destroy();
   });
 
@@ -47,7 +53,7 @@
     : 0;
 
   // AI recommendation trigger: show after 3 chars
-  $: if (topicInput.trim().length >= 3 && phase === 'create') {
+  $: if (topicInput.trim().length >= 3 && phase === 'step1' || phase === 'step2') {
     aiRecVisible = true;
   } else if (topicInput.trim().length < 3) {
     aiRecVisible = false;
@@ -165,9 +171,15 @@
     if (e.key === 'Enter') {
       e.preventDefault();
       if (phase === 'idle') startResearch();
-      else if (phase === 'create') handleQuickStart();
+      else if (phase === 'step1' && topicInput.trim().length >= 2) {
+        studioStore.goToStep2(topicInput.trim());
+      }
+      else if (phase === 'step2') handleQuickStart();
     }
-    if (e.key === 'Escape' && phase === 'create') goBackToIdle();
+    if (e.key === 'Escape') {
+      if (phase === 'step2') studioStore.goBack();
+      else if (phase === 'step1') goBackToIdle();
+    }
   }
 
   const RESOURCE_MODES: { id: ResourceMode; label: string; desc: string }[] = [
@@ -238,6 +250,9 @@
           {/each}
         </div>
         <button class="fc-advanced" on:click={() => nav('ontology')}>고급 설정 →</button>
+        {#if !$nodeStore.hasActiveNode}
+          <button class="fc-advanced" on:click={() => gpuWizardOpen = true}>GPU 노드 등록 →</button>
+        {/if}
       </div>
 
       <!-- Research Presets -->
@@ -270,7 +285,7 @@
         </div>
       {/if}
 
-    {:else if phase === 'create'}
+    {:else if phase === 'step1' || phase === 'step2'}
       <!-- ═══════════════════════════════════════════════════ -->
       <!-- CREATE STATE: Topic input + AI recommendation       -->
       <!-- ═══════════════════════════════════════════════════ -->
@@ -373,6 +388,26 @@
         </button>
       </div>
 
+    {:else if phase === 'setup'}
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- SETUP STATE: Advanced ontology configuration         -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <div class="setup-section" in:fly={{ y: 10, duration: 300 }}>
+        <button class="sh-back" on:click={() => studioStore.goBack()}>← 돌아가기</button>
+        <h1 class="sh-title">고급 설정</h1>
+        <p class="sh-sub">실험 브랜치, 모델, 파라미터를 직접 구성하세요</p>
+        {#await import('../components/studio/OntologySetup.svelte') then mod}
+          <svelte:component
+            this={mod.default}
+            on:launch={(e) => {
+              studioStore.startRunning();
+              launchJob(stState.createTopic);
+            }}
+            on:back={() => studioStore.goBack()}
+          />
+        {/await}
+      </div>
+
     {:else if phase === 'complete'}
       <!-- ═══════════════════════════════════════════════════ -->
       <!-- COMPLETE STATE: shown when returning from research   -->
@@ -436,10 +471,18 @@
         <p class="sh-sub">연구 결과를 HOOT 네트워크에 배포합니다</p>
         <StudioPublish
           topic={stState.createTopic}
+          bestMetric={$jobStore.bestMetric === Infinity ? 0 : $jobStore.bestMetric}
+          experiments={$jobStore.experiments}
+          branches={$jobStore.branches}
+          totalExperiments={$jobStore.totalExperiments}
           on:back={() => studioStore.setPhase('complete')}
           on:published={(e) => {
             studioStore.confirmPublished(e.detail.modelId);
             router.navigate('model-detail', { modelId: e.detail.modelId });
+          }}
+          on:newResearch={() => {
+            studioStore.reset();
+            topicInput = '';
           }}
         />
       </div>
@@ -482,6 +525,17 @@
     toasts.info('크레딧 충전', 'Protocol 페이지에서 크레딧을 충전할 수 있습니다');
   }}
 />
+
+<!-- GPU Onboard Wizard -->
+{#if gpuWizardOpen}
+  <GPUOnboardWizard
+    on:close={() => gpuWizardOpen = false}
+    on:complete={(e) => {
+      gpuWizardOpen = false;
+      toasts.success('GPU 등록 완료', `${e.detail.nodeId} 등록됨`);
+    }}
+  />
+{/if}
 
 <style>
   .studio-page {

@@ -13,11 +13,19 @@
   import DisconnectConfirmModal from "./lib/components/DisconnectConfirmModal.svelte";
   import { wallet } from "./lib/stores/walletStore.ts";
   import { toasts } from "./lib/stores/toastStore.ts";
+  import { ppapStore } from "./lib/stores/ppapStore.ts";
+  import { nodeStore } from "./lib/stores/nodeStore.ts";
+  import { onMount } from "svelte";
   import "./lib/tokens.css";
 
   let showSplash = true;
   let walletModalOpen = false;
   let disconnectConfirmOpen = false;
+
+  onMount(() => {
+    ppapStore.init();
+    nodeStore.init();
+  });
 
   function handleDisconnect() {
     const name = $wallet.name;

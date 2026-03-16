@@ -1,6 +1,7 @@
 <script lang="ts">
   import { router } from "../stores/router.ts";
   import { fmtNumber } from "../utils/format.ts";
+  import { modelPublishStore } from "../stores/modelPublishStore.ts";
 
   let searchQuery = "";
   let debouncedQuery = "";
@@ -158,8 +159,29 @@
     },
   ];
 
+  // Merge user-published models from store with demo data
+  $: publishedModels = ($modelPublishStore || []).map(pm => ({
+    id: pm.id,
+    name: pm.name,
+    slug: `hoot/${pm.slug}`,
+    topic: pm.name.replace(/ v\d+$/, ''),
+    category: 'prediction' as const,
+    metricValue: pm.metrics.best,
+    metricLabel: 'val_bpb',
+    metricDirection: 'lower' as const,
+    framework: 'transformer',
+    downloads: 0,
+    likes: 0,
+    training: `${pm.metrics.experiments} experiments`,
+    updated: 'just now',
+    date: pm.createdAt?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+    tags: ['user-published'],
+    status: 'published',
+  }));
+
   // Pre-compute lowercase strings to avoid repeated .toLowerCase() on each filter pass
-  const modelsIndexed = models.map(m => ({
+  $: allModels = [...publishedModels, ...models];
+  $: modelsIndexed = allModels.map(m => ({
     ...m,
     _nameLower: m.name.toLowerCase(),
     _topicLower: m.topic.toLowerCase(),

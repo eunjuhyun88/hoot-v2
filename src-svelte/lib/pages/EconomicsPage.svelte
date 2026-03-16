@@ -16,7 +16,12 @@
   import TokenFlowPanel from '../components/TokenFlowPanel.svelte';
   import PPAPPipeline from '../components/PPAPPipeline.svelte';
   import YourJourney from '../components/YourJourney.svelte';
+  import PPAPContributePanel from '../components/protocol/PPAPContributePanel.svelte';
+  import MyActivityPanel from '../components/protocol/MyActivityPanel.svelte';
+  import ChallengePanel from '../components/protocol/ChallengePanel.svelte';
   import { rewardSummary } from '../stores/rewardStore.ts';
+  import { ppapStore } from '../stores/ppapStore.ts';
+  import { nodeStore } from '../stores/nodeStore.ts';
   import { router } from '../stores/router.ts';
 
   let visible = false;
@@ -52,6 +57,8 @@
 
   onMount(() => {
     visible = true;
+    ppapStore.init();
+    nodeStore.init();
     const isDestroyed = () => destroyed;
 
     // UX-E5: Track mobile state for tab slide transitions
@@ -235,6 +242,21 @@
         </div>
         <BurnPanel simulatedBalance={12450} on:openModal={e => openContractModal(e.detail)} />
         <JobCreatorPanel on:openModal={e => openContractModal(e.detail)} />
+
+        <!-- PPAP Data Contribution -->
+        {#if walletConnected}
+          <PPAPContributePanel />
+        {/if}
+
+        <!-- My Activity (Earnings Dashboard) -->
+        {#if walletConnected}
+          <MyActivityPanel />
+        {/if}
+
+        <!-- Challenge Panel (Notary Voting) -->
+        {#if walletConnected}
+          <ChallengePanel on:openModal={e => openContractModal(e.detail)} />
+        {/if}
       </div>
       {/if}
 
